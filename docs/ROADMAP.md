@@ -13,7 +13,7 @@ compiles.
 
 ## M1 — Walking skeleton: talk to Hermes
 
-The thinnest end-to-end path. No policy yet; Hermes approval mode set to `manual`.
+The thinnest end-to-end path. No Kairos policy yet; Hermes approval mode stays `smart`.
 
 - **Deliverables**
   - Repo layout: `app/` (Tauri 2 + React + TS), `plugin/` (Python), `docs/`, `scripts/`.
@@ -24,8 +24,9 @@ The thinnest end-to-end path. No policy yet; Hermes approval mode set to `manual
   - Approval card: renders `approval.request`, answers via `/v1/runs/{id}/approval`.
 - **Acceptance**
   - Ask a question → streamed answer on the free model.
-  - Ask for a command Hermes classes as dangerous (e.g. deleting a scratch file) → approval card
-    appears → approve → result shown; deny → shown as blocked, not as success.
+  - Ask for a command that `smart` mode escalates to a human (e.g. recursively deleting a scratch
+    folder) → approval card appears → approve → result shown; deny → shown as blocked, not as
+    success.
   - Kill the app mid-run, reopen → the run is found again via `GET /v1/runs/{id}`.
 - **Tests:** Rust client unit tests against a recorded SSE fixture; one integration test against a
   real local Hermes on a temporary `HERMES_HOME`.

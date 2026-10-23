@@ -115,12 +115,28 @@ are a later milestone (`ROADMAP.md`, M4).
 
 ---
 
+## D-008 — Windows 11 is the primary OS — Accepted
+
+Kairos targets Windows 11 first, running Hermes natively (not in WSL). Linux support stays a goal
+but is not tested until later. Consequences: OS keyring = Windows Credential Manager;
+`HERMES_HOME` defaults to `%LOCALAPPDATA%\hermes`; container isolation (M3) uses Docker Desktop
+with the WSL2 backend; scripts are PowerShell first.
+
+---
+
+## D-009 — Keep Hermes approval mode `smart` — Accepted
+
+Hermes's default: an auxiliary model auto-approves commands it judges low-risk, auto-denies clearly
+dangerous ones, and asks a human about the rest. The hardline blocklist and (from M2) Kairos `deny`
+and `ask` rules still apply on top, since Kairos rules run before the approval gate.
+
+Risk accepted: the auxiliary model's judgment depends on which model it is. On a small free model
+it may misjudge. Mitigations: Kairos `ask` rules for consequential actions (M2), the audit log
+shows every `smart_approve` decision, and the setting can be switched to `manual` from the app.
+
+---
+
 ## Open questions
 
-- **Q-1 — Primary OS.** This machine runs Windows 11; the original plan assumed EndeavourOS
-  Linux. Hermes supports both. It mostly affects isolation (`SECURITY.md` §4) and packaging.
 - **Q-2 — First real use cases.** The 3–5 things Kairos must do well first. These decide which
   tools are enabled, which policy rules come first, and what the eval set contains.
-- **Q-3 — Hermes's own approval mode.** Keep the default `smart` (an auxiliary model auto-approves
-  low-risk commands) or switch to `manual` while Kairos is young? Recommendation: `manual` until
-  the policy file and audit log are proven.

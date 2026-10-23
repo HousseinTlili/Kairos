@@ -230,6 +230,6 @@ sounds positive.
 
 ## 7. Cross-platform notes
 
-Hermes runs natively on Windows, macOS and Linux. Kairos is designed for all three, but the
-**isolation** story differs (see `SECURITY.md` §4) and the primary target OS is an open question
-(`DECISIONS.md`, Q-1).
+Hermes runs natively on Windows, macOS and Linux. Kairos targets **Windows 11 first**
+(`DECISIONS.md`, D-008) and avoids OS-specific code outside the keyring, paths and setup scripts,
+so Linux can follow. The **isolation** story differs per OS (`SECURITY.md` §4).
