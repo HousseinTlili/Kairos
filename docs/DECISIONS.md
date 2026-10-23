@@ -124,19 +124,28 @@ with the WSL2 backend; scripts are PowerShell first.
 
 ---
 
-## D-009 — Keep Hermes approval mode `smart` — Accepted
+## D-009 — Hermes approval mode `manual` until M2's `ask` rules exist, then `smart` — Accepted
 
-Hermes's default: an auxiliary model auto-approves commands it judges low-risk, auto-denies clearly
-dangerous ones, and asks a human about the rest. The hardline blocklist and (from M2) Kairos `deny`
-and `ask` rules still apply on top, since Kairos rules run before the approval gate.
+Revised 2026-10-23 (originally "keep `smart`").
 
-Risk accepted: the auxiliary model's judgment depends on which model it is. On a small free model
-it may misjudge. **Observed 2026-10-23:** with `upstage/solar-mini4:free` as the auxiliary model,
+**Now (M1 until M2 is accepted): `manual`.** Hermes asks a human before every command it classes
+as dangerous. Set with `hermes config set approvals.mode manual`.
+
+**Why the change.** In `smart` mode an auxiliary model auto-approves commands it judges low-risk,
+auto-denies clearly dangerous ones, and asks a human about the rest. Its judgment depends on which
+model it is. **Observed 2026-10-23:** with `upstage/solar-mini4:free` as the auxiliary model,
 `smart` auto-approved `rm -rf` on a folder in the user's home directory with no human prompt
-(`fixtures/hermes-0.22.5/run-smart-autoapprove/`). Under `manual` the same command asked first.
-Until M2's `ask` rules exist, `smart` gives no human checkpoint for destructive commands the
-auxiliary model considers fine. Mitigations: Kairos `ask` rules for consequential actions (M2), the audit log
-shows every `smart_approve` decision, and the setting can be switched to `manual` from the app.
+(`fixtures/hermes-0.22.5/run-smart-autoapprove/`). Under `manual` the same command asked first
+(`run-approval-deny/`). Until Kairos has its own `ask` rules, `smart` gives no human checkpoint for
+destructive commands the auxiliary model considers fine.
+
+**Later: back to `smart`**, only when M2's acceptance criteria pass: Kairos `deny`/`ask` rules
+cover destructive and outbound actions (Kairos rules run before Hermes's approval gate, and
+`block` beats `approve`), and the audit log records every `smart_approve` decision so they can
+be reviewed. Switching back is a product-owner decision, recorded here.
+
+**Cost of `manual`.** More approval prompts during M1 development and testing. The hardline
+blocklist applies in both modes.
 
 ---
 

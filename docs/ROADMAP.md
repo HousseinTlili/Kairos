@@ -13,7 +13,7 @@ compiles.
 
 ## M1 — Walking skeleton: talk to Hermes
 
-The thinnest end-to-end path. No Kairos policy yet; Hermes approval mode stays `smart`.
+The thinnest end-to-end path. No Kairos policy yet; Hermes approval mode is `manual` (D-009).
 
 - **Deliverables**
   - Repo layout: `app/` (Tauri 2 + React + TS), `plugin/` (Python), `docs/`, `scripts/`.
@@ -24,8 +24,8 @@ The thinnest end-to-end path. No Kairos policy yet; Hermes approval mode stays `
   - Approval card: renders `approval.request`, answers via `/v1/runs/{id}/approval`.
 - **Acceptance**
   - Ask a question → streamed answer on the free model.
-  - Ask for a command that `smart` mode escalates to a human (e.g. recursively deleting a scratch
-    folder) → approval card appears → approve → result shown; deny → shown as blocked, not as
+  - Ask for a command Hermes classes as dangerous (e.g. recursively deleting a scratch folder)
+    → approval card appears → approve → result shown; deny → shown as blocked, not as
     success.
   - Kill the app mid-run, reopen → the run is found again via `GET /v1/runs/{id}`.
 - **Tests:** Rust client unit tests against a recorded SSE fixture; one integration test against a
@@ -47,6 +47,9 @@ The thinnest end-to-end path. No Kairos policy yet; Hermes approval mode stays `
   - A malformed `policy.yaml` blocks every tool call (fail closed) and the app says why.
   - An injected instruction inside a fetched web page cannot cause an `ask` tool to run without
     a click.
+  - With approval mode switched to `smart` for the test, the `rm -rf` from
+    `fixtures/hermes-0.22.5/run-smart-autoapprove/` now asks first because of a Kairos `ask` rule.
+    Only then does the product owner decide whether to return to `smart` (D-009).
 - **Tests:** policy matcher unit tests (table-driven); a plugin test that raises → call blocked;
   redaction tests with fake secrets.
 - **Risks:** argument shapes differ per tool, so path matching must be written per tool family.

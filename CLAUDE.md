@@ -35,8 +35,8 @@ The user is the product owner. You are the engineer. Stop and ask before:
   If a check could not be run, say so plainly.
 - **Don't resend work.** Every Hermes run is created with an `Idempotency-Key` stored first; never
   retry a request under a new key (M1 §9 rule 1).
-- **Approval mode.** Hermes runs in `smart` (D-009). Any test that switches it to `manual` must
-  switch it back to `smart` and say so.
+- **Approval mode.** Hermes runs in `manual` until M2 is accepted (D-009). Never switch it to
+  `smart`, `off` or YOLO. A test that changes it must restore `manual` and say so.
 
 ## Commands
 
