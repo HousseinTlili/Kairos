@@ -48,7 +48,8 @@ The user is the product owner. You are the engineer. Stop and ask before:
 | TS tests | `pnpm -C app test` |
 | Lint | `cargo clippy --manifest-path app/src-tauri/Cargo.toml -- -D warnings`; `pnpm -C app lint` |
 | Hermes status | `hermes gateway status`; `curl http://127.0.0.1:8642/health` |
-| Hermes setup | `powershell -File scripts/setup.ps1` |
+| Hermes setup | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1` |
+| Setup script tests | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-setup.ps1` (throwaway homes; never touches the real `.env`) |
 
 ## Code style
 
