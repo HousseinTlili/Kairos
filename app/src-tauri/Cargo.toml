@@ -1,0 +1,34 @@
+[package]
+name = "kairos"
+version = "0.1.0"
+description = "Kairos personal AI assistant, a desktop front end for Hermes Agent"
+authors = ["HousseinTlili"]
+edition = "2024"
+
+[lib]
+# The `_lib` suffix keeps the lib name distinct from the bin name, which matters on Windows
+# (https://github.com/rust-lang/cargo/issues/8519).
+name = "kairos_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Exact pins (M1 §3). Tauri and serde follow the template's ranges; Cargo.lock pins them.
+reqwest = { version = "=0.13.5", default-features = false, features = ["rustls", "json", "stream"] }
+# Windows Credential Manager only (D-008); other OS stores are added when Linux support starts.
+keyring = { version = "=4.2.0", default-features = false, features = ["v1", "windows-native-keyring-store"] }
+rusqlite = { version = "=0.40.2", features = ["bundled"] }
+ulid = "=3.0.0"
+thiserror = "=2.0.21"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
