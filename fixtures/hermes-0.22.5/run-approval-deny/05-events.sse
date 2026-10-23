@@ -1,0 +1,144 @@
+: open
+
+id: 0
+data: {"event": "tool.started", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794642.6234903, "tool": "terminal", "preview": "rm -rf C:/Users/USER/kairos-probe-scratch", "tool_call_id": "call_2916e026811542d7a4204351", "seq": 0}
+
+id: 1
+data: {"event": "approval.request", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794644.2895958, "kind": "approval", "prompt_id": "5ca707fdc79b4076b0d1dddbcc756c64", "execution_generation": 1, "command": "rm -rf C:/Users/USER/kairos-probe-scratch; echo \"EXIT_CODE=$?\"", "description": "recursive delete", "choices": ["once", "deny", "session", "always"], "seq": 1}
+
+: keepalive
+
+id: 2
+data: {"event": "approval.settled", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794654.5378742, "prompt_id": "5ca707fdc79b4076b0d1dddbcc756c64", "execution_generation": 1, "seq": 2}
+
+id: 3
+data: {"event": "tool.completed", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794654.5658388, "tool": "terminal", "duration": 0, "error": true, "tool_call_id": "call_2916e026811542d7a4204351", "preview": "", "seq": 3}
+
+id: 4
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794657.9358568, "delta": "\n\nThe", "seq": 4}
+
+id: 5
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794657.9573963, "delta": " command", "seq": 5}
+
+id: 6
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794657.9603205, "delta": " did", "seq": 6}
+
+id: 7
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794657.9634018, "delta": " not", "seq": 7}
+
+id: 8
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794657.967044, "delta": " run", "seq": 8}
+
+id: 9
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794657.9826975, "delta": ".", "seq": 9}
+
+id: 10
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794657.985446, "delta": " The", "seq": 10}
+
+id: 11
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794657.9878328, "delta": " terminal", "seq": 11}
+
+id: 12
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794657.9908967, "delta": " tool", "seq": 12}
+
+id: 13
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0071397, "delta": " blocked", "seq": 13}
+
+id: 14
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0107343, "delta": " it", "seq": 14}
+
+id: 15
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.013846, "delta": ",", "seq": 15}
+
+id: 16
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0167425, "delta": " citing", "seq": 16}
+
+id: 17
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0323184, "delta": " that", "seq": 17}
+
+id: 18
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0340576, "delta": " you", "seq": 18}
+
+id: 19
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.036133, "delta": " have", "seq": 19}
+
+id: 20
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0391061, "delta": " not", "seq": 20}
+
+id: 21
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.068755, "delta": " consented", "seq": 21}
+
+id: 22
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0702531, "delta": " to", "seq": 22}
+
+id: 23
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0722177, "delta": " this", "seq": 23}
+
+id: 24
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.074053, "delta": " action", "seq": 24}
+
+id: 25
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0907876, "delta": ".", "seq": 25}
+
+id: 26
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0941072, "delta": " Because", "seq": 26}
+
+id: 27
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0967398, "delta": " it", "seq": 27}
+
+id: 28
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.0995533, "delta": " never", "seq": 28}
+
+id: 29
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.1115158, "delta": " executed", "seq": 29}
+
+id: 30
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.1136665, "delta": ",", "seq": 30}
+
+id: 31
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.1158543, "delta": " there", "seq": 31}
+
+id: 32
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.119427, "delta": " is", "seq": 32}
+
+id: 33
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.140494, "delta": " no", "seq": 33}
+
+id: 34
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.1429412, "delta": " exit", "seq": 34}
+
+id: 35
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.1449912, "delta": " code", "seq": 35}
+
+id: 36
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.1480343, "delta": " to", "seq": 36}
+
+id: 37
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.1710963, "delta": " report", "seq": 37}
+
+id: 38
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.173074, "delta": " \u2014", "seq": 38}
+
+id: 39
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.1753752, "delta": " I", "seq": 39}
+
+id: 40
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.178377, "delta": " won", "seq": 40}
+
+id: 41
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.2019649, "delta": "'t", "seq": 41}
+
+id: 42
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.204386, "delta": " fabricate", "seq": 42}
+
+id: 43
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.206298, "delta": " one", "seq": 43}
+
+id: 44
+data: {"event": "message.delta", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.2085469, "delta": ".", "seq": 44}
+
+id: 45
+data: {"event": "run.completed", "run_id": "run_632e72c9a7b7469cb54fcdd011b81e79", "timestamp": 1792794658.381687, "output": "The command did not run. The terminal tool blocked it, citing that you have not consented to this action. Because it never executed, there is no exit code to report \u2014 I won't fabricate one.", "usage": {"input_tokens": 24992, "output_tokens": 485, "total_tokens": 25477}, "runtime": {"provider": "", "model": "", "route_source": "global"}, "completed": true, "partial": false, "interrupted": false, "seq": 45}
+
+: stream closed
+

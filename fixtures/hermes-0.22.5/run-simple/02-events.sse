@@ -1,0 +1,22 @@
+: open
+
+id: 0
+data: {"event": "message.delta", "run_id": "run_8790e213c48849b7b918204bd99b9a79", "timestamp": 1792794536.579055, "delta": "K", "seq": 0}
+
+id: 1
+data: {"event": "message.delta", "run_id": "run_8790e213c48849b7b918204bd99b9a79", "timestamp": 1792794536.580283, "delta": "ai", "seq": 1}
+
+id: 2
+data: {"event": "message.delta", "run_id": "run_8790e213c48849b7b918204bd99b9a79", "timestamp": 1792794536.5810494, "delta": "ros", "seq": 2}
+
+id: 3
+data: {"event": "message.delta", "run_id": "run_8790e213c48849b7b918204bd99b9a79", "timestamp": 1792794536.582187, "delta": " probe", "seq": 3}
+
+id: 4
+data: {"event": "message.delta", "run_id": "run_8790e213c48849b7b918204bd99b9a79", "timestamp": 1792794536.583223, "delta": " OK", "seq": 4}
+
+id: 5
+data: {"event": "run.completed", "run_id": "run_8790e213c48849b7b918204bd99b9a79", "timestamp": 1792794537.0208986, "output": "Kairos probe OK", "usage": {"input_tokens": 12348, "output_tokens": 29, "total_tokens": 12377}, "runtime": {"provider": "", "model": "", "route_source": "global"}, "completed": true, "partial": false, "interrupted": false, "seq": 5}
+
+: stream closed
+

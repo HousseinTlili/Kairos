@@ -1,0 +1,112 @@
+: open
+
+id: 0
+data: {"event": "tool.started", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794567.037803, "tool": "terminal", "preview": "rm -rf C:/Users/USER/kairos-probe-scratch", "tool_call_id": "call_b8e9c70f9f0c457d8ccdf938", "seq": 0}
+
+id: 1
+data: {"event": "tool.completed", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794572.0431604, "tool": "terminal", "duration": 0, "error": false, "tool_call_id": "call_b8e9c70f9f0c457d8ccdf938", "preview": "", "seq": 1}
+
+id: 2
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.4246392, "delta": "\n\nExit", "seq": 2}
+
+id: 3
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.4281642, "delta": " code", "seq": 3}
+
+id: 4
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6470594, "delta": ":", "seq": 4}
+
+id: 5
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.648206, "delta": " 0", "seq": 5}
+
+id: 6
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6495323, "delta": ".", "seq": 6}
+
+id: 7
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.650503, "delta": " The", "seq": 7}
+
+id: 8
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6519206, "delta": " directory", "seq": 8}
+
+id: 9
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6528988, "delta": " `", "seq": 9}
+
+id: 10
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6535819, "delta": "C", "seq": 10}
+
+id: 11
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6544905, "delta": ":/", "seq": 11}
+
+id: 12
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.655367, "delta": "Users", "seq": 12}
+
+id: 13
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6571882, "delta": "/H", "seq": 13}
+
+id: 14
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.65799, "delta": "ousse", "seq": 14}
+
+id: 15
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6586962, "delta": "in", "seq": 15}
+
+id: 16
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6601155, "delta": "/k", "seq": 16}
+
+id: 17
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6610851, "delta": "ai", "seq": 17}
+
+id: 18
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6630864, "delta": "ros", "seq": 18}
+
+id: 19
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6641486, "delta": "-probe", "seq": 19}
+
+id: 20
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6652005, "delta": "-", "seq": 20}
+
+id: 21
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6731436, "delta": "scratch", "seq": 21}
+
+id: 22
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.674526, "delta": "`", "seq": 22}
+
+id: 23
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6759794, "delta": " (", "seq": 23}
+
+id: 24
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6769238, "delta": "and", "seq": 24}
+
+id: 25
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6776626, "delta": " its", "seq": 25}
+
+id: 26
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.678433, "delta": " contents", "seq": 26}
+
+id: 27
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.679795, "delta": ")", "seq": 27}
+
+id: 28
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.681205, "delta": " was", "seq": 28}
+
+id: 29
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6824515, "delta": " removed", "seq": 29}
+
+id: 30
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.683331, "delta": ",", "seq": 30}
+
+id: 31
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6841545, "delta": " if", "seq": 31}
+
+id: 32
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6863146, "delta": " it", "seq": 32}
+
+id: 33
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6878517, "delta": " existed", "seq": 33}
+
+id: 34
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6887772, "delta": ".", "seq": 34}
+
+id: 35
+data: {"event": "run.completed", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.8971324, "output": "Exit code: 0. The directory `C:/Users/USER/kairos-probe-scratch` (and its contents) was removed, if it existed.", "usage": {"input_tokens": 24849, "output_tokens": 97, "total_tokens": 24946}, "runtime": {"provider": "", "model": "", "route_source": "global"}, "completed": true, "partial": false, "interrupted": false, "seq": 35}
+
+: stream closed
+

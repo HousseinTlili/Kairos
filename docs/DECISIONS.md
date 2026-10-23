@@ -131,7 +131,11 @@ dangerous ones, and asks a human about the rest. The hardline blocklist and (fro
 and `ask` rules still apply on top, since Kairos rules run before the approval gate.
 
 Risk accepted: the auxiliary model's judgment depends on which model it is. On a small free model
-it may misjudge. Mitigations: Kairos `ask` rules for consequential actions (M2), the audit log
+it may misjudge. **Observed 2026-10-23:** with `upstage/solar-mini4:free` as the auxiliary model,
+`smart` auto-approved `rm -rf` on a folder in the user's home directory with no human prompt
+(`fixtures/hermes-0.22.5/run-smart-autoapprove/`). Under `manual` the same command asked first.
+Until M2's `ask` rules exist, `smart` gives no human checkpoint for destructive commands the
+auxiliary model considers fine. Mitigations: Kairos `ask` rules for consequential actions (M2), the audit log
 shows every `smart_approve` decision, and the setting can be switched to `manual` from the app.
 
 ---

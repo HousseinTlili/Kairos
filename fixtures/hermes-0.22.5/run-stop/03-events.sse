@@ -1,0 +1,15 @@
+: open
+
+id: 0
+data: {"event": "tool.started", "run_id": "run_f0bf3c1462bf489a8257cca45a9423b9", "timestamp": 1792794679.1883821, "tool": "terminal", "preview": "ping -n 40 127.0.0.1", "tool_call_id": "call_125dd2f8df1a4fbabda83754", "seq": 0}
+
+: keepalive
+
+id: 1
+data: {"event": "tool.completed", "run_id": "run_f0bf3c1462bf489a8257cca45a9423b9", "timestamp": 1792794689.9263482, "tool": "terminal", "duration": 0, "error": true, "tool_call_id": "call_125dd2f8df1a4fbabda83754", "preview": "", "seq": 1}
+
+id: 2
+data: {"event": "run.cancelled", "run_id": "run_f0bf3c1462bf489a8257cca45a9423b9", "timestamp": 1792794689.9778922, "completed": false, "partial": false, "interrupted": true, "turn_exit_reason": "interrupted_by_user", "seq": 2}
+
+: stream closed
+
