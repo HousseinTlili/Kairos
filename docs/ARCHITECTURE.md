@@ -115,8 +115,12 @@ Precedence in Hermes: any plugin's `block` beats any `approve`. Kairos can only 
 
 ### 3.3 Versioning
 
-- Kairos pins a tested Hermes version range and checks it on connect (`/v1/capabilities` plus the
-  version Hermes reports).
+- On connect, Kairos checks `/v1/capabilities` for every feature it needs (`run_submission`,
+  `run_events_sse`, `run_stop`, `run_approval`, ...) and refuses to start with a clear message if
+  one is missing. Feature flags, not version numbers, are the compatibility test: the capabilities
+  document does not report a Hermes version.
+- Kairos also records the Hermes version it was tested against; how to read the running version
+  (CLI `hermes --version` or the install stamp) is settled in M1.
 - An upgrade of Hermes is a deliberate step: run Kairos's integration tests against it first.
 
 ## 4. Data ownership
@@ -185,7 +189,7 @@ stateDiagram-v2
     running --> waiting_for_approval: approval.request event
     waiting_for_approval --> running: user answers
     running --> completed: run.completed
-    running --> incomplete: budget exhausted (finish_reason length)
+    running --> incomplete: iteration budget exhausted
     running --> failed: run.failed
     running --> cancelled: user stops
     running --> interrupted: Hermes shut down
