@@ -1,5 +1,7 @@
 mod commands;
-mod hermes;
+// Public so the fixture tests in tests/ can drive it, and so it isn't dead code before the
+// Tauri commands use it (Step 4).
+pub mod hermes;
 mod keyring;
 mod store;
 
