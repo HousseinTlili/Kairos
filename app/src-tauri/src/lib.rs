@@ -9,6 +9,8 @@ pub fn run() {
     tauri::Builder::default()
         .manage(commands::AppState::default())
         .invoke_handler(tauri::generate_handler![
+            commands::create_run,
+            commands::subscribe_run,
             commands::connect,
             commands::reload_key
         ])
