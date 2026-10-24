@@ -9,10 +9,15 @@ pub fn run() {
     tauri::Builder::default()
         .manage(commands::AppState::default())
         .invoke_handler(tauri::generate_handler![
+            commands::connect,
+            commands::reload_key,
             commands::create_run,
             commands::subscribe_run,
-            commands::connect,
-            commands::reload_key
+            commands::answer_approval,
+            commands::stop_run,
+            commands::resume_open_tasks,
+            commands::list_conversations,
+            commands::conversation_tasks
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

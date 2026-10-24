@@ -55,6 +55,67 @@ export const createRun = (sessionId: string | null, input: string) =>
 export const subscribeRun = (taskId: string, runId: string) =>
   call<void>("subscribe_run", { taskId, runId });
 
+export type ApprovalChoice = "once" | "session" | "always" | "deny";
+
+export const answerApproval = (
+  runId: string,
+  promptId: string,
+  executionGeneration: number,
+  choice: ApprovalChoice,
+) => call<void>("answer_approval", { runId, promptId, executionGeneration, choice });
+
+export const stopRun = (taskId: string, runId: string) => call<void>("stop_run", { taskId, runId });
+
+/** A row of kairos.db's task table (store.rs `Task`). */
+export interface StoredTask {
+  id: string;
+  session_id: string;
+  run_id: string | null;
+  goal: string;
+  status:
+    | "created"
+    | "running"
+    | "waiting_for_approval"
+    | "stopping"
+    | "completed"
+    | "incomplete"
+    | "failed"
+    | "cancelled"
+    | "interrupted"
+    | "unknown"
+    | "lost";
+  created_at: number;
+  finished_at: number | null;
+  outcome: string | null;
+}
+
+export interface Conversation {
+  session_id: string;
+  title: string;
+  /** Unix seconds. */
+  last_active: number;
+  task_count: number;
+}
+
+export interface OtherConversation {
+  id: string;
+  title: string | null;
+  source: string | null;
+  model: string | null;
+  last_active: number | null;
+  message_count: number;
+}
+
+export interface ConversationList {
+  kairos: Conversation[];
+  other: OtherConversation[];
+}
+
+export const resumeOpenTasks = () => call<StoredTask[]>("resume_open_tasks");
+export const listConversations = () => call<ConversationList>("list_conversations");
+export const conversationTasks = (sessionId: string) =>
+  call<StoredTask[]>("conversation_tasks", { sessionId });
+
 export function onRunEvent(handler: (payload: RunEventPayload) => void): Promise<UnlistenFn> {
   return listen<RunEventPayload>("run-event", (event) => handler(event.payload));
 }

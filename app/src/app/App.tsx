@@ -1,33 +1,44 @@
 import { useEffect } from "react";
 import { ChatView } from "../features/chat/ChatView";
-import { startChatEvents } from "../features/chat/store";
+import { startChatEvents, useChat } from "../features/chat/store";
 import { ConnectScreen } from "../features/connection/ConnectScreen";
 import { useConnection } from "../features/connection/store";
+import { Settings } from "../features/shell/Settings";
+import { Sidebar } from "../features/shell/Sidebar";
+import { useShell } from "../features/shell/store";
 
 export default function App() {
   const connected = useConnection((state) => state.info?.status === "connected");
-  const version = useConnection((state) => state.info?.version);
-  const check = useConnection((state) => state.check);
+  const view = useShell((state) => state.view);
+  const resume = useChat((state) => state.resume);
 
   useEffect(() => {
-    // Listen before anything can be sent, so no run event is missed.
+    // Listen before anything can be sent or resumed, so no run event is missed.
     const stop = startChatEvents();
     return () => {
       void stop.then((unlisten) => unlisten());
     };
   }, []);
 
+  useEffect(() => {
+    // M1 §9 rule 6: once connected, settle or re-follow requests from before a restart.
+    if (connected) void resume();
+  }, [connected, resume]);
+
   return (
-    <main className={connected ? "app app-chat" : "app"}>
-      <header className="app-header">
-        <h1>Kairos</h1>
-        {connected && (
-          <button className="link" onClick={() => void check()} title="Check the connection again">
-            <span className="dot ok-dot" aria-hidden="true" /> Hermes {version}
-          </button>
+    <div className="shell">
+      <Sidebar />
+      <main className="main">
+        {view === "settings" ? (
+          <Settings />
+        ) : connected ? (
+          <ChatView />
+        ) : (
+          <div className="connect-wrap">
+            <ConnectScreen />
+          </div>
         )}
-      </header>
-      {connected ? <ChatView /> : <ConnectScreen />}
-    </main>
+      </main>
+    </div>
   );
 }

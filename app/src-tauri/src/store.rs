@@ -57,6 +57,21 @@ impl TaskStatus {
         }
     }
 
+    /// A Hermes run status (`GET /v1/runs/{id}`, M1 §5) as a task status.
+    pub fn from_hermes(status: &str) -> Option<Self> {
+        Some(match status {
+            "started" | "running" => TaskStatus::Running,
+            "waiting_for_approval" => TaskStatus::WaitingForApproval,
+            "stopping" => TaskStatus::Stopping,
+            "completed" => TaskStatus::Completed,
+            "cancelled" => TaskStatus::Cancelled,
+            "failed" => TaskStatus::Failed,
+            "interrupted" => TaskStatus::Interrupted,
+            "unknown" => TaskStatus::Unknown,
+            _ => return None,
+        })
+    }
+
     fn parse(text: &str) -> Option<Self> {
         Some(match text {
             "created" => TaskStatus::Created,
@@ -228,6 +243,66 @@ impl TaskStore {
             )
             .optional()?)
     }
+
+    /// A conversation's tasks, oldest first.
+    pub fn for_session(&self, session_id: &str) -> Result<Vec<Task>, StoreError> {
+        self.query_tasks(
+            "SELECT id, session_id, run_id, goal, status, created_at, finished_at, outcome
+             FROM task WHERE session_id = ?1 ORDER BY created_at, rowid",
+            params![session_id],
+        )
+    }
+
+    /// Tasks that haven't reached a final status: candidates for reconnecting after a restart
+    /// (M1 §9 rule 6).
+    pub fn open_tasks(&self) -> Result<Vec<Task>, StoreError> {
+        self.query_tasks(
+            "SELECT id, session_id, run_id, goal, status, created_at, finished_at, outcome
+             FROM task
+             WHERE status NOT IN ('completed', 'incomplete', 'failed', 'cancelled', 'interrupted', 'lost')
+             ORDER BY created_at, rowid",
+            params![],
+        )
+    }
+
+    /// Kairos conversations, most recently active first. The title is the first request.
+    pub fn conversations(&self) -> Result<Vec<Conversation>, StoreError> {
+        let mut statement = self.conn.prepare(
+            "SELECT session_id,
+                    (SELECT goal FROM task t2 WHERE t2.session_id = t.session_id
+                     ORDER BY created_at, rowid LIMIT 1),
+                    MAX(created_at),
+                    COUNT(*)
+             FROM task t GROUP BY session_id ORDER BY MAX(created_at) DESC",
+        )?;
+        let rows = statement.query_map([], |row| {
+            Ok(Conversation {
+                session_id: row.get(0)?,
+                title: row.get(1)?,
+                last_active: row.get(2)?,
+                task_count: row.get(3)?,
+            })
+        })?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+
+    fn query_tasks(
+        &self,
+        sql: &str,
+        params: impl rusqlite::Params,
+    ) -> Result<Vec<Task>, StoreError> {
+        let mut statement = self.conn.prepare(sql)?;
+        let rows = statement.query_map(params, row_to_task)?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Conversation {
+    pub session_id: String,
+    pub title: String,
+    pub last_active: i64,
+    pub task_count: i64,
 }
 
 fn row_to_task(row: &rusqlite::Row<'_>) -> rusqlite::Result<Task> {
@@ -330,6 +405,46 @@ mod tests {
             TaskStatus::after(&RunEvent::MessageDelta { delta: "x".into() }),
             None
         );
+    }
+
+    #[test]
+    fn conversations_are_titled_by_their_first_request_and_tasks_come_back_in_order() {
+        let store = store();
+        store.create("a", "kairos-s1", "first").expect("create");
+        store.create("b", "kairos-s2", "other").expect("create");
+        store.create("c", "kairos-s1", "second").expect("create");
+        let goals: Vec<String> = store
+            .for_session("kairos-s1")
+            .expect("query")
+            .into_iter()
+            .map(|t| t.goal)
+            .collect();
+        assert_eq!(goals, ["first", "second"]);
+        let conversations = store.conversations().expect("conversations");
+        let s1 = conversations
+            .iter()
+            .find(|c| c.session_id == "kairos-s1")
+            .expect("s1");
+        assert_eq!(s1.title, "first");
+        assert_eq!(s1.task_count, 2);
+    }
+
+    #[test]
+    fn only_unfinished_tasks_are_open() {
+        let store = store();
+        store.create("a", "kairos-s1", "running").expect("create");
+        store.set_run("a", "run_a").expect("run");
+        store.create("b", "kairos-s1", "done").expect("create");
+        store
+            .set_status("b", TaskStatus::Completed, Some("ok"))
+            .expect("done");
+        let open: Vec<String> = store
+            .open_tasks()
+            .expect("open")
+            .into_iter()
+            .map(|t| t.id)
+            .collect();
+        assert_eq!(open, ["a"]);
     }
 
     #[test]

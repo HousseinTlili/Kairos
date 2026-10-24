@@ -54,6 +54,8 @@ export interface RunEventEnvelope {
 export interface RunEventPayload {
   task_id: string;
   envelope: RunEventEnvelope;
+  /** For approval.request only: whether Hermes still lists it as pending (M1 §9 rule 2). */
+  approval_live: boolean | null;
 }
 
 /** The `run-stream-end` Tauri event (commands.rs `RunStreamEnd`). */

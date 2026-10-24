@@ -10,14 +10,14 @@ use serde::Serialize;
 use tauri::{Emitter, Manager};
 
 use crate::hermes::client::{
-    ApiKey, Capabilities, CreateRunRequest, CreateRunResponse, DEFAULT_BASE_URL, Health,
-    HermesClient,
+    ApiKey, ApprovalChoice, Capabilities, CreateRunRequest, CreateRunResponse, DEFAULT_BASE_URL,
+    Health, HermesClient, PendingControl, RunStatus,
 };
 use crate::hermes::errors::HermesError;
 use crate::hermes::events::{RunEvent, RunEventEnvelope};
 use crate::hermes::local::{self, LocalError};
 use crate::keyring::{self, KeyStoreError};
-use crate::store::{self, StoreError, TaskStatus, TaskStore};
+use crate::store::{self, Conversation, StoreError, Task, TaskStatus, TaskStore};
 
 /// Shared between commands.
 #[derive(Default)]
@@ -286,6 +286,8 @@ pub struct TaskRef {
 pub struct RunEventPayload {
     pub task_id: String,
     pub envelope: RunEventEnvelope,
+    /// For `approval.request` only: whether Hermes still lists it as pending.
+    pub approval_live: Option<bool>,
 }
 
 /// Sent as `run-stream-end` when a run's event stream closes, with the error if it broke.
@@ -419,7 +421,20 @@ pub async fn subscribe_run(
                     if let RunEvent::Unknown { name, .. } = &envelope.event {
                         eprintln!("[kairos] unrecognised Hermes event {name:?} in run {run_id}");
                     }
-                    if let Some(status) = TaskStatus::after(&envelope.event) {
+                    // M1 §9 rule 2: a replayed stream repeats old approval requests, so only one
+                    // Hermes still lists as pending may become a live card.
+                    let approval_live = match &envelope.event {
+                        RunEvent::ApprovalRequest { prompt_id, .. } => {
+                            Some(client.run_status(&run_id).await.is_ok_and(|status| {
+                                approval_is_live(&status.pending_controls, prompt_id)
+                            }))
+                        }
+                        _ => None,
+                    };
+                    let status_change = TaskStatus::after(&envelope.event).filter(|status| {
+                        *status != TaskStatus::WaitingForApproval || approval_live == Some(true)
+                    });
+                    if let Some(status) = status_change {
                         let outcome = outcome_of(&envelope.event);
                         let state = app.state::<AppState>();
                         if let Err(err) = state.with_store(|store| {
@@ -431,6 +446,7 @@ pub async fn subscribe_run(
                     let payload = RunEventPayload {
                         task_id: task.id.clone(),
                         envelope,
+                        approval_live,
                     };
                     let _ = app.emit("run-event", payload);
                 }
@@ -446,6 +462,151 @@ pub async fn subscribe_run(
         );
     });
     Ok(())
+}
+
+fn approval_is_live(pending: &[PendingControl], prompt_id: &str) -> bool {
+    pending
+        .iter()
+        .any(|control| control.kind == "approval" && control.prompt_id == prompt_id)
+}
+
+/// Answers a pending approval (M1 §9 rule 2). Hermes refuses a stale generation with
+/// `stale_generation`, which reaches the UI as kind `stale`.
+#[tauri::command]
+pub async fn answer_approval(
+    state: tauri::State<'_, AppState>,
+    run_id: String,
+    prompt_id: String,
+    execution_generation: u32,
+    choice: ApprovalChoice,
+) -> Result<(), CommandError> {
+    let client = state.connected_client()?;
+    client
+        .answer_approval(&run_id, &prompt_id, execution_generation, choice)
+        .await?;
+    Ok(())
+}
+
+/// Asks Hermes to stop a run (M1 §9 rule 5). The task shows `stopping` until `run.cancelled`.
+#[tauri::command]
+pub async fn stop_run(
+    state: tauri::State<'_, AppState>,
+    task_id: String,
+    run_id: String,
+) -> Result<(), CommandError> {
+    let client = state.connected_client()?;
+    client.stop_run(&run_id).await?;
+    state.with_store(|store| store.set_status(&task_id, TaskStatus::Stopping, None))?;
+    Ok(())
+}
+
+/// What a task should become, given Hermes's answer about its run after a restart (M1 §9 rule 6).
+fn resumed_status(answer: &Result<RunStatus, HermesError>) -> TaskStatus {
+    match answer {
+        Ok(status) => TaskStatus::from_hermes(&status.status).unwrap_or(TaskStatus::Unknown),
+        Err(HermesError::NotFound { .. }) => TaskStatus::Lost,
+        // Hermes unreachable or erroring: say nothing new; the task stays as it was.
+        Err(_) => TaskStatus::Unknown,
+    }
+}
+
+/// After a restart, checks every unfinished task with Hermes. Finished runs get their outcome;
+/// runs Hermes no longer knows become `lost` (never resubmitted); the rest are returned so the UI
+/// can subscribe to them again.
+#[tauri::command]
+pub async fn resume_open_tasks(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<Task>, CommandError> {
+    let client = state.connected_client()?;
+    let open = state.with_store(|store| store.open_tasks())?;
+    let mut still_running = Vec::new();
+    for task in open {
+        let Some(run_id) = task.run_id.clone() else {
+            // Created but never admitted: unknown whether Hermes got it, so don't guess.
+            state.with_store(|store| {
+                store.set_status(
+                    &task.id,
+                    TaskStatus::Unknown,
+                    Some("Kairos closed before Hermes confirmed this request"),
+                )
+            })?;
+            continue;
+        };
+        let answer = client.run_status(&run_id).await;
+        if let Err(HermesError::Unreachable(_)) = answer {
+            still_running.push(task);
+            continue;
+        }
+        let status = resumed_status(&answer);
+        let outcome = match (&answer, status) {
+            (Ok(run), s) if s.is_terminal() && !run.output.is_empty() => Some(run.output.clone()),
+            (_, TaskStatus::Lost) => Some("Hermes no longer knows this run".to_string()),
+            _ => None,
+        };
+        state.with_store(|store| store.set_status(&task.id, status, outcome.as_deref()))?;
+        if !status.is_terminal()
+            && let Some(updated) = state.with_store(|store| store.get(&task.id))?
+        {
+            still_running.push(updated);
+        }
+    }
+    Ok(still_running)
+}
+
+/// Kairos conversations from `kairos.db`, and Hermes's other conversations (Desktop, CLI,
+/// messaging), which Kairos shows read-only because it can't continue them.
+#[derive(Debug, Clone, Serialize)]
+pub struct ConversationList {
+    pub kairos: Vec<Conversation>,
+    pub other: Vec<OtherConversation>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct OtherConversation {
+    pub id: String,
+    pub title: Option<String>,
+    pub source: Option<String>,
+    pub model: Option<String>,
+    pub last_active: Option<f64>,
+    pub message_count: u64,
+}
+
+#[tauri::command]
+pub async fn list_conversations(
+    state: tauri::State<'_, AppState>,
+) -> Result<ConversationList, CommandError> {
+    let kairos = state.with_store(|store| store.conversations())?;
+    let other = match state.connected_client() {
+        Ok(client) => client
+            .list_sessions()
+            .await
+            .map(|list| {
+                list.data
+                    .into_iter()
+                    .filter(|s| !s.id.starts_with("kairos-"))
+                    .map(|s| OtherConversation {
+                        title: s.title.or(s.preview),
+                        id: s.id,
+                        source: s.source,
+                        model: s.model,
+                        last_active: s.last_active,
+                        message_count: s.message_count,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        Err(_) => Vec::new(),
+    };
+    Ok(ConversationList { kairos, other })
+}
+
+/// A Kairos conversation's earlier requests and their outcomes, oldest first.
+#[tauri::command]
+pub async fn conversation_tasks(
+    state: tauri::State<'_, AppState>,
+    session_id: String,
+) -> Result<Vec<Task>, CommandError> {
+    state.with_store(|store| store.for_session(&session_id))
 }
 
 #[cfg(test)]
@@ -574,5 +735,57 @@ mod tests {
             outcome_of(&RunEvent::MessageDelta { delta: "x".into() }),
             None
         );
+    }
+
+    fn control(prompt_id: &str) -> PendingControl {
+        serde_json::from_value(serde_json::json!({
+            "kind": "approval", "prompt_id": prompt_id, "execution_generation": 1
+        }))
+        .expect("control")
+    }
+
+    #[test]
+    fn only_an_approval_hermes_still_lists_is_live() {
+        assert!(approval_is_live(&[control("p1")], "p1"));
+        assert!(!approval_is_live(&[control("p2")], "p1"));
+        assert!(!approval_is_live(&[], "p1"));
+    }
+
+    fn run_status(status: &str) -> Result<RunStatus, HermesError> {
+        Ok(
+            serde_json::from_value(serde_json::json!({ "run_id": "r", "status": status }))
+                .expect("status"),
+        )
+    }
+
+    #[test]
+    fn after_a_restart_each_hermes_answer_maps_to_a_task_status() {
+        assert_eq!(
+            resumed_status(&run_status("completed")),
+            TaskStatus::Completed
+        );
+        assert_eq!(
+            resumed_status(&run_status("cancelled")),
+            TaskStatus::Cancelled
+        );
+        assert_eq!(resumed_status(&run_status("running")), TaskStatus::Running);
+        assert_eq!(
+            resumed_status(&run_status("waiting_for_approval")),
+            TaskStatus::WaitingForApproval
+        );
+        assert_eq!(resumed_status(&run_status("unknown")), TaskStatus::Unknown);
+        assert_eq!(
+            resumed_status(&run_status("brand_new")),
+            TaskStatus::Unknown
+        );
+    }
+
+    #[test]
+    fn a_run_hermes_no_longer_knows_is_lost_not_resubmitted() {
+        let gone = Err(HermesError::NotFound {
+            code: "run_not_found".into(),
+            message: "Run not found".into(),
+        });
+        assert_eq!(resumed_status(&gone), TaskStatus::Lost);
     }
 }
