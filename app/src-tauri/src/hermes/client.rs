@@ -41,8 +41,15 @@ impl ApiKey {
         Self(key.into())
     }
 
-    fn expose(&self) -> &str {
+    /// The raw key, for the Authorization header and the keyring only. Never log or display it.
+    pub(crate) fn expose(&self) -> &str {
         &self.0
+    }
+}
+
+impl PartialEq for ApiKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
     }
 }
 
@@ -321,9 +328,17 @@ fn path_segment(id: &str) -> Result<&str, HermesError> {
     }
 }
 
-// reqwest's error text names the URL but never the headers, so it carries no key.
+// reqwest's own text for a refused connection is just "error sending request", which tells the
+// user nothing; name the common cases. Its text never includes headers, so it carries no key.
 fn unreachable(err: reqwest::Error) -> HermesError {
-    HermesError::Unreachable(err.without_url().to_string())
+    let reason = if err.is_connect() {
+        "nothing is accepting connections on that address".to_string()
+    } else if err.is_timeout() {
+        "it didn't answer in time".to_string()
+    } else {
+        err.without_url().to_string()
+    };
+    HermesError::Unreachable(reason)
 }
 
 async fn check_status(response: reqwest::Response) -> Result<reqwest::Response, HermesError> {

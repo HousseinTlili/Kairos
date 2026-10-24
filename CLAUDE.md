@@ -48,6 +48,7 @@ The user is the product owner. You are the engineer. Stop and ask before:
 | TS tests | `pnpm -C app test` |
 | Lint | `cargo clippy --manifest-path app/src-tauri/Cargo.toml -- -D warnings`; `pnpm -C app lint` |
 | Hermes status | `hermes gateway status`; `curl http://127.0.0.1:8642/health` |
+| Start Hermes | `hermes gateway run` in a terminal the user keeps open (or Hermes Desktop). **Never start the gateway from an agent shell**: it is killed when that shell ends (happened 2026-10-24). If it must be started for a check, use a Terminal panel tab. |
 | Hermes setup | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1` |
 | Setup script tests | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-setup.ps1` (throwaway homes; never touches the real `.env`) |
 

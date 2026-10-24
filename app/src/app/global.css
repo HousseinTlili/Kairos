@@ -1,7 +1,14 @@
 :root {
   --bg: #f7f7f5;
+  --surface: #ffffff;
   --fg: #1c1c1a;
   --muted: #6b6b66;
+  --border: #e2e2dd;
+  --ok: #1f7a4d;
+  --bad: #b3261e;
+  --warn: #8a5a00;
+  --warn-bg: #fff6e0;
+  --code-bg: #efefeb;
   font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   color: var(--fg);
   background: var(--bg);
@@ -10,8 +17,15 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #161615;
+    --surface: #1f1f1d;
     --fg: #ececea;
     --muted: #9a9a94;
+    --border: #33332f;
+    --ok: #5cc28e;
+    --bad: #f2b8b5;
+    --warn: #f5c46b;
+    --warn-bg: #2b2414;
+    --code-bg: #2a2a27;
   }
 }
 
@@ -21,14 +35,127 @@ body {
   background: var(--bg);
 }
 
-.empty-state {
-  display: grid;
-  place-items: center;
-  min-height: 100vh;
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 24px;
 }
 
-.empty-state h1 {
-  font-weight: 500;
+.app-header h1 {
+  margin: 0 0 24px;
+  font-size: 1.25rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+.muted {
   color: var(--muted);
+}
+
+.connect {
+  display: grid;
+  gap: 16px;
+}
+
+.status-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--muted);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.status-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.status-card p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.status-card .detail {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.status-card.ok {
+  border-left-color: var(--ok);
+}
+
+.status-card.bad {
+  border-left-color: var(--bad);
+}
+
+.status-card.warn {
+  border-left-color: var(--warn);
+  background: var(--warn-bg);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.ok .dot {
+  background: var(--ok);
+}
+
+.bad .dot {
+  background: var(--bad);
+}
+
+.command {
+  display: block;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--code-bg);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 0.8125rem;
+  user-select: all;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.facts dt {
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  font: inherit;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }

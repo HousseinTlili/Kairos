@@ -1,8 +1,13 @@
-// Routes (Connect, Chat) arrive in Steps 4 and 5; Step 1 only proves the window opens.
+import { ConnectScreen } from "../features/connection/ConnectScreen";
+
+// The Chat route arrives in Step 5; until then the app is the Connect screen.
 export default function App() {
   return (
-    <main className="empty-state">
-      <h1>Kairos</h1>
+    <main className="app">
+      <header className="app-header">
+        <h1>Kairos</h1>
+      </header>
+      <ConnectScreen />
     </main>
   );
 }
