@@ -6,9 +6,9 @@ for the current milestone, read its spec in `docs/milestones/`.
 
 ## Current milestone
 
-**M1** — `docs/milestones/M1.md`. All steps are built; the results are in
-`docs/milestones/M1-acceptance.md`, awaiting the product owner's sign-off. M2 starts after that.
-Each step ends with a check; run it and show its output before saying the step is done.
+**M1 accepted** on 2026-10-24 (`docs/milestones/M1-acceptance.md`). **M2** is next; its spec
+(`docs/milestones/M2.md`) is written before any M2 code. Each step ends with a check; run it and
+show its output before saying the step is done.
 
 ## Roles
 

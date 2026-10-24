@@ -13,8 +13,7 @@ compiles.
 
 ## M1 — Walking skeleton: talk to Hermes
 
-**Status:** built and checked on 2026-10-24; awaiting product-owner sign-off of
-`docs/milestones/M1-acceptance.md`. It grew into a full desktop layout (sidebar, settings,
+**Status:** accepted on 2026-10-24 (`docs/milestones/M1-acceptance.md`). It grew into a full desktop layout (sidebar, settings,
 Markdown answers) at the product owner's request.
 
 The thinnest end-to-end path. No Kairos policy yet; Hermes approval mode is `manual` (D-009).

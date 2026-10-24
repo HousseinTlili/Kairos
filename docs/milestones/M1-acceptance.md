@@ -70,4 +70,4 @@ owner. "Automated" means a test or command whose output was recorded in the sess
 
 ## Sign-off
 
-M1 is accepted when the product owner confirms this record.
+**Accepted** by the product owner on 2026-10-24.
