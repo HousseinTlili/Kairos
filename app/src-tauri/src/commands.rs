@@ -9,6 +9,7 @@ use std::time::Duration;
 use serde::Serialize;
 use tauri::{Emitter, Manager};
 
+use crate::audit::{self, AuditEvent};
 use crate::hermes::client::{
     ApiKey, ApprovalChoice, Capabilities, CreateRunRequest, CreateRunResponse, DEFAULT_BASE_URL,
     Health, HermesClient, PendingControl, RunStatus,
@@ -607,6 +608,14 @@ pub async fn conversation_tasks(
     session_id: String,
 ) -> Result<Vec<Task>, CommandError> {
     state.with_store(|store| store.for_session(&session_id))
+}
+
+/// The Kairos plugin's record of a conversation's tool calls: each call's rule decision, result and
+/// approval (M2 Step 6). Empty when the plugin isn't installed.
+#[tauri::command]
+pub async fn audit_for_session(session_id: String) -> Result<Vec<AuditEvent>, CommandError> {
+    let path = audit::default_path()?;
+    Ok(audit::events_for_session(&path, &session_id)?)
 }
 
 #[cfg(test)]

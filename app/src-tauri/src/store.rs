@@ -17,6 +17,12 @@ const SCHEMA_VERSION: i32 = 1;
 #[error("local task database: {0}")]
 pub struct StoreError(String);
 
+impl StoreError {
+    pub fn new(message: impl Into<String>) -> Self {
+        StoreError(message.into())
+    }
+}
+
 impl From<rusqlite::Error> for StoreError {
     fn from(err: rusqlite::Error) -> Self {
         StoreError(err.to_string())

@@ -12,7 +12,7 @@ import { useShell } from "../shell/store";
 import { ApprovalCard } from "./ApprovalCard";
 import { MarkdownView } from "./MarkdownView";
 import { useChat } from "./store";
-import { blockedCount, isFinished, toolLabel, type Turn } from "./turn";
+import { blockedCount, decisionText, isFinished, toolLabel, type Turn } from "./turn";
 
 const SUGGESTIONS = [
   "What can you help me with?",
@@ -87,6 +87,11 @@ function TurnView({ turn }: { turn: Turn }) {
                     {item.preview}
                   </code>
                   <span className="tool-state">{toolLabel(turn, item)}</span>
+                  {decisionText(item) && (
+                    <span className={`tool-decision ${item.audit?.decision ?? ""}`}>
+                      {decisionText(item)}
+                    </span>
+                  )}
                 </li>
               ) : (
                 <li key={i}>

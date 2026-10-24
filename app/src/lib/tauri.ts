@@ -116,6 +116,27 @@ export const listConversations = () => call<ConversationList>("list_conversation
 export const conversationTasks = (sessionId: string) =>
   call<StoredTask[]>("conversation_tasks", { sessionId });
 
+/** One tool call as the Kairos plugin recorded it in audit.db (audit.rs `AuditEvent`). */
+export interface AuditEvent {
+  /** Unix seconds. */
+  at: number;
+  tool_call_id: string | null;
+  tool_name: string;
+  /** JSON of the arguments, with secrets removed by the plugin. */
+  args_redacted: string;
+  decision: "allow" | "deny" | "ask" | "inherit" | "invalid_rules";
+  rule_id: string | null;
+  status: "ok" | "error" | "blocked" | null;
+  error_type: string | null;
+  duration_ms: number | null;
+  approval_choice: string | null;
+  /** "aux_llm" when Hermes's smart mode decided instead of a person. */
+  approval_decided_by: string | null;
+}
+
+export const auditForSession = (sessionId: string) =>
+  call<AuditEvent[]>("audit_for_session", { sessionId });
+
 export function onRunEvent(handler: (payload: RunEventPayload) => void): Promise<UnlistenFn> {
   return listen<RunEventPayload>("run-event", (event) => handler(event.payload));
 }

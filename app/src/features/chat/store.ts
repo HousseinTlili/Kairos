@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { RunEventPayload, RunStreamEnd } from "../../lib/hermes-events";
 import {
   answerApproval,
+  auditForSession,
   conversationTasks,
   createRun,
   listConversations,
@@ -14,7 +15,20 @@ import {
   type CommandError,
   type ConversationList,
 } from "../../lib/tauri";
-import { applyEvent, isFinished, markAnswered, newTurn, turnFromTask, type Turn } from "./turn";
+import {
+  applyEvent,
+  attachAudit,
+  isFinished,
+  markAnswered,
+  newTurn,
+  turnsFromHistory,
+  type Turn,
+} from "./turn";
+
+// Hermes writes audit rows from its own process a moment after the events arrive here, so the
+// audit is re-read shortly after a tool call or run ends, not on every event.
+const AUDIT_REFRESH_DELAY_MS = 400;
+let auditTimer: ReturnType<typeof setTimeout> | null = null;
 
 interface ChatState {
   /** Null for a new conversation until its first request creates a Kairos session. */
@@ -28,6 +42,8 @@ interface ChatState {
   newConversation: () => void;
   openConversation: (sessionId: string) => Promise<void>;
   refreshConversations: () => Promise<void>;
+  /** Re-reads the Kairos plugin's audit of the open conversation onto its tool rows. */
+  refreshAudit: () => Promise<void>;
   stop: (taskId: string) => Promise<void>;
   answer: (taskId: string, promptId: string, choice: ApprovalChoice) => Promise<void>;
   resume: () => Promise<void>;
@@ -93,12 +109,27 @@ export const useChat = create<ChatState>((set, get) => {
 
     async openConversation(sessionId) {
       try {
-        const tasks = await conversationTasks(sessionId);
-        const turns = tasks.map(turnFromTask);
+        const [tasks, events] = await Promise.all([
+          conversationTasks(sessionId),
+          // No audit (plugin not installed, file unreadable) still shows the conversation.
+          auditForSession(sessionId).catch(() => []),
+        ]);
+        const turns = turnsFromHistory(tasks, events);
         set({ sessionId, turns, notice: null });
         await subscribeUnfinished(turns);
       } catch (err) {
         set({ notice: `Couldn't open that conversation: ${messageOf(err)}` });
+      }
+    },
+
+    async refreshAudit() {
+      const sessionId = get().sessionId;
+      if (!sessionId) return;
+      try {
+        const events = await auditForSession(sessionId);
+        if (get().sessionId === sessionId) set({ turns: attachAudit(get().turns, events) });
+      } catch {
+        // The timeline is extra detail; a failed read leaves the rows as they are.
       }
     },
 
@@ -165,7 +196,12 @@ export const useChat = create<ChatState>((set, get) => {
 
     receive({ task_id, envelope, approval_live }) {
       updateTask(task_id, (turn) => applyEvent(turn, envelope, approval_live === true));
-      if (envelope.event.event.startsWith("run.")) void get().refreshConversations();
+      const name = envelope.event.event;
+      if (name.startsWith("run.")) void get().refreshConversations();
+      if (name === "tool.completed" || name === "approval.settled" || name.startsWith("run.")) {
+        if (auditTimer) clearTimeout(auditTimer);
+        auditTimer = setTimeout(() => void get().refreshAudit(), AUDIT_REFRESH_DELAY_MS);
+      }
     },
 
     streamEnded({ task_id, error }) {

@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { RunEvent, RunEventEnvelope } from "../../lib/hermes-events";
+import type { AuditEvent } from "../../lib/tauri";
 import {
   applyEvent,
+  attachAudit,
   blockedCount,
+  decisionText,
   isFinished,
   liveApproval,
   markAnswered,
   newTurn,
   toolLabel,
+  toolRowFromAudit,
   turnFromTask,
+  turnsFromHistory,
   type Turn,
 } from "./turn";
 import simpleSse from "../../../../fixtures/hermes-0.22.5/run-simple/02-events.sse?raw";
@@ -187,5 +192,101 @@ describe("approvals, stop and history (M1 §9 rules 2, 4, 5)", () => {
       outcome: "Hermes no longer knows this run",
     });
     expect(turn).toMatchObject({ text: "", error: "Hermes no longer knows this run" });
+  });
+});
+
+describe("the Kairos audit on tool rows (M2 Step 6)", () => {
+  function audit(overrides: Partial<AuditEvent>): AuditEvent {
+    return {
+      at: 100,
+      tool_call_id: "call_1",
+      tool_name: "read_file",
+      args_redacted: '{"path": "C:\\Users\\USER\\.ssh\\id_rsa"}',
+      decision: "inherit",
+      rule_id: null,
+      status: "ok",
+      error_type: null,
+      duration_ms: 3,
+      approval_choice: null,
+      approval_decided_by: null,
+      ...overrides,
+    };
+  }
+
+  function turnWithTool(state: "ok" | "error"): Turn {
+    return {
+      ...newTurn("x"),
+      status: "completed",
+      items: [{ kind: "tool", toolCallId: "call_1", tool: "read_file", preview: "", state }],
+    };
+  }
+
+  it("a call blocked by a Kairos rule is labelled blocked, with the rule", () => {
+    const [turn] = attachAudit(
+      [turnWithTool("error")],
+      [audit({ decision: "deny", rule_id: "no-credentials", status: "blocked" })],
+    );
+    const row = turn.items[0];
+    expect(row.kind === "tool" && toolLabel(turn, row)).toBe("blocked");
+    expect(row.kind === "tool" && decisionText(row)).toBe("blocked by no-credentials");
+  });
+
+  it("an asked call says who decided", () => {
+    const denied = audit({
+      decision: "ask",
+      rule_id: "destructive-commands",
+      approval_choice: "deny",
+    });
+    expect(decisionText(toolRowFromAudit(denied))).toBe(
+      "asked by destructive-commands, you denied it",
+    );
+    const smart = audit({
+      decision: "inherit",
+      approval_choice: "once",
+      approval_decided_by: "aux_llm",
+    });
+    expect(decisionText(toolRowFromAudit(smart))).toBe(
+      "Hermes asked, Hermes's helper model allowed it",
+    );
+  });
+
+  it("a call no rule matched has no decision text", () => {
+    expect(decisionText(toolRowFromAudit(audit({})))).toBeNull();
+  });
+
+  it("attaching the same audit twice changes nothing", () => {
+    const events = [audit({ decision: "deny", rule_id: "no-credentials" })];
+    const once = attachAudit([turnWithTool("error")], events);
+    expect(attachAudit(once, events)[0]).toBe(once[0]);
+  });
+
+  it("a reopened conversation gets each task's tool calls back", () => {
+    const task = (id: string, created_at: number, goal: string) => ({
+      id,
+      session_id: "kairos-s",
+      run_id: `run_${id}`,
+      goal,
+      status: "completed" as const,
+      created_at,
+      finished_at: created_at + 5,
+      outcome: "done",
+    });
+    const turns = turnsFromHistory(
+      [task("a", 100, "read the readme"), task("b", 200, "read my key")],
+      [
+        audit({ at: 101.5, tool_call_id: "call_a", args_redacted: '{"path": "README.md"}' }),
+        audit({
+          at: 202,
+          tool_call_id: "call_b",
+          decision: "deny",
+          rule_id: "no-credentials",
+          status: "blocked",
+        }),
+      ],
+    );
+    expect(turns.map((t) => t.items.length)).toEqual([1, 1]);
+    const [first, second] = turns.map((t) => t.items[0]);
+    expect(first).toMatchObject({ kind: "tool", preview: "README.md", state: "ok" });
+    expect(second.kind === "tool" && toolLabel(turns[1], second)).toBe("blocked");
   });
 });

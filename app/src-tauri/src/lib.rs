@@ -1,3 +1,4 @@
+mod audit;
 mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
@@ -17,7 +18,8 @@ pub fn run() {
             commands::stop_run,
             commands::resume_open_tasks,
             commands::list_conversations,
-            commands::conversation_tasks
+            commands::conversation_tasks,
+            commands::audit_for_session
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

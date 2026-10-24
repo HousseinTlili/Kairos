@@ -1,7 +1,7 @@
 // One request and everything Hermes sent back for it, built up event by event. Pure, so it can
 // be tested against the recorded streams in fixtures/.
 import type { RunEventEnvelope } from "../../lib/hermes-events";
-import type { ApprovalChoice, StoredTask } from "../../lib/tauri";
+import type { ApprovalChoice, AuditEvent, StoredTask } from "../../lib/tauri";
 
 export interface ToolRow {
   kind: "tool";
@@ -9,6 +9,8 @@ export interface ToolRow {
   tool: string;
   preview: string;
   state: "running" | "ok" | "error";
+  /** What the Kairos plugin decided for this call (audit.db), once it has been read. */
+  audit?: AuditEvent;
 }
 
 export interface ApprovalRow {
@@ -118,10 +120,104 @@ export function toolLabel(
 ): "running" | "done" | "failed" | "blocked" | "stopped" {
   if (row.state === "running") return turn.status === "stopping" ? "stopped" : "running";
   if (row.state === "ok") return "done";
+  const audit = row.audit;
+  if (audit && (audit.decision === "deny" || audit.decision === "invalid_rules")) return "blocked";
+  if (audit?.approval_choice === "deny" || audit?.status === "blocked") return "blocked";
   const denied = turn.items.some((item) => item.kind === "approval" && item.choice === "deny");
   if (denied) return "blocked";
   if (turn.status === "cancelled" || turn.status === "stopping") return "stopped";
   return "failed";
+}
+
+const CHOICE_TEXT: Record<string, string> = {
+  once: "you allowed it once",
+  session: "you allowed it for this conversation",
+  always: "you always allow it",
+  deny: "you denied it",
+  timeout: "nobody answered in time",
+  cancelled: "the request ended first",
+};
+
+/**
+ * The Kairos rule's part in a tool call, for its row: "blocked by no-credentials",
+ * "asked: destructive-commands, you denied it". Null when no Kairos rule matched.
+ */
+export function decisionText(row: ToolRow): string | null {
+  const audit = row.audit;
+  if (!audit) return null;
+  const rule = audit.rule_id ?? "a Kairos rule";
+  const choice = audit.approval_choice
+    ? audit.approval_decided_by === "aux_llm"
+      ? `Hermes's helper model ${audit.approval_choice === "deny" ? "denied" : "allowed"} it`
+      : (CHOICE_TEXT[audit.approval_choice] ?? audit.approval_choice)
+    : null;
+  switch (audit.decision) {
+    case "deny":
+      return `blocked by ${rule}`;
+    case "invalid_rules":
+      return "blocked: Kairos rules are invalid";
+    case "ask":
+      return choice ? `asked by ${rule}, ${choice}` : `needs approval: ${rule}`;
+    case "allow":
+      return `allowed by ${rule}`;
+    case "inherit":
+      // No Kairos rule matched; Hermes's own approval may still have asked.
+      return choice ? `Hermes asked, ${choice}` : null;
+  }
+}
+
+/** Joins audit events onto the turns' tool rows by tool call id. */
+export function attachAudit(turns: Turn[], events: AuditEvent[]): Turn[] {
+  const byCall = new Map(events.filter((e) => e.tool_call_id).map((e) => [e.tool_call_id, e]));
+  return turns.map((turn) => {
+    let changed = false;
+    const items = turn.items.map((item) => {
+      if (item.kind !== "tool" || !item.toolCallId) return item;
+      const audit = byCall.get(item.toolCallId);
+      if (!audit || audit === item.audit) return item;
+      changed = true;
+      return { ...item, audit };
+    });
+    return changed ? { ...turn, items } : turn;
+  });
+}
+
+function previewOf(event: AuditEvent): string {
+  try {
+    const args = JSON.parse(event.args_redacted) as Record<string, unknown>;
+    for (const key of ["command", "code", "path", "file_path", "url"]) {
+      if (typeof args[key] === "string") return args[key] as string;
+    }
+    if (Array.isArray(args.urls)) return args.urls.join(", ");
+  } catch {
+    // Not JSON: show nothing rather than raw text.
+  }
+  return "";
+}
+
+/** A tool row rebuilt from the audit log, for a conversation reopened from history. */
+export function toolRowFromAudit(event: AuditEvent): ToolRow {
+  return {
+    kind: "tool",
+    toolCallId: event.tool_call_id,
+    tool: event.tool_name,
+    preview: previewOf(event),
+    state: event.status === null ? "running" : event.status === "ok" ? "ok" : "error",
+    audit: event,
+  };
+}
+
+/**
+ * Turns for a reopened conversation: each stored task, with the audited tool calls that happened
+ * between its start and the next task's start (kairos.db keeps only requests and answers).
+ */
+export function turnsFromHistory(tasks: StoredTask[], events: AuditEvent[]): Turn[] {
+  return tasks.map((task, i) => {
+    const start = task.created_at;
+    const end = tasks[i + 1]?.created_at ?? Infinity;
+    const rows = events.filter((e) => e.at >= start && e.at < end).map(toolRowFromAudit);
+    return { ...turnFromTask(task), items: rows };
+  });
 }
 
 export function blockedCount(turn: Turn): number {
