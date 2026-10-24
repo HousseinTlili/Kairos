@@ -111,4 +111,4 @@ Fixed in Step 9:
 
 ## Sign-off
 
-M2 is accepted when the product owner confirms this record.
+**Accepted** by the product owner on 2026-10-25.

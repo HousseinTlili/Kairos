@@ -38,8 +38,7 @@ The thinnest end-to-end path. No Kairos policy yet; Hermes approval mode is `man
 
 ## M2 — Kairos rules and audit timeline
 
-**Status:** built and checked on 2026-10-25; awaiting product-owner sign-off of
-`docs/milestones/M2-acceptance.md`.
+**Status:** accepted on 2026-10-25 (`docs/milestones/M2-acceptance.md`).
 
 Kairos's own safety layer, before Kairos is given any more power (D-004). Spec:
 `docs/milestones/M2.md`.
