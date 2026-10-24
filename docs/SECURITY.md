@@ -67,12 +67,12 @@ A permission check decides *whether* a command runs. Isolation limits *what it c
 check is wrong. Hermes's terminal backend can run commands inside a Docker container with
 security flags and resource limits (Hermes docs: Container Isolation).
 
-| OS | Recommended for milestone 3+ |
+| OS | Recommended from M7 |
 |---|---|
 | Windows 11 | Docker Desktop (WSL2 backend) container backend for terminal and code execution |
 | Linux | Docker/Podman container backend; bubblewrap as a lighter alternative |
 
-Until isolation is configured (M3), Kairos relies on Hermes approval mode `manual` until M2 is
+Until isolation is configured (M7), Kairos relies on Hermes approval mode `manual` until M2 is
 accepted, then `smart` (`DECISIONS.md`, D-009), Kairos `deny`/`ask` rules from M2, and a workspace
 write root (`HERMES_WRITE_SAFE_ROOT`).
 

@@ -111,7 +111,7 @@ Current setup: Nous Portal, `upstage/solar-mini4:free`. Kairos uses whatever Her
 with, so this works with zero extra effort. Free models are small and rate-limited, and free tiers
 can change. Plan for: a stronger cloud model for multi-step work, a local Ollama model (RTX 4060,
 8 GB VRAM → ~7–8B quantized) for private or offline work, and a per-task cost cap. Routing rules
-are a later milestone (`ROADMAP.md`, M4).
+are a later milestone (`ROADMAP.md`, M7).
 
 ---
 
@@ -119,7 +119,7 @@ are a later milestone (`ROADMAP.md`, M4).
 
 Kairos targets Windows 11 first, running Hermes natively (not in WSL). Linux support stays a goal
 but is not tested until later. Consequences: OS keyring = Windows Credential Manager;
-`HERMES_HOME` defaults to `%LOCALAPPDATA%\hermes`; container isolation (M3) uses Docker Desktop
+`HERMES_HOME` defaults to `%LOCALAPPDATA%\hermes`; container isolation (M7) uses Docker Desktop
 with the WSL2 backend; scripts are PowerShell first.
 
 ---
@@ -149,7 +149,78 @@ blocklist applies in both modes.
 
 ---
 
-## Open questions
+## D-010 — Accounts only through official sign-in, read-only by default — Accepted
 
-- **Q-2 — First real use cases.** The 3–5 things Kairos must do well first. These decide which
-  tools are enabled, which policy rules come first, and what the eval set contains.
+The product owner wants Kairos to reach their accounts. Kairos never asks for or stores account
+passwords. Each account is connected on its own through the provider's official sign-in (OAuth,
+or the provider's own CLI login such as `gh auth login`), with the narrowest permission that
+works, read-only first. Sending, deleting, paying, posting or changing account settings always
+needs an approval (a Kairos `ask` rule, M2). Each account can be disconnected from Settings.
+
+**Why not "access to everything":** one prompt injection in a web page or an email would then
+reach every account at once. Per-account, least-privilege access limits what a single mistake can
+do, and gives most of the convenience.
+
+**Where secrets live:** in Hermes's credential vault or the provider's own credential store, never
+in Kairos files, `kairos.db` or logs (as D-006).
+
+---
+
+## D-011 — Unread messages and missed calls come from Windows notifications — Accepted
+
+Kairos reads notifications through the Windows notification-listener API (`UserNotificationListener`),
+after the user grants permission in Windows, instead of logging into each messaging service.
+Phone Link delivers phone calls and texts as notifications, so missed calls arrive the same way as
+Discord, Teams, WhatsApp desktop or Outlook messages.
+
+**Consequences:** only apps that show notifications are covered, and only what the notification
+says (sender and a preview, not the whole thread). Notification text is treated as untrusted
+input like any web page: it can be summarised, never obeyed. Turning the permission off stops
+collection; collected notifications stay in `kairos.db` until the user clears them.
+
+---
+
+## D-012 — The system page is native, not AI — Accepted
+
+CPU, RAM, disk, GPU, network, battery and process figures are read directly by the Kairos Rust
+core and drawn by the app; Hermes and the model aren't involved. It's instant, works offline,
+costs nothing, and can't be wrong in the way a model can. The model only sees these figures when
+the user asks about them or in the welcome-back briefing.
+
+**Dependency note:** reading these figures needs a system-information crate (likely `sysinfo`) and
+the Windows API crate for battery and notifications. Each is proposed with its spec and added only
+after approval (CLAUDE.md).
+
+---
+
+## D-013 — Kairos and Hermes start with Windows — Proposed
+
+For the welcome-back briefing to be ready when the user logs in, both must already be running:
+Kairos as a tray app registered to start at login, Hermes through its own login auto-start
+(`hermes gateway install`). Starting the gateway from a user-owned service also fixes the
+gateway being killed with whatever shell started it (seen on 2026-10-24).
+
+Kairos reacts to three Windows events: startup, resume from sleep, and session unlock. It briefs
+only on the first unlock of the day or after a configurable time away, never in quiet hours.
+
+---
+
+## D-014 — PC control through Kairos tools with rules, not raw terminal access — Proposed
+
+Opening and closing apps, and later window, volume, media and power control, are tools that the
+Kairos plugin registers in Hermes (`ctx.register_tool`), each with a narrow purpose and its own
+rule: opening an allowed app runs, closing an app asks (it can lose unsaved work), system
+processes are always denied. The model is steered to these tools instead of improvising
+PowerShell, so every PC action is visible in the timeline as what it is.
+
+Hermes's `computer_use` toolset (mouse and keyboard control) stays off until there is a use case
+that needs it and a rule set for it.
+
+---
+
+## Answered questions
+
+- **Q-2 — First real use cases.** Answered 2026-10-24: the welcome-back briefing (an evolution of
+  the morning briefing), debug-and-fix, code review, and documents to actions; plus the "Jarvis"
+  wishes that became M3 (system page, PC control), M4 (notifications) and M6 (accounts). See
+  `ROADMAP.md`.

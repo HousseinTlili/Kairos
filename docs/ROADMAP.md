@@ -36,66 +36,101 @@ The thinnest end-to-end path. No Kairos policy yet; Hermes approval mode is `man
 - **Risks:** SSE parsing edge cases (keepalive comments, named events); Windows keyring access
   from Tauri.
 
-## M2 — Kairos plugin: policy and audit
+## M2 — Kairos rules and audit timeline
+
+Kairos's own safety layer, before Kairos is given any more power (D-004). Spec:
+`docs/milestones/M2.md`.
 
 - **Deliverables**
-  - `plugin/kairos/` (`plugin.yaml`, `__init__.py`): `pre_tool_call` policy, `post_tool_call`,
-    approval and session observers.
-  - `policy.yaml` format v1 with schema validation; starter rules from `SECURITY.md` §3.
-  - `kairos.db` with `task`, `tool_event`, `approval` (`ARCHITECTURE.md` §4) and migrations.
-  - App: task timeline per conversation (every tool call, decision, rule, result); policy editor.
+  - The `kairos` Hermes plugin (Python, `plugin/kairos/`): a `pre_tool_call` policy check on every
+    tool call, `post_tool_call` and approval observers writing an audit log.
+  - `policy.yaml` v1 with validation; starter rules for the use cases below, including the rule
+    families M3–M6 will need (app control, account actions, outbound messages).
+  - `kairos.db` gains `tool_event` and `approval` tables (ARCHITECTURE.md §4).
+  - App: a timeline per request (every action, the rule that decided it, the result) and a rules
+    page in Settings.
 - **Acceptance**
-  - Asking Kairos to read `~/.ssh/id_rsa` is blocked by rule `no-credentials`, visible in the
-    timeline with the rule ID.
+  - Reading `~/.ssh/id_rsa` is blocked by rule `no-credentials`, visible in the timeline.
   - A malformed `policy.yaml` blocks every tool call (fail closed) and the app says why.
-  - An injected instruction inside a fetched web page cannot cause an `ask` tool to run without
-    a click.
-  - With approval mode switched to `smart` for the test, the `rm -rf` from
-    `fixtures/hermes-0.22.5/run-smart-autoapprove/` now asks first because of a Kairos `ask` rule.
-    Only then does the product owner decide whether to return to `smart` (D-009).
-- **Tests:** policy matcher unit tests (table-driven); a plugin test that raises → call blocked;
-  redaction tests with fake secrets.
-- **Risks:** argument shapes differ per tool, so path matching must be written per tool family.
+  - An instruction injected into a fetched web page can't make an `ask` action run without a click.
+  - With approval mode briefly set to `smart`, the recorded `rm -rf`
+    (`fixtures/hermes-0.22.5/run-smart-autoapprove/`) asks first because of a Kairos rule. Only
+    then does the product owner decide whether to return to `smart` (D-009).
 
-## M3 — Isolation and workspaces
+## M3 — System dashboard and PC control
 
-- Hermes terminal backend in a container (Docker Desktop on Windows, Docker/Podman on Linux).
-- Named workspaces in the app, mapped to `HERMES_WRITE_SAFE_ROOT` / container mounts.
-- **Acceptance:** a command that tries to write outside the workspace fails inside the container,
-  and the timeline shows it.
+The Jarvis layer, part one (D-012, D-013, D-014).
 
-## M4 — Models and cost
+- **System page**, native and with no AI: CPU (total, per core), RAM, disks (usage, read/write
+  speed, free space per drive), GPU (load, VRAM, temperature via `nvidia-smi`), network up/down,
+  Wi-Fi network and signal, battery (level, charging, time left, wear), uptime, top processes by
+  CPU and RAM, and an on-demand internet speed test.
+- **PC control tools** registered by the Kairos plugin: `open_app`, `close_app`,
+  `list_running_apps`; later window focus, volume, brightness, media, lock and sleep. Opening an
+  allowed app runs; closing an app asks; system processes are always denied.
+- **Proactive alerts:** low battery, a nearly full disk, a process hogging CPU (with a "close it?"
+  that goes through the same rule).
+- **Starts with Windows:** Kairos in the system tray; Hermes's login auto-start
+  (`hermes gateway install`). Kairos notices startup, wake from sleep and unlock.
+- **Acceptance:** the system page matches Task Manager within a few percent; "open Notepad" runs,
+  "close Notepad" asks first; after a reboot both Kairos and Hermes are running without anyone
+  starting them.
 
-- Model picker (`/api/model/options`), per-conversation model, Hermes fallback providers.
-- Local model via Ollama for private or offline tasks; a cloud model for multi-step work.
-- Usage and cost shown per task from run `usage` / `runtime`; a per-task cost cap.
-- **Acceptance:** a task that exceeds its cap stops and reports it.
+## M4 — Notifications hub
 
-## M5 — Use cases and evaluation
+- Reads Windows notifications through the notification-listener API, with the user's permission
+  (D-011): missed calls and texts via Phone Link, Discord, Teams, WhatsApp desktop, Outlook and
+  anything else that shows a toast. No account passwords.
+- Unread counts per app, a notifications panel, and "anything I missed?" answered from it.
+- **Acceptance:** a test toast and a real Discord message appear in Kairos within seconds; nothing
+  is collected before permission is granted, and turning it off stops collection.
 
-- Implement the 3–5 use cases from Q-2 as skills plus policy rules.
-- An eval set: 10–20 repeatable tasks with checkable outcomes, run by a script, results stored,
-  to compare models and prompt changes objectively.
+## M5 — Use cases and the welcome-back briefing
 
-## M6 — Scheduled and proactive work
+The product owner's first use cases (Q-2), each as skills plus rules, with an evaluation set.
 
-- Scheduled jobs from the app via `/api/jobs`; notifications from the Tauri tray.
-- Every scheduled job runs under the same policy; `ask` actions wait for the user.
+1. **Welcome-back briefing** (the headline feature). On startup, wake or unlock, after a
+   configurable time away and outside quiet hours: instant facts with no AI (battery, Wi-Fi,
+   missed calls and messages, system warnings, finished or waiting tasks), then a short AI summary
+   of what matters (repos, calendar and email once connected) with suggestions.
+2. **Debug-and-fix:** reproduce an error, find the root cause, propose or apply a fix; delegate
+   large changes to Claude Code or Codex only with approval.
+3. **Code review:** review a branch or PR for bugs, security problems and missing tests;
+   read-only, asks before posting to GitHub.
+4. **Documents to actions:** summarise PDFs, Word and Excel files and extract action items; writes
+   only to a Kairos output folder.
 
-## M7 — Voice
+- **Evaluation:** 10–20 repeatable tasks with checkable outcomes (a planted bug the review must
+  find, a failing test the briefing must mention), run by a script, results stored.
 
-- Speech in and out using Hermes's voice / TTS features or local Whisper + Piper.
-- Test English, French and Arabic before choosing components.
+## M6 — Accounts
 
-## M8 — Character and avatar (last)
+- Accounts connected one at a time through their official sign-in (OAuth, or the provider's own
+  CLI login), never with passwords given to Kairos (D-010): Gmail or Outlook, Google Calendar,
+  GitHub, then others on request.
+- Read-only by default. Sending, deleting, paying or posting always asks. Every account can be
+  disconnected from Settings.
+- **Acceptance:** the briefing lists today's calendar and unread email counts; "reply to X" drafts
+  and asks before sending; disconnecting an account removes Kairos's access to it.
+
+## M7 — Isolation, models and cost
+
+- Commands run inside a container (Docker Desktop with WSL2) with the workspace mounted.
+- Model choice per conversation, a local Ollama model for private or offline work, Hermes fallback
+  providers, usage and cost per task, and a per-task cost cap.
+
+## M8 — Always-there assistant
+
+- A global hotkey (for example Alt+Space) opens a small Kairos box over any app.
+- "What's on my screen?": a screenshot plus vision to explain an error dialog or a page.
+- Scheduled jobs from the app via `/api/jobs`, all under the same rules.
+
+## M9 — Voice
+
+- Speech in and out (Hermes voice/TTS, or local Whisper and Piper); a wake word ("Kairos…");
+  the welcome-back briefing read aloud on request. Test English, French and Arabic first.
+
+## M10 — Persona and avatar (last)
 
 - The Kairos persona via Hermes's personality / `SOUL.md`.
 - The animated avatar driven by run events (`idle`, `listening`, `thinking`, `speaking`).
-- Only after M1–M6 are reliable.
-
----
-
-## First implementation task (after approval)
-
-M1, step 1: `scripts/setup` plus the connect screen, proving that Kairos can find, authenticate to,
-and identify the local Hermes. Nothing else depends on guesswork after that.
