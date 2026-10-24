@@ -144,3 +144,20 @@ export function onRunEvent(handler: (payload: RunEventPayload) => void): Promise
 export function onRunStreamEnd(handler: (payload: RunStreamEnd) => void): Promise<UnlistenFn> {
   return listen<RunStreamEnd>("run-stream-end", (event) => handler(event.payload));
 }
+
+export type RulesValidation =
+  | { result: "valid" }
+  | { result: "invalid"; reason: string }
+  | { result: "unavailable"; reason: string };
+
+export interface RulesState {
+  path: string;
+  exists: boolean;
+  text: string;
+  validation: RulesValidation;
+}
+
+export const rulesState = () => call<RulesState>("rules_state");
+export const validateRules = (text: string) => call<RulesValidation>("validate_rules", { text });
+export const saveRules = (text: string) => call<RulesState>("save_rules", { text });
+export const resetRules = () => call<RulesState>("reset_rules");

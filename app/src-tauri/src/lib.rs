@@ -3,6 +3,7 @@ mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
 mod keyring;
+mod rules;
 mod store;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -19,7 +20,11 @@ pub fn run() {
             commands::resume_open_tasks,
             commands::list_conversations,
             commands::conversation_tasks,
-            commands::audit_for_session
+            commands::audit_for_session,
+            commands::rules_state,
+            commands::validate_rules,
+            commands::save_rules,
+            commands::reset_rules
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

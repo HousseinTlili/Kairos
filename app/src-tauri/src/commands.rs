@@ -18,6 +18,7 @@ use crate::hermes::errors::HermesError;
 use crate::hermes::events::{RunEvent, RunEventEnvelope};
 use crate::hermes::local::{self, LocalError};
 use crate::keyring::{self, KeyStoreError};
+use crate::rules;
 use crate::store::{self, Conversation, StoreError, Task, TaskStatus, TaskStore};
 
 /// Shared between commands.
@@ -616,6 +617,103 @@ pub async fn conversation_tasks(
 pub async fn audit_for_session(session_id: String) -> Result<Vec<AuditEvent>, CommandError> {
     let path = audit::default_path()?;
     Ok(audit::events_for_session(&path, &session_id)?)
+}
+
+// --- Rules (M2 Step 7) ---------------------------------------------------------------------
+
+/// The rules file as the Rules page shows it.
+#[derive(Debug, Clone, Serialize)]
+pub struct RulesState {
+    pub path: String,
+    pub exists: bool,
+    /// The file's text, or the starter rules when there is no file yet.
+    pub text: String,
+    /// The file as the plugin sees it right now. Anything but `valid` means every tool call is
+    /// blocked (or, if unavailable, that Kairos can't tell).
+    pub validation: rules::Validation,
+}
+
+fn rules_runtime() -> Option<rules::PluginRuntime> {
+    local::hermes_home()
+        .ok()
+        .and_then(|home| rules::PluginRuntime::find(&home))
+}
+
+async fn validate_off_thread(text: String) -> rules::Validation {
+    tauri::async_runtime::spawn_blocking(move || rules::validate(rules_runtime().as_ref(), &text))
+        .await
+        .unwrap_or_else(|err| rules::Validation::Unavailable {
+            reason: format!("validator crashed: {err}"),
+        })
+}
+
+async fn read_rules_state() -> Result<RulesState, CommandError> {
+    let path = rules::default_path()?;
+    let (exists, text) = match std::fs::read_to_string(&path) {
+        Ok(text) => (true, text),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            (false, rules::STARTER_RULES.to_string())
+        }
+        Err(err) => {
+            return Err(CommandError {
+                kind: "store",
+                message: format!("can't read {}: {err}", path.display()),
+            });
+        }
+    };
+    let validation = if exists {
+        validate_off_thread(text.clone()).await
+    } else {
+        rules::Validation::Invalid {
+            reason: format!("{} is missing", path.display()),
+        }
+    };
+    Ok(RulesState {
+        path: path.display().to_string(),
+        exists,
+        text,
+        validation,
+    })
+}
+
+#[tauri::command]
+pub async fn rules_state() -> Result<RulesState, CommandError> {
+    read_rules_state().await
+}
+
+/// Checks rules text without saving it, for live feedback while editing.
+#[tauri::command]
+pub async fn validate_rules(text: String) -> Result<rules::Validation, CommandError> {
+    Ok(validate_off_thread(text).await)
+}
+
+/// Saves the rules, but only if the plugin's validator accepts them: an invalid file would block
+/// every tool call, so the page never writes one.
+#[tauri::command]
+pub async fn save_rules(text: String) -> Result<RulesState, CommandError> {
+    match validate_off_thread(text.clone()).await {
+        rules::Validation::Valid => {}
+        rules::Validation::Invalid { reason } => {
+            return Err(CommandError {
+                kind: "invalid_rules",
+                message: reason,
+            });
+        }
+        rules::Validation::Unavailable { reason } => {
+            return Err(CommandError {
+                kind: "unavailable",
+                message: format!("Kairos can't check the rules, so it didn't save them: {reason}"),
+            });
+        }
+    }
+    rules::write_atomically(&rules::default_path()?, &text)?;
+    read_rules_state().await
+}
+
+/// Puts the starter rules back.
+#[tauri::command]
+pub async fn reset_rules() -> Result<RulesState, CommandError> {
+    save_rules(rules::STARTER_RULES.to_string()).await
 }
 
 #[cfg(test)]

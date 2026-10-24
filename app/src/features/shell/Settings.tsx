@@ -1,4 +1,11 @@
 import { approvalWarning, useConnection } from "../connection/store";
+import { RulesPage } from "../rules/RulesPage";
+import { useShell, type SettingsTab } from "./store";
+
+const TABS: { id: SettingsTab; label: string }[] = [
+  { id: "connection", label: "Connection" },
+  { id: "rules", label: "Rules" },
+];
 
 const MODE_TEXT: Record<string, string> = {
   manual: "Hermes asks you before any command it considers dangerous.",
@@ -7,13 +14,34 @@ const MODE_TEXT: Record<string, string> = {
 };
 
 export function Settings() {
+  const { settingsTab, showSettings } = useShell();
+  return (
+    <section className="settings" aria-labelledby="settings-title">
+      <h1 id="settings-title">Settings</h1>
+      <div className="tabs" role="tablist">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            role="tab"
+            aria-selected={settingsTab === tab.id}
+            className={settingsTab === tab.id ? "tab active" : "tab"}
+            onClick={() => showSettings(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {settingsTab === "rules" ? <RulesPage /> : <ConnectionSettings />}
+    </section>
+  );
+}
+
+function ConnectionSettings() {
   const { info, checking, check, reloadKey } = useConnection();
   const warning = info ? approvalWarning(info.approval_mode) : null;
 
   return (
-    <section className="settings" aria-labelledby="settings-title">
-      <h1 id="settings-title">Settings</h1>
-
+    <>
       <div className="settings-section">
         <h2>Hermes connection</h2>
         <dl className="facts">
@@ -66,6 +94,6 @@ export function Settings() {
           works within.
         </p>
       </div>
-    </section>
+    </>
   );
 }
