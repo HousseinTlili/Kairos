@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "default": "inherit",
+  "rules": [
+    {
+      "id": "no-credentials",
+      "description": "Credential and key files are off-limits to Kairos.",
+      "tools": ["read_file", "write_file", "patch", "search_files", "terminal", "execute_code"],
+      "match": {
+        "any_text": [
+          "**/.ssh/**",
+          "**/hermes/.env",
+          "**/hermes/.env.*",
+          "**/hermes/auth.json",
+          "**/*.pem",
+          "**/*.key",
+          "**/*.pfx",
+          "**/id_rsa*",
+          "**/id_ed25519*",
+          "**/.aws/credentials",
+          "**/.git-credentials",
+          "**/.npmrc"
+        ]
+      },
+      "action": "deny"
+    },
+    {
+      "id": "no-credential-store",
+      "description": "Windows Credential Manager and other secret stores are off-limits to Kairos.",
+      "tools": ["terminal", "execute_code"],
+      "match": {
+        "commands": [
+          "\\bcmdkey\\b",
+          "\\bvaultcmd\\b",
+          "Get-StoredCredential",
+          "\\bCredRead\\b",
+          "\\bgh\\s+auth\\s+token\\b",
+          "\\bgit\\s+credential\\b"
+        ]
+      },
+      "action": "deny"
+    },
+    {
+      "id": "no-kairos-tampering",
+      "description": "Kairos may not change its own rules, records or plugin.",
+      "tools": ["write_file", "patch", "terminal", "execute_code"],
+      "match": {
+        "any_text": [
+          "%APPDATA%/kairos/**",
+          "%LOCALAPPDATA%/hermes/plugins/kairos/**"
+        ]
+      },
+      "action": "deny"
+    },
+    {
+      "id": "no-safety-changes",
+      "description": "Kairos may not change Hermes's approval mode or turn its own plugin off.",
+      "tools": ["terminal", "execute_code"],
+      "match": {
+        "commands": [
+          "\\bhermes(\\.exe)?\\s+config\\s+(set|unset|edit)\\s+(approvals|plugins|security)",
+          "\\bhermes(\\.exe)?\\s+plugins\\s+(disable|remove|uninstall)\\b",
+          "\\bhermes(\\.exe)?\\s+.*--yolo\\b"
+        ]
+      },
+      "action": "deny"
+    },
+    {
+      "id": "kairos-plugin-source",
+      "description": "Changing the Kairos plugin's source code changes Kairos's own safety rules.",
+      "tools": ["write_file", "patch"],
+      "match": { "paths": ["**/kairos/plugin/**"] },
+      "action": "ask"
+    },
+    {
+      "id": "destructive-commands",
+      "description": "This command deletes or overwrites data that may not be recoverable.",
+      "tools": ["terminal", "execute_code"],
+      "match": {
+        "commands": [
+          "\\brm\\b[^;&|\\n]*\\s-(-recursive\\b|[a-z]*r)",
+          "\\bremove-item\\b[^;&|\\n]*-recurse",
+          "\\b(del|erase|rd|rmdir)\\b[^;&|\\n]*\\s/s\\b",
+          "\\bformat(\\.com)?\\s+[a-z]:",
+          "\\bdiskpart\\b",
+          "\\bmkfs\\b",
+          "\\bdd\\s+[^;&|\\n]*\\bof=",
+          "\\bgit\\s+push\\b[^;&|\\n]*\\s(--force\\b|-f\\b|--force-with-lease\\b)",
+          "\\bgit\\s+reset\\s+--hard\\b",
+          "\\bgit\\s+clean\\b[^;&|\\n]*\\s-[a-z]*f",
+          "\\bgit\\s+branch\\s+-D\\b",
+          "\\bshutil\\.rmtree\\b"
+        ]
+      },
+      "action": "ask"
+    },
+    {
+      "id": "outbound-messages",
+      "description": "Sending a message on your behalf always needs your OK.",
+      "tools": ["send_message", "discord", "discord_admin", "yb_send_dm", "yb_send_sticker"],
+      "action": "ask"
+    },
+    {
+      "id": "delegate-to-agents",
+      "description": "Handing work to another agent can spend money and change code.",
+      "tools": ["delegate_task", "a2a_call", "a2a_orchestrate"],
+      "action": "ask"
+    },
+    {
+      "id": "delegate-cli",
+      "description": "Running Claude Code, Codex or OpenCode can spend money and change code.",
+      "tools": ["terminal"],
+      "match": {
+        "commands": ["(^|[;&|]\\s*|\\bnpx\\s+)(claude|codex|opencode)(\\.exe|\\.cmd)?(\\s|$)"]
+      },
+      "action": "ask"
+    },
+    {
+      "id": "git-publish",
+      "description": "Publishing to GitHub is visible to others.",
+      "tools": ["terminal"],
+      "match": {
+        "commands": [
+          "\\bgit\\s+push\\b",
+          "\\bgh\\s+pr\\s+(create|merge|close|comment|review|edit)\\b",
+          "\\bgh\\s+release\\s+(create|delete|edit)\\b",
+          "\\bgh\\s+issue\\s+(create|comment|close|edit|delete)\\b",
+          "\\bgh\\s+repo\\s+(create|delete|edit|rename)\\b"
+        ]
+      },
+      "action": "ask"
+    },
+    {
+      "id": "install-software",
+      "description": "Installing or removing software changes your computer.",
+      "tools": ["terminal"],
+      "match": {
+        "commands": [
+          "\\b(winget|choco|scoop)\\s+(install|upgrade|uninstall|remove)\\b",
+          "\\bpip3?\\s+(install|uninstall)\\b",
+          "\\bpython3?(\\.exe)?\\s+-m\\s+pip\\s+(install|uninstall)\\b",
+          "\\bnpm\\s+(i|install|uninstall)\\b[^;&|\\n]*\\s(-g|--global)\\b",
+          "\\bpnpm\\s+(add|i|install|remove)\\b[^;&|\\n]*\\s(-g|--global)\\b",
+          "\\bcargo\\s+(install|uninstall)\\b",
+          "\\buv\\s+tool\\s+install\\b",
+          "\\bmsiexec\\b"
+        ]
+      },
+      "action": "ask"
+    },
+    {
+      "id": "system-processes",
+      "description": "Closing a Windows system process can crash or log out the computer.",
+      "tools": ["close_app"],
+      "match": {
+        "any_text": [
+          "explorer", "explorer.exe", "winlogon", "winlogon.exe", "csrss", "csrss.exe",
+          "lsass", "lsass.exe", "services", "services.exe", "svchost", "svchost.exe",
+          "smss", "smss.exe", "wininit", "wininit.exe", "dwm", "dwm.exe"
+        ]
+      },
+      "action": "deny"
+    },
+    {
+      "id": "close-apps",
+      "description": "Closing an app can lose unsaved work.",
+      "tools": ["close_app"],
+      "action": "ask"
+    }
+  ]
+}
