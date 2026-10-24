@@ -23,7 +23,7 @@ describe("the rules model", () => {
   it("reads the plugin's starter rules in order", () => {
     const doc = starter();
     expect(doc.rules[0].id).toBe("no-credentials");
-    expect(doc.rules).toHaveLength(13);
+    expect(doc.rules).toHaveLength(17);
   });
 
   it("saves the starter rules unchanged when nothing was edited", () => {

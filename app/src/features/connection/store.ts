@@ -30,13 +30,14 @@ export const useConnection = create<ConnectionState>((set) => ({
 }));
 
 /** D-009: only `manual` is acceptable until M2 is accepted. */
+/** D-009 (2026-10-25): `smart` with the Kairos rules, or `manual`. Anything that can run commands
+ *  without any check (`off`, YOLO) is never acceptable. */
+export const ACCEPTED_APPROVAL_MODES = ["smart", "manual"];
+
 export function approvalWarning(mode: string | null): string | null {
-  if (mode === "manual") return null;
+  if (mode !== null && ACCEPTED_APPROVAL_MODES.includes(mode)) return null;
   if (mode === null) {
-    return "Couldn't read Hermes's approval mode. Kairos needs it to be 'manual' until M2.";
+    return "Couldn't read Hermes's approval mode. Kairos expects 'smart' (with its rules) or 'manual'.";
   }
-  if (mode === "smart") {
-    return "Approval mode is 'smart': Hermes's helper model can auto-approve destructive commands (it approved rm -rf in testing). Kairos needs 'manual' until M2.";
-  }
-  return `Approval mode is '${mode}', which can run commands without asking you. Kairos needs 'manual' until M2.`;
+  return `Approval mode is '${mode}', which can run commands without asking you. Kairos expects 'smart' (with its rules) or 'manual'.`;
 }

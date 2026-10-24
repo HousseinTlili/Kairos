@@ -72,9 +72,9 @@ security flags and resource limits (Hermes docs: Container Isolation).
 | Windows 11 | Docker Desktop (WSL2 backend) container backend for terminal and code execution |
 | Linux | Docker/Podman container backend; bubblewrap as a lighter alternative |
 
-Until isolation is configured (M7), Kairos relies on Hermes approval mode `manual` until M2 is
-accepted, then `smart` (`DECISIONS.md`, D-009), Kairos `deny`/`ask` rules from M2, and a workspace
-write root (`HERMES_WRITE_SAFE_ROOT`).
+Until isolation is configured (M7), Kairos relies on its `deny`/`ask` rules (M2), Hermes approval
+mode `smart` behind them (`DECISIONS.md`, D-009), and a workspace write root
+(`HERMES_WRITE_SAFE_ROOT`).
 
 ## 5. Secrets
 

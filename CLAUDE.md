@@ -36,15 +36,16 @@ The user is the product owner. You are the engineer. Stop and ask before:
   If a check could not be run, say so plainly.
 - **Don't resend work.** Every Hermes run is created with an `Idempotency-Key` stored first; never
   retry a request under a new key (M1 §9 rule 1).
-- **Approval mode.** Hermes runs in `manual` until M2 is accepted (D-009). Never switch it to
-  `smart`, `off` or YOLO. A test that changes it must restore `manual` and say so.
+- **Approval mode.** Hermes runs in `smart`, with the Kairos rules in front of it (D-009, decided
+  2026-10-25). Never switch it to `off` or YOLO. A test that changes it must restore `smart` and
+  say so. Changing the mode permanently is the product owner's decision.
 
 ## Commands
 
 | What | Command |
 |---|---|
 | Dev app | `pnpm -C app tauri dev` |
-| Rust tests | `cargo test --manifest-path app/src-tauri/Cargo.toml` |
+| Rust tests | `cargo test --manifest-path app/src-tauri/Cargo.toml` (while the dev app is running, set `CARGO_TARGET_DIR=target/test-build`: Windows locks the running `kairos.exe` and the build fails with "Access is denied") |
 | Live Hermes tests | `cargo test --manifest-path app/src-tauri/Cargo.toml -- --ignored` (needs Hermes running) |
 | TS tests | `pnpm -C app test` |
 | Lint | `cargo clippy --manifest-path app/src-tauri/Cargo.toml -- -D warnings`; `pnpm -C app lint` |

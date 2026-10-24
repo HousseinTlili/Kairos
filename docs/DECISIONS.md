@@ -124,28 +124,36 @@ with the WSL2 backend; scripts are PowerShell first.
 
 ---
 
-## D-009 — Hermes approval mode `manual` until M2's `ask` rules exist, then `smart` — Accepted
+## D-009 — Hermes approval mode: `smart`, with the Kairos rules — Accepted
 
-Revised 2026-10-23 (originally "keep `smart`").
+**Decided 2026-10-25 by the product owner**, after the M2 Step 8 test. History: `smart` (Phase 0),
+then `manual` (2026-10-23, after smart auto-approved an `rm -rf`), now `smart` again with the
+Kairos rules in front of it.
 
-**Now (M1 until M2 is accepted): `manual`.** Hermes asks a human before every command it classes
-as dangerous. Set with `hermes config set approvals.mode manual`.
+**Why it changed back.** The Kairos plugin checks every tool call *before* Hermes's own approval
+runs, so a Kairos `ask` rule always reaches a person, whatever the mode. Step 8 measured it
+(`docs/milestones/M2.md`, Step 8): in `smart`, the `rm -rf` that smart approved alone in Phase 0
+was stopped by `destructive-commands` and a Deny kept the folder; allowing it cost **one** prompt,
+because Hermes's helper model then approved its own check. In `manual` the same command asked
+**twice**.
 
-**Why the change.** In `smart` mode an auxiliary model auto-approves commands it judges low-risk,
-auto-denies clearly dangerous ones, and asks a human about the rest. Its judgment depends on which
-model it is. **Observed 2026-10-23:** with `upstage/solar-mini4:free` as the auxiliary model,
-`smart` auto-approved `rm -rf` on a folder in the user's home directory with no human prompt
-(`fixtures/hermes-0.22.5/run-smart-autoapprove/`). Under `manual` the same command asked first
-(`run-approval-deny/`). Until Kairos has its own `ask` rules, `smart` gives no human checkpoint for
-destructive commands the auxiliary model considers fine.
+**What `smart` still decides alone:** anything no Kairos rule covers. To narrow that, three more
+protections were added first (2026-10-25), as four rules: `run-downloaded-code` (piping a download
+into a shell, `Invoke-Expression`, `certutil -urlcache` and similar), `system-files` and
+`system-changes` (writes under `C:\Windows`, `Program Files`, `ProgramData`; the registry; services;
+scheduled tasks; boot settings; firewall rules), and `permission-changes` (`icacls`, `takeown`,
+recursive or world-writable `chmod`, local admin groups, execution policy, Defender settings).
+Every decision the helper model makes is recorded in `audit.db` (`decided_by = "aux_llm"`) and
+shown on its tool row ("Hermes's helper model allowed it").
 
-**Later: back to `smart`**, only when M2's acceptance criteria pass: Kairos `deny`/`ask` rules
-cover destructive and outbound actions (Kairos rules run before Hermes's approval gate, and
-`block` beats `approve`), and the audit log records every `smart_approve` decision so they can
-be reviewed. Switching back is a product-owner decision, recorded here.
+**Checked live after switching (2026-10-25):** a harmless `git status` ran with no prompt; `curl … |
+sh` was stopped by `run-downloaded-code` and blocked on Deny.
 
-**Cost of `manual`.** More approval prompts during M1 development and testing. The hardline
-blocklist applies in both modes.
+**Never acceptable:** `off` or YOLO. The app and `scripts/setup.ps1` warn if Hermes is in either;
+`no-safety-changes` stops the agent from changing the mode itself.
+
+**Going back to `manual`** is always possible (`hermes config set approvals.mode manual`) and is
+the stricter choice: two independent checks, at the cost of double prompts.
 
 ---
 

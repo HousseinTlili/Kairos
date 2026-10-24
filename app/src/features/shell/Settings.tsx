@@ -9,7 +9,8 @@ const TABS: { id: SettingsTab; label: string }[] = [
 
 const MODE_TEXT: Record<string, string> = {
   manual: "Hermes asks you before any command it considers dangerous.",
-  smart: "A helper model approves commands it judges safe, and asks you about the rest.",
+  smart:
+    "Your Kairos rules ask you about destructive, system and outbound actions; Hermes's helper model decides the rest by itself, and Kairos records every such decision.",
   off: "Hermes runs commands without asking.",
 };
 
@@ -77,11 +78,12 @@ function ConnectionSettings() {
         {warning ? (
           <div className="status-card warn" role="alert">
             <p>{warning}</p>
-            <code className="command">hermes config set approvals.mode manual</code>
+            <code className="command">hermes config set approvals.mode smart</code>
           </div>
         ) : (
           <p className="muted">
-            Kairos keeps Hermes in manual mode until its own approval rules exist (milestone M2).
+            Chosen on 2026-10-25 (decision D-009). Manual mode is the stricter choice: it adds
+            Hermes's own prompt on top of your rules, so some commands ask twice.
           </p>
         )}
       </div>

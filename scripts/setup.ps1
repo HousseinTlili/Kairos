@@ -216,10 +216,10 @@ $env:HERMES_HOME = $homeDir
 $modeResult = Invoke-Hermes $hermes @('config', 'get', 'approvals.mode')
 $mode = ''
 if ($modeResult.Output.Count -gt 0) { $mode = ([string]$modeResult.Output[-1]).Trim() }
-if ($mode -eq 'manual') {
-  Write-Ok 'Approval mode: manual'
+if ($mode -eq 'smart' -or $mode -eq 'manual') {
+  Write-Ok "Approval mode: $mode"
 } else {
-  Write-Warn "Approval mode is '$mode'. Kairos requires 'manual' until M2 (docs/DECISIONS.md D-009). Set it with: hermes config set approvals.mode manual"
+  Write-Warn "Approval mode is '$mode', which can run commands without asking. Kairos expects 'smart' (with its rules) or 'manual' (docs/DECISIONS.md D-009). Set it with: hermes config set approvals.mode smart"
 }
 
 Write-Host 'Hermes is ready for Kairos.'

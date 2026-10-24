@@ -5,7 +5,14 @@
     {
       "id": "no-credentials",
       "description": "Credential and key files are off-limits to Kairos.",
-      "tools": ["read_file", "write_file", "patch", "search_files", "terminal", "execute_code"],
+      "tools": [
+        "read_file",
+        "write_file",
+        "patch",
+        "search_files",
+        "terminal",
+        "execute_code"
+      ],
       "match": {
         "any_text": [
           "**/.ssh/**",
@@ -27,7 +34,10 @@
     {
       "id": "no-credential-store",
       "description": "Windows Credential Manager and other secret stores are off-limits to Kairos.",
-      "tools": ["terminal", "execute_code"],
+      "tools": [
+        "terminal",
+        "execute_code"
+      ],
       "match": {
         "commands": [
           "\\bcmdkey\\b",
@@ -43,7 +53,12 @@
     {
       "id": "no-kairos-tampering",
       "description": "Kairos may not change its own rules, records or plugin.",
-      "tools": ["write_file", "patch", "terminal", "execute_code"],
+      "tools": [
+        "write_file",
+        "patch",
+        "terminal",
+        "execute_code"
+      ],
       "match": {
         "any_text": [
           "%APPDATA%/kairos/**",
@@ -55,7 +70,10 @@
     {
       "id": "no-safety-changes",
       "description": "Kairos may not change Hermes's approval mode or turn its own plugin off.",
-      "tools": ["terminal", "execute_code"],
+      "tools": [
+        "terminal",
+        "execute_code"
+      ],
       "match": {
         "commands": [
           "\\bhermes(\\.exe)?\\s+config\\s+(set|unset|edit)\\s+(approvals|plugins|security)",
@@ -68,14 +86,24 @@
     {
       "id": "kairos-plugin-source",
       "description": "Changing the Kairos plugin's source code changes Kairos's own safety rules.",
-      "tools": ["write_file", "patch"],
-      "match": { "paths": ["**/kairos/plugin/**"] },
+      "tools": [
+        "write_file",
+        "patch"
+      ],
+      "match": {
+        "paths": [
+          "**/kairos/plugin/**"
+        ]
+      },
       "action": "ask"
     },
     {
       "id": "destructive-commands",
       "description": "This command deletes or overwrites data that may not be recoverable.",
-      "tools": ["terminal", "execute_code"],
+      "tools": [
+        "terminal",
+        "execute_code"
+      ],
       "match": {
         "commands": [
           "\\brm\\b[^;&|\\n]*\\s-(-recursive\\b|[a-z]*r)",
@@ -95,30 +123,134 @@
       "action": "ask"
     },
     {
+      "id": "run-downloaded-code",
+      "description": "This downloads code and runs it straight away, without anyone reading it first.",
+      "tools": [
+        "terminal",
+        "execute_code"
+      ],
+      "match": {
+        "commands": [
+          "\\b(curl|wget)\\b[^;&\\n]*\\|\\s*(sudo\\s+)?(ba|z|da)?sh\\b",
+          "\\b(curl|wget)\\b[^;&\\n]*\\|\\s*(python3?|node|perl|ruby|pwsh|powershell)\\b",
+          "\\b(iwr|irm|invoke-webrequest|invoke-restmethod)\\b[^;&\\n]*\\|\\s*(iex|invoke-expression)\\b",
+          "\\b(iex|invoke-expression)\\b",
+          "\\b(powershell|pwsh)(\\.exe)?\\b[^;&|\\n]*\\s-(e|ec|enc|encodedcommand)\\s",
+          "\\bmshta(\\.exe)?\\b",
+          "\\bregsvr32(\\.exe)?\\b[^;&|\\n]*\\s/i:",
+          "\\bcertutil(\\.exe)?\\b[^;&|\\n]*-urlcache",
+          "\\bbitsadmin(\\.exe)?\\b[^;&|\\n]*/transfer"
+        ]
+      },
+      "action": "ask"
+    },
+    {
+      "id": "system-files",
+      "description": "Changing files in Windows or Program Files can break the system or installed programs.",
+      "tools": [
+        "write_file",
+        "patch"
+      ],
+      "match": {
+        "paths": [
+          "c:/windows/**",
+          "c:/program files/**",
+          "c:/program files (x86)/**",
+          "c:/programdata/**"
+        ]
+      },
+      "action": "ask"
+    },
+    {
+      "id": "system-changes",
+      "description": "This changes Windows itself: system folders, the registry, services, scheduled tasks or boot settings.",
+      "tools": [
+        "terminal",
+        "execute_code"
+      ],
+      "match": {
+        "commands": [
+          "\\b(copy|xcopy|robocopy|move|mv|cp|del|erase|rm|rmdir|rd|ren|rename|mkdir|md|new-item|set-content|add-content|out-file|copy-item|move-item|remove-item|rename-item|tee)\\b[^;&|\\n]*[a-z]:[\\\\/]+\\\"?(windows|program files|programdata)\\b",
+          ">>?\\s*\\\"?[a-z]:[\\\\/]+(windows|program files|programdata)\\b",
+          "\\breg(\\.exe)?\\s+(add|delete|import|load|unload|restore|copy)\\b",
+          "\\b(set-itemproperty|new-itemproperty|remove-itemproperty|rename-itemproperty|new-item|set-item|remove-item)\\b[^;&|\\n]*\\b(hklm|hkcu|hkcr|hku|hkcc|registry::)",
+          "\\bregedit(\\.exe)?\\b[^;&|\\n]*\\s/s\\b",
+          "\\bsc(\\.exe)?\\s+(config|create|delete|stop|failure)\\b",
+          "\\b(set|stop|new|remove|restart)-service\\b",
+          "\\bschtasks(\\.exe)?\\b[^;&|\\n]*/(create|delete|change)\\b",
+          "\\b(register|unregister|set)-scheduledtask\\b",
+          "\\bbcdedit(\\.exe)?\\b",
+          "\\bnetsh\\b[^;&|\\n]*\\b(firewall|advfirewall)\\b[^;&|\\n]*\\b(set|add|delete)\\b"
+        ]
+      },
+      "action": "ask"
+    },
+    {
+      "id": "permission-changes",
+      "description": "This changes who may read or change files, or what the computer allows to run.",
+      "tools": [
+        "terminal",
+        "execute_code"
+      ],
+      "match": {
+        "commands": [
+          "\\bicacls(\\.exe)?\\b[^;&|\\n]*\\s/(grant|deny|remove|reset|setowner|setintegritylevel|inheritance)",
+          "\\bcacls(\\.exe)?\\b",
+          "\\btakeown(\\.exe)?\\b",
+          "\\bset-acl\\b",
+          "\\bchmod\\b[^;&|\\n]*\\s-[a-z]*R",
+          "\\bchmod\\b[^;&|\\n]*\\s(0?777|a\\+rwx)\\b",
+          "\\bchown\\b",
+          "\\battrib(\\.exe)?\\b[^;&|\\n]*\\s-[shr]\\b",
+          "\\bnet(\\.exe)?\\s+(user|localgroup)\\b[^;&|\\n]*\\s/(add|delete)\\b",
+          "\\b(add|remove)-localgroupmember\\b",
+          "\\bset-executionpolicy\\b",
+          "\\b(set|add)-mppreference\\b"
+        ]
+      },
+      "action": "ask"
+    },
+    {
       "id": "outbound-messages",
       "description": "Sending a message on your behalf always needs your OK.",
-      "tools": ["send_message", "discord", "discord_admin", "yb_send_dm", "yb_send_sticker"],
+      "tools": [
+        "send_message",
+        "discord",
+        "discord_admin",
+        "yb_send_dm",
+        "yb_send_sticker"
+      ],
       "action": "ask"
     },
     {
       "id": "delegate-to-agents",
       "description": "Handing work to another agent can spend money and change code.",
-      "tools": ["delegate_task", "a2a_call", "a2a_orchestrate"],
+      "tools": [
+        "delegate_task",
+        "a2a_call",
+        "a2a_orchestrate"
+      ],
       "action": "ask"
     },
     {
       "id": "delegate-cli",
       "description": "Running Claude Code, Codex or OpenCode can spend money and change code.",
-      "tools": ["terminal"],
+      "tools": [
+        "terminal"
+      ],
       "match": {
-        "commands": ["(^|[;&|]\\s*|\\bnpx\\s+)(claude|codex|opencode)(\\.exe|\\.cmd)?(\\s|$)"]
+        "commands": [
+          "(^|[;&|]\\s*|\\bnpx\\s+)(claude|codex|opencode)(\\.exe|\\.cmd)?(\\s|$)"
+        ]
       },
       "action": "ask"
     },
     {
       "id": "git-publish",
       "description": "Publishing to GitHub is visible to others.",
-      "tools": ["terminal"],
+      "tools": [
+        "terminal"
+      ],
       "match": {
         "commands": [
           "\\bgit\\s+push\\b",
@@ -133,7 +265,9 @@
     {
       "id": "install-software",
       "description": "Installing or removing software changes your computer.",
-      "tools": ["terminal"],
+      "tools": [
+        "terminal"
+      ],
       "match": {
         "commands": [
           "\\b(winget|choco|scoop)\\s+(install|upgrade|uninstall|remove)\\b",
@@ -151,12 +285,29 @@
     {
       "id": "system-processes",
       "description": "Closing a Windows system process can crash or log out the computer.",
-      "tools": ["close_app"],
+      "tools": [
+        "close_app"
+      ],
       "match": {
         "any_text": [
-          "explorer", "explorer.exe", "winlogon", "winlogon.exe", "csrss", "csrss.exe",
-          "lsass", "lsass.exe", "services", "services.exe", "svchost", "svchost.exe",
-          "smss", "smss.exe", "wininit", "wininit.exe", "dwm", "dwm.exe"
+          "explorer",
+          "explorer.exe",
+          "winlogon",
+          "winlogon.exe",
+          "csrss",
+          "csrss.exe",
+          "lsass",
+          "lsass.exe",
+          "services",
+          "services.exe",
+          "svchost",
+          "svchost.exe",
+          "smss",
+          "smss.exe",
+          "wininit",
+          "wininit.exe",
+          "dwm",
+          "dwm.exe"
         ]
       },
       "action": "deny"
@@ -164,7 +315,9 @@
     {
       "id": "close-apps",
       "description": "Closing an app can lose unsaved work.",
-      "tools": ["close_app"],
+      "tools": [
+        "close_app"
+      ],
       "action": "ask"
     }
   ]

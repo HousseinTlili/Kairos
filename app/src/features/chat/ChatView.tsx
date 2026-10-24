@@ -17,7 +17,7 @@ import { blockedCount, decisionText, isFinished, toolLabel, type Turn } from "./
 const SUGGESTIONS = [
   "What can you help me with?",
   "List the 10 largest files in my Downloads folder",
-  "Explain what Hermes's manual approval mode protects me from",
+  "Explain which of my actions Kairos asks me about, and why",
   "Check which version of Node.js and Rust I have installed",
 ];
 
@@ -208,7 +208,7 @@ export function ChatView() {
         </h1>
         {approvalMode && (
           <span
-            className={`mode-badge ${approvalMode === "manual" ? "" : "warn"}`}
+            className={`mode-badge ${approvalMode === "manual" || approvalMode === "smart" ? "" : "warn"}`}
             title="Hermes approval mode"
           >
             Approvals: {approvalMode}
