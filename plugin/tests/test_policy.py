@@ -128,6 +128,23 @@ class StarterRulesTest(unittest.TestCase):
         ("terminal", {"command": r"icacls C:\data"}, "inherit", None),
         ("terminal", {"command": "chmod +x run.sh"}, "inherit", None),
         ("terminal", {"command": "Get-ExecutionPolicy"}, "inherit", None),
+        # browser_exec runs Python on this machine outside Hermes's command check (M2 Step 9)
+        ("browser_exec", {"code": "import os\nos.system('rm -rf C:/Users/u/scratch')"}, "ask", "destructive-commands"),
+        ("browser_exec", {"code": "import shutil; shutil.rmtree(r'C:\\Users\\u\\scratch')"}, "ask", "destructive-commands"),
+        ("browser_exec", {"code": "print(open('C:/Users/u/.ssh/id_rsa').read())"}, "deny", "no-credentials"),
+        ("browser_exec", {"code": "print(open(r'~/.ssh/config').read())"}, "deny", "no-credentials"),
+        ("browser_exec", {"code": "import subprocess\nsubprocess.run(['cmdkey', '/list'])"}, "deny", "no-credential-store"),
+        ("browser_exec", {"code": "import subprocess; subprocess.run('reg add HKCU\\\\x /v y', shell=True)"}, "ask", "system-changes"),
+        ("browser_exec", {"code": "import subprocess\nsubprocess.run(['del', '/s', 'x'])"}, "ask", "browser-code-system-access"),
+        ("browser_exec", {"code": "from pathlib import Path\nPath('notes.txt').unlink()"}, "ask", "browser-code-system-access"),
+        ("browser_exec", {"code": "data = open('report.csv', 'w')"}, "ask", "browser-code-system-access"),
+        ("browser_exec", {"code": "exec(requests.get(u).text)"}, "ask", "browser-code-system-access"),
+        # Its own network requests skip Hermes's private-address block (seen in M2 Step 9).
+        ("browser_exec", {"code": "import urllib.request\nprint(urllib.request.urlopen('http://127.0.0.1:8765').read())"}, "ask", "browser-code-system-access"),
+        ("browser_exec", {"code": "import requests; requests.get('http://192.168.1.1')"}, "ask", "browser-code-system-access"),
+        ("browser_exec", {"code": "from http.client import HTTPConnection"}, "ask", "browser-code-system-access"),
+        ("browser_exec", {"code": "goto('https://example.com')\nprint(page_info())"}, "inherit", None),
+        ("browser_exec", {"code": "click(120, 300)\ntype_text('hello')\nprint(js('document.title'))"}, "inherit", None),
         # messaging and delegation
         ("send_message", {"to": "someone", "text": "hi"}, "ask", "outbound-messages"),
         ("discord", {"action": "send"}, "ask", "outbound-messages"),

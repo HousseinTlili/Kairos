@@ -27,8 +27,10 @@ RULE_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 # Argument names that hold a path, across Hermes's file-like tools.
 PATH_KEYS = ("path", "file_path", "target_path", "source", "destination", "dest", "cwd", "workdir")
-# Tools whose text is a shell command or a script.
-COMMAND_TOOLS = {"terminal": "command", "execute_code": "code"}
+# Tools whose text is a shell command or a script. `browser_exec` runs arbitrary Python on this
+# machine through the browser-use helper (Hermes's tools/browser_use_cli.py) and isn't covered by
+# Hermes's own command check, so it is read like a script (M2 Step 9).
+COMMAND_TOOLS = {"terminal": "command", "execute_code": "code", "browser_exec": "code"}
 URL_KEYS = ("url", "urls")
 _URL = re.compile(r"https?://[^\s\"'<>]+", re.IGNORECASE)
 # Splits a command into candidate path tokens: whitespace, quotes, and shell separators.

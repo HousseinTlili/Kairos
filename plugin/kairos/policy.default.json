@@ -11,7 +11,8 @@
         "patch",
         "search_files",
         "terminal",
-        "execute_code"
+        "execute_code",
+        "browser_exec"
       ],
       "match": {
         "any_text": [
@@ -36,7 +37,8 @@
       "description": "Windows Credential Manager and other secret stores are off-limits to Kairos.",
       "tools": [
         "terminal",
-        "execute_code"
+        "execute_code",
+        "browser_exec"
       ],
       "match": {
         "commands": [
@@ -57,7 +59,8 @@
         "write_file",
         "patch",
         "terminal",
-        "execute_code"
+        "execute_code",
+        "browser_exec"
       ],
       "match": {
         "any_text": [
@@ -72,7 +75,8 @@
       "description": "Kairos may not change Hermes's approval mode or turn its own plugin off.",
       "tools": [
         "terminal",
-        "execute_code"
+        "execute_code",
+        "browser_exec"
       ],
       "match": {
         "commands": [
@@ -102,7 +106,8 @@
       "description": "This command deletes or overwrites data that may not be recoverable.",
       "tools": [
         "terminal",
-        "execute_code"
+        "execute_code",
+        "browser_exec"
       ],
       "match": {
         "commands": [
@@ -127,7 +132,8 @@
       "description": "This downloads code and runs it straight away, without anyone reading it first.",
       "tools": [
         "terminal",
-        "execute_code"
+        "execute_code",
+        "browser_exec"
       ],
       "match": {
         "commands": [
@@ -166,7 +172,8 @@
       "description": "This changes Windows itself: system folders, the registry, services, scheduled tasks or boot settings.",
       "tools": [
         "terminal",
-        "execute_code"
+        "execute_code",
+        "browser_exec"
       ],
       "match": {
         "commands": [
@@ -190,7 +197,8 @@
       "description": "This changes who may read or change files, or what the computer allows to run.",
       "tools": [
         "terminal",
-        "execute_code"
+        "execute_code",
+        "browser_exec"
       ],
       "match": {
         "commands": [
@@ -206,6 +214,27 @@
           "\\b(add|remove)-localgroupmember\\b",
           "\\bset-executionpolicy\\b",
           "\\b(set|add)-mppreference\\b"
+        ]
+      },
+      "action": "ask"
+    },
+    {
+      "id": "browser-code-system-access",
+      "description": "Browser automation code that reaches beyond the browser (files, programs, the system or its own network requests) needs your OK.",
+      "tools": [
+        "browser_exec"
+      ],
+      "match": {
+        "commands": [
+          "\\bimport\\s+(os|subprocess|shutil|pathlib|ctypes|winreg|sys|tempfile|glob)\\b",
+          "\\bfrom\\s+(os|subprocess|shutil|pathlib|ctypes|winreg|sys|tempfile|glob)\\b",
+          "\\b__import__\\s*\\(",
+          "\\b(eval|exec|compile)\\s*\\(",
+          "\\bopen\\s*\\(",
+          "\\bos\\.(system|popen|remove|unlink|rmdir|rename|replace|chmod|startfile|spawn\\w*|exec\\w*)\\b",
+          "\\bimport\\s+(urllib|requests|httpx|socket|ftplib|smtplib|aiohttp)\\b",
+          "\\bimport\\s+http\\.client\\b",
+          "\\bfrom\\s+(urllib|requests|httpx|socket|http|ftplib|smtplib|aiohttp)\\b"
         ]
       },
       "action": "ask"

@@ -6,8 +6,8 @@ for the current milestone, read its spec in `docs/milestones/`.
 
 ## Current milestone
 
-**M1 accepted** on 2026-10-24 (`docs/milestones/M1-acceptance.md`). **M2** is next; its spec
-(`docs/milestones/M2.md`) is written before any M2 code. Each step ends with a check; run it and
+**M1 accepted** on 2026-10-24. **M2** (`docs/milestones/M2.md`) is built; results in
+`docs/milestones/M2-acceptance.md`, awaiting the product owner's sign-off. M3 starts after that. Each step ends with a check; run it and
 show its output before saying the step is done.
 
 ## Roles
@@ -53,6 +53,7 @@ The user is the product owner. You are the engineer. Stop and ask before:
 | Start Hermes | `hermes gateway run` in a terminal the user keeps open (or Hermes Desktop). **Never start the gateway from an agent shell**: it is killed when that shell ends (happened 2026-10-24). If it must be started for a check, use a Terminal panel tab. |
 | Hermes setup | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1` |
 | Setup script tests | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-setup.ps1` (throwaway homes; never touches the real `.env`) |
+| Apply plugin code changes | Changes to `plugin/kairos/*.py` take effect only after a gateway restart (Hermes imports the plugin once); `policy.json` changes apply on the next call. Restart the gateway in a Terminal panel tab |
 | Install the Kairos plugin | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-plugin.ps1` (asks first; `-Uninstall` removes it, keeping the rules and audit log). Changes Hermes's plugin list: ask the product owner before running it |
 | Plugin tests | `& (Get-Item "$env:LOCALAPPDATA\hermes\tools\python-*\python.exe")[0] -I -m unittest discover -s plugin/tests -t plugin` (Hermes's own Python; the plugin is standard library only) |
 
