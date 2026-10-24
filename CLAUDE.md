@@ -52,6 +52,7 @@ The user is the product owner. You are the engineer. Stop and ask before:
 | Start Hermes | `hermes gateway run` in a terminal the user keeps open (or Hermes Desktop). **Never start the gateway from an agent shell**: it is killed when that shell ends (happened 2026-10-24). If it must be started for a check, use a Terminal panel tab. |
 | Hermes setup | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1` |
 | Setup script tests | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-setup.ps1` (throwaway homes; never touches the real `.env`) |
+| Install the Kairos plugin | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-plugin.ps1` (asks first; `-Uninstall` removes it, keeping the rules and audit log). Changes Hermes's plugin list: ask the product owner before running it |
 | Plugin tests | `& (Get-Item "$env:LOCALAPPDATA\hermes\tools\python-*\python.exe")[0] -I -m unittest discover -s plugin/tests -t plugin` (Hermes's own Python; the plugin is standard library only) |
 
 ## Code style
