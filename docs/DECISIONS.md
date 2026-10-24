@@ -218,6 +218,24 @@ that needs it and a rule set for it.
 
 ---
 
+## D-015 — The audit log is its own `audit.db`, written only by the plugin — Accepted
+
+Supersedes the ARCHITECTURE.md §4 plan of putting `tool_event` and `approval` tables in
+`kairos.db`. The Kairos plugin (Python, inside Hermes) is the only writer of
+`%APPDATA%\kairos\audit.db`; the app reads it read-only. The app stays the only writer of
+`kairos.db` and `policy.json`. The two processes never share a database, a lock or a schema
+migration. Accepted with the M2 spec (2026-10-24).
+
+---
+
+## D-016 — Kairos rules are JSON (`policy.json`) — Accepted
+
+Supersedes the YAML sketch in SECURITY.md §3. Both sides parse JSON with what they already have
+(Python's `json`, Rust's `serde_json`), so neither needs a new dependency, and the app's Rules page
+is the normal way to edit them. Accepted with the M2 spec (2026-10-24).
+
+---
+
 ## Answered questions
 
 - **Q-2 — First real use cases.** Answered 2026-10-24: the welcome-back briefing (an evolution of

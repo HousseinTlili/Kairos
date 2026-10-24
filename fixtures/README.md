@@ -15,6 +15,7 @@ via Nous Portal.
 | `run-smart-autoapprove/` | `rm -rf` on a scratch folder under approval mode `smart`: **auto-approved, no human prompt** |
 | `run-approval-deny/` | The same command under `manual`: `approval.request`, a stale-generation answer (rejected), a `deny`, the final state |
 | `run-stop/` | A long `ping`, stopped mid-run → `run.cancelled` |
+| `plugin-hooks/` | Recorded 2026-10-24 by a temporary probe plugin (M2 Step 1): what `pre_tool_call`, `post_tool_call`, the two approval hooks and the session hooks receive, for `read_file`, `terminal`, `search_files`, `web_extract` and a denied `rm -rf`. Each line holds key names, value types and samples cut to 160 characters, not full values |
 
 ## Sanitising
 
