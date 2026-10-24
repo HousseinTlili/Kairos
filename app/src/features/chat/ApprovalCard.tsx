@@ -32,9 +32,10 @@ export function ApprovalCard({ row, onAnswer }: Props) {
       <div className={`approval-note ${row.choice === "deny" ? "denied" : ""}`}>
         <ShieldIcon />
         <span>
-          {row.state === "answering" ? "Sending your answer…" : answered}: {row.description}
+          {row.state === "answering" ? "Sending your answer…" : answered}
+          {row.rule ? ` (Kairos rule ${row.rule})` : ""}: {row.description}
         </span>
-        <code>{row.command}</code>
+        {row.command && <code>{row.command}</code>}
       </div>
     );
   }
@@ -43,13 +44,27 @@ export function ApprovalCard({ row, onAnswer }: Props) {
     <div className="approval-card" role="alertdialog" aria-labelledby={`approval-${row.promptId}`}>
       <div className="approval-head">
         <ShieldIcon />
-        <h3 id={`approval-${row.promptId}`}>Kairos wants to run a command that needs your OK</h3>
+        <h3 id={`approval-${row.promptId}`}>
+          {row.source === "kairos"
+            ? "One of your Kairos rules wants your OK first"
+            : "Hermes flagged this command and wants your OK"}
+        </h3>
       </div>
-      <p className="approval-why">Hermes flagged it as: {row.description}</p>
+      <p className="approval-why">
+        {row.source === "kairos" ? (
+          <>
+            Rule <code>{row.rule ?? "unknown"}</code>: {row.description}
+          </>
+        ) : (
+          <>Hermes flagged it as: {row.description}</>
+        )}
+      </p>
       {/* M1 §9 rule 3: exactly what will run, not the model's description of it. */}
-      <pre className="approval-command">
-        <code>{row.command}</code>
-      </pre>
+      {row.command && (
+        <pre className="approval-command">
+          <code>{row.command}</code>
+        </pre>
+      )}
       <div className="approval-actions">
         {row.choices.includes("deny") && (
           <button className="deny" onClick={() => onAnswer("deny")}>

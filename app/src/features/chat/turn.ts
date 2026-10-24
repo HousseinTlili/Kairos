@@ -25,6 +25,34 @@ export interface ApprovalRow {
   state: "waiting" | "answering" | "settled";
   /** What the user chose here; Hermes's approval.settled doesn't say. */
   choice: ApprovalChoice | null;
+  /** "kairos" when a Kairos rule asked (the plugin's check, before the tool starts), "hermes" for
+   *  Hermes's own dangerous-command check. */
+  source: "kairos" | "hermes";
+  /** The Kairos rule that asked, if any. */
+  rule: string | null;
+}
+
+// Hermes shows this instead of the command for approvals a plugin asked for (M2 spec §4).
+const PLUGIN_PLACEHOLDER = /^<[^>]+> \(plugin approval rule\)$/;
+// The Kairos plugin's approval message: hooks.py `hook_result`.
+const KAIROS_MESSAGE = /^Kairos rule '([a-z0-9][a-z0-9-]*)': ([\s\S]*?) — ([\s\S]*)$/;
+
+/**
+ * Who asked, and what will really run. For a Kairos rule Hermes's `command` is a placeholder, so
+ * the rule, its reason and the real command come from the plugin's message.
+ */
+export function readApproval(
+  command: string,
+  description: string,
+): Pick<ApprovalRow, "source" | "rule" | "command" | "description"> {
+  if (PLUGIN_PLACEHOLDER.test(command)) {
+    const parsed = KAIROS_MESSAGE.exec(description);
+    if (parsed) {
+      return { source: "kairos", rule: parsed[1], description: parsed[2], command: parsed[3] };
+    }
+    return { source: "kairos", rule: null, description, command: "" };
+  }
+  return { source: "hermes", rule: null, description, command };
 }
 
 export type TurnItem = ToolRow | ApprovalRow;
@@ -221,8 +249,14 @@ export function turnsFromHistory(tasks: StoredTask[], events: AuditEvent[]): Tur
 }
 
 export function blockedCount(turn: Turn): number {
-  return turn.items.filter((item) => item.kind === "tool" && toolLabel(turn, item) === "blocked")
-    .length;
+  const blockedTools = turn.items.filter(
+    (item) => item.kind === "tool" && toolLabel(turn, item) === "blocked",
+  ).length;
+  // A call denied at a Kairos rule never starts, so it has no tool row to count.
+  const deniedAtKairos = turn.items.filter(
+    (item) => item.kind === "approval" && item.source === "kairos" && item.choice === "deny",
+  ).length;
+  return blockedTools + deniedAtKairos;
 }
 
 function errorText(error: unknown): string {
@@ -278,8 +312,7 @@ export function applyEvent(turn: Turn, envelope: RunEventEnvelope, approvalLive:
         kind: "approval",
         promptId: event.prompt_id,
         executionGeneration: event.execution_generation,
-        command: event.command,
-        description: event.description,
+        ...readApproval(event.command, event.description),
         choices: event.choices,
         live: approvalLive,
         state: "waiting",

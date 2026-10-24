@@ -176,7 +176,7 @@ fn every_recorded_stream_parses_without_errors_or_unknown_events() {
             checked += 1;
         }
     }
-    assert_eq!(checked, 4, "expected the four recorded runs");
+    assert_eq!(checked, 6, "expected the six recorded runs");
 }
 
 #[test]
@@ -391,4 +391,57 @@ fn a_non_json_error_body_still_maps_by_status() {
         HermesError::Http { status: 502, ref message, .. } if message == "Bad Gateway"
     ));
     assert_eq!(error_from_response(401, "nope"), HermesError::Unauthorized);
+}
+
+fn approval_requests(events: &[RunEventEnvelope]) -> Vec<(&str, &str)> {
+    events
+        .iter()
+        .filter_map(|e| match &e.event {
+            RunEvent::ApprovalRequest {
+                command,
+                description,
+                ..
+            } => Some((command.as_str(), description.as_str())),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn a_kairos_rule_approval_names_the_rule_and_the_real_command() {
+    // M2 Step 8, smart mode: the Kairos rule stopped the rm -rf that smart mode approved alone.
+    let stream = parse_stream("run-kairos-rule-deny/events.sse");
+    let requests = approval_requests(&stream.events);
+    assert_eq!(requests.len(), 1);
+    let (command, description) = requests[0];
+    // Hermes shows a placeholder for plugin approvals; the plugin puts the command in the reason.
+    assert_eq!(command, "<terminal> (plugin approval rule)");
+    assert!(description.starts_with("Kairos rule 'destructive-commands':"));
+    assert!(description.contains("rm -rf C:/Users/USER/kairos-smart-test"));
+    // The Kairos check runs before Hermes announces the tool, so a denied call never starts:
+    // no tool.started or tool.completed at all, only the approval.
+    assert!(
+        !stream.events.iter().any(|e| matches!(
+            e.event,
+            RunEvent::ToolStarted { .. } | RunEvent::ToolCompleted { .. }
+        )),
+        "a call denied at the Kairos check must not appear as a tool"
+    );
+}
+
+#[test]
+fn manual_mode_asks_twice_for_a_command_both_kairos_and_hermes_flag() {
+    // M2 Step 8, manual mode: the Kairos rule, then Hermes's own recursive-delete check.
+    let stream = parse_stream("run-kairos-rule-double-prompt/events.sse");
+    let requests = approval_requests(&stream.events);
+    assert_eq!(requests.len(), 2);
+    assert!(
+        requests[0]
+            .1
+            .starts_with("Kairos rule 'destructive-commands':")
+    );
+    assert_eq!(
+        requests[1],
+        ("rm -rf C:/Users/USER/kairos-smart-test", "recursive delete")
+    );
 }

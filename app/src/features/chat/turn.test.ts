@@ -10,6 +10,7 @@ import {
   liveApproval,
   markAnswered,
   newTurn,
+  readApproval,
   toolLabel,
   toolRowFromAudit,
   turnFromTask,
@@ -20,6 +21,8 @@ import simpleSse from "../../../../fixtures/hermes-0.22.5/run-simple/02-events.s
 import autoApproveSse from "../../../../fixtures/hermes-0.22.5/run-smart-autoapprove/02-events.sse?raw";
 import denySse from "../../../../fixtures/hermes-0.22.5/run-approval-deny/05-events.sse?raw";
 import stopSse from "../../../../fixtures/hermes-0.22.5/run-stop/03-events.sse?raw";
+import kairosDenySse from "../../../../fixtures/hermes-0.22.5/run-kairos-rule-deny/events.sse?raw";
+import doublePromptSse from "../../../../fixtures/hermes-0.22.5/run-kairos-rule-double-prompt/events.sse?raw";
 
 // The Rust side sends {run_id, seq, timestamp, event: {event, ...fields}}; recorded Hermes data
 // lines are flat, so wrap them the same way.
@@ -288,5 +291,52 @@ describe("the Kairos audit on tool rows (M2 Step 6)", () => {
     const [first, second] = turns.map((t) => t.items[0]);
     expect(first).toMatchObject({ kind: "tool", preview: "README.md", state: "ok" });
     expect(second.kind === "tool" && toolLabel(turns[1], second)).toBe("blocked");
+  });
+});
+
+describe("approvals from a Kairos rule (M2 Step 8 recordings)", () => {
+  it("a Kairos-rule approval names the rule and shows the real command, not Hermes's placeholder", () => {
+    expect(
+      readApproval(
+        "<terminal> (plugin approval rule)",
+        "Kairos rule 'destructive-commands': This command deletes data. — rm -rf C:/x",
+      ),
+    ).toEqual({
+      source: "kairos",
+      rule: "destructive-commands",
+      description: "This command deletes data.",
+      command: "rm -rf C:/x",
+    });
+    expect(readApproval("rm -rf C:/x", "recursive delete")).toEqual({
+      source: "hermes",
+      rule: null,
+      description: "recursive delete",
+      command: "rm -rf C:/x",
+    });
+  });
+
+  it("a call denied at a Kairos rule counts as blocked though it never became a tool row", () => {
+    const events = envelopes(kairosDenySse);
+    let turn: Turn = { ...newTurn("x"), status: "running" };
+    turn = applyEvent(turn, events[0], true);
+    const [approval] = turn.items;
+    expect(approval).toMatchObject({
+      kind: "approval",
+      source: "kairos",
+      rule: "destructive-commands",
+      command: "rm -rf C:/Users/USER/kairos-smart-test",
+    });
+    turn = markAnswered(turn, (approval as { promptId: string }).promptId, "deny");
+    turn = events.slice(1).reduce((t, e) => applyEvent(t, e, true), turn);
+    expect(turn.items.filter((i) => i.kind === "tool")).toHaveLength(0);
+    expect(turn.status).toBe("completed");
+    expect(blockedCount(turn)).toBe(1);
+  });
+
+  it("manual mode shows the Kairos card first, then Hermes's own", () => {
+    const turn = play(doublePromptSse);
+    const approvals = turn.items.filter((i) => i.kind === "approval");
+    expect(approvals.map((a) => a.kind === "approval" && a.source)).toEqual(["kairos", "hermes"]);
+    expect(turn.items.map((i) => i.kind)).toEqual(["approval", "tool", "approval"]);
   });
 });
