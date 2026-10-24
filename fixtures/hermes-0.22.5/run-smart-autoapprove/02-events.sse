@@ -40,13 +40,13 @@ id: 12
 data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.655367, "delta": "Users", "seq": 12}
 
 id: 13
-data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6571882, "delta": "/H", "seq": 13}
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6571882, "delta": "/USER", "seq": 13}
 
 id: 14
-data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.65799, "delta": "ousse", "seq": 14}
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.65799, "delta": "", "seq": 14}
 
 id: 15
-data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6586962, "delta": "in", "seq": 15}
+data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6586962, "delta": "", "seq": 15}
 
 id: 16
 data: {"event": "message.delta", "run_id": "run_6b0a1298f9864ed9bf0a3bb5912c46b1", "timestamp": 1792794573.6601155, "delta": "/k", "seq": 16}

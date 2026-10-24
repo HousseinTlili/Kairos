@@ -21,6 +21,10 @@ via Nous Portal.
 Recorded responses can contain personal data. Before committing a new fixture:
 
 - Replace the Windows user name in paths with `USER`.
+- **Also check the joined `message.delta` text**, not just each line: Hermes splits words across
+  deltas, so a name can be spread over several events where a plain search can't see it. (This
+  happened once: `run-smart-autoapprove` carried the user name split over three deltas until it was
+  sanitised on 2026-10-24. Those deltas now read `"/USER"`, `""`, `""`.)
 - Never commit `/api/sessions` or `/api/model/options` output from a real profile: they contain
   the Windows account SID, chat titles and previews, and account details.
 - Check: `grep -rniE "<your user name>|S-1-5-21|@|API_SERVER_KEY" fixtures/hermes-*` must print
