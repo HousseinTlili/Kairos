@@ -13,6 +13,9 @@ or the product owner and are not done until the product owner has run them.
 **M4** (notifications) is being built ahead of M3's sign-off on the branch `m4/notifications`;
 its spec is `docs/milestones/M4.md`. Steps 1–6 are built; the Step 1 probe on the PC comes first
 when it is tested (a Denied verdict means the listener can't work unpackaged).
+**M5 onwards** are built the same way, one branch per milestone stacked on the previous one
+(`m5/briefing`, …). **`docs/TESTING.md`** is the product owner's list of everything still to
+verify on the PC; add every new **(on the PC)** check to it.
 
 ## Roles
 

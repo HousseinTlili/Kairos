@@ -95,6 +95,8 @@ The Jarvis layer, part one (D-012, D-013, D-014).
 
 ## M5 — Use cases and the welcome-back briefing
 
+**Status:** being built on `m5/briefing` (spec `docs/milestones/M5.md`, 2026-10-25).
+
 The product owner's first use cases (Q-2), each as skills plus rules, with an evaluation set.
 
 1. **Welcome-back briefing** (the headline feature). On startup, wake or unlock, after a
