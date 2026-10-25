@@ -21,7 +21,7 @@ vi.mock("./recorder", () => ({
   micError: () => "Kairos isn't allowed to use the microphone.",
 }));
 
-import { useVoice } from "./store";
+import { useVoice, wasSpoken } from "./store";
 
 const recording = { samples: new Float32Array(16_000), seconds: 1 };
 
@@ -44,6 +44,15 @@ describe("the voice states", () => {
     expect(useVoice.getState()).toMatchObject({ phase: "idle", heard: "en", error: null });
   });
 
+  it("remembers a spoken request once, so only its answer is spoken back", async () => {
+    tauri.transcribe.mockResolvedValue({ text: "What time is it?", language: "en", elapsed_ms: 1 });
+    await useVoice.getState().startListening();
+    await useVoice.getState().finishListening();
+    expect(wasSpoken("Something I typed")).toBe(false);
+    expect(wasSpoken("What time is it?")).toBe(true);
+    expect(wasSpoken("What time is it?")).toBe(false);
+  });
+
   it("sends the fixed language when one is set", async () => {
     useVoice.setState({
       settings: {
@@ -51,6 +60,7 @@ describe("the voice states", () => {
         model: "small",
         language: "fr",
         read_aloud: false,
+        answer_spoken: true,
         ptt_hotkey: "Ctrl+Alt+J",
         downloading: false,
       },

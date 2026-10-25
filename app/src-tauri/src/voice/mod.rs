@@ -13,6 +13,8 @@ use thiserror::Error;
 pub const MODEL_SETTING: &str = "voice_model";
 pub const LANGUAGE_SETTING: &str = "voice_language";
 pub const READ_ALOUD_SETTING: &str = "voice_read_aloud";
+/// Asked by voice, answered by voice: on unless switched off ("0").
+pub const ANSWER_SPOKEN_SETTING: &str = "voice_answer_spoken";
 pub const PTT_SETTING: &str = "voice_ptt_hotkey";
 /// Next to the quick box's Ctrl+Alt+K; J for "just say it".
 pub const DEFAULT_PTT: &str = "Ctrl+Alt+J";

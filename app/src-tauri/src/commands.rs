@@ -1779,6 +1779,8 @@ pub struct VoiceSettings {
     /// `None` = detect per recording.
     pub language: Option<String>,
     pub read_aloud: bool,
+    /// Answers to spoken requests are read aloud (on by default).
+    pub answer_spoken: bool,
     pub ptt_hotkey: String,
     pub downloading: bool,
 }
@@ -1809,6 +1811,7 @@ fn voice_settings(state: &AppState, voice: &VoiceState) -> Result<VoiceSettings,
         language: setting_or(state, voice::LANGUAGE_SETTING)
             .filter(|l| crate::voice::stt::language_setting(Some(l)).is_some()),
         read_aloud: setting_or(state, voice::READ_ALOUD_SETTING).as_deref() == Some("1"),
+        answer_spoken: setting_or(state, voice::ANSWER_SPOKEN_SETTING).as_deref() != Some("0"),
         ptt_hotkey: stored_ptt_hotkey(state),
         downloading: voice.downloading.load(std::sync::atomic::Ordering::SeqCst),
     })
@@ -1822,7 +1825,7 @@ pub async fn voice_state(
     voice_settings(&state, &voice)
 }
 
-/// Saves the model, language and read-aloud choices (not the hotkey: `set_ptt_hotkey`).
+/// Saves the model, language and the two read-aloud choices (not the hotkey: `set_ptt_hotkey`).
 #[tauri::command]
 pub async fn save_voice_settings(
     state: tauri::State<'_, AppState>,
@@ -1830,6 +1833,7 @@ pub async fn save_voice_settings(
     model: ModelId,
     language: Option<String>,
     read_aloud: bool,
+    answer_spoken: bool,
 ) -> Result<VoiceSettings, CommandError> {
     let language = language
         .as_deref()
@@ -1841,6 +1845,10 @@ pub async fn save_voice_settings(
         store.set_setting(
             voice::READ_ALOUD_SETTING,
             if read_aloud { "1" } else { "0" },
+        )?;
+        store.set_setting(
+            voice::ANSWER_SPOKEN_SETTING,
+            if answer_spoken { "1" } else { "0" },
         )
     })?;
     voice_settings(&state, &voice)

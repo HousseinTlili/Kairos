@@ -23,7 +23,7 @@ interface VoiceState {
   speaking: string | null;
   loadSettings: () => Promise<void>;
   saveSettings: (
-    patch: Partial<Pick<VoiceSettings, "model" | "language" | "read_aloud">>,
+    patch: Partial<Pick<VoiceSettings, "model" | "language" | "read_aloud" | "answer_spoken">>,
   ) => Promise<void>;
   setSettings: (settings: VoiceSettings) => void;
   /** Starts recording; a second call while listening is ignored. */
@@ -38,6 +38,15 @@ interface VoiceState {
 let recorder: Recorder | null = null;
 // When the minute is up, whoever started the recording finishes it.
 let onLimit: (() => void) | null = null;
+
+// Requests that were spoken, by their text: their answers are spoken back (M9: asked by voice,
+// answered by voice). The chat turn only knows its text, so that is the link.
+const spokenRequests = new Set<string>();
+
+/** True once for a request that came from the microphone. */
+export function wasSpoken(text: string): boolean {
+  return spokenRequests.delete(text.trim());
+}
 
 export function whenRecordingLimitReached(handler: (() => void) | null) {
   onLimit = handler;
@@ -71,7 +80,14 @@ export const useVoice = create<VoiceState>((set, get) => ({
     if (!current) return;
     const next = { ...current, ...patch };
     try {
-      set({ settings: await saveVoiceSettings(next.model, next.language, next.read_aloud) });
+      set({
+        settings: await saveVoiceSettings(
+          next.model,
+          next.language,
+          next.read_aloud,
+          next.answer_spoken,
+        ),
+      });
     } catch (err) {
       set({ error: message(err) });
     }
@@ -113,6 +129,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
         set({ error: "Didn't catch that. Hold the key while you speak." });
         return null;
       }
+      spokenRequests.add(transcript.text.trim());
       return transcript.text.trim();
     } catch (err) {
       set({ phase: "idle", error: message(err) });

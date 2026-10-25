@@ -41,7 +41,8 @@ other apps. The Small model is already downloaded.
 | 7 | Click the mic and say nothing for 3 s, click again | "Didn't catch that"; nothing sent | |
 | 8 | **Test the voice** in Settings ▸ Voice | Kairos speaks the test sentence | |
 | 9 | Speaker button under an answer; then Esc | The answer is read (code skipped); Esc stops it | |
-| 10 | Turn on **Read every answer aloud**, ask something | The new answer is read once; reopening the conversation doesn't read old ones | |
+| 10 | Ask by voice (mic or Ctrl+Alt+J) | The answer is **spoken without any click** ("Answer out loud when I speak", on by default); a typed question stays silent | |
+| 10b | Turn on **Read typed questions' answers aloud too**, type a question | The new answer is read once; reopening the conversation doesn't read old ones | |
 | 11 | Settings ▸ Briefing ▸ Brief me now, then **Read it to me** | The welcome-back facts are read | |
 | 12 | Optional: add a French voice (Windows Settings ▸ Time & language ▸ Speech), ask in French | The answer is read with the French voice | |
 | 13 | Turn Wi-Fi off and repeat step 2 | Still transcribes: nothing goes online | |

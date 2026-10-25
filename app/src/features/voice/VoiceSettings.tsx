@@ -201,14 +201,22 @@ export function VoiceSettings() {
         <label className="switch-row">
           <input
             type="checkbox"
+            checked={settings.answer_spoken}
+            onChange={(e) => void saveSettings({ answer_spoken: e.target.checked })}
+          />
+          <span>Answer out loud when I speak</span>
+        </label>
+        <label className="switch-row">
+          <input
+            type="checkbox"
             checked={settings.read_aloud}
             onChange={(e) => void saveSettings({ read_aloud: e.target.checked })}
           />
-          <span>Read every answer aloud when it arrives</span>
+          <span>Read typed questions' answers aloud too</span>
         </label>
         <p className="muted small">
-          Otherwise, use the speaker button under an answer. Esc or a new request stops it. Code is
-          skipped.
+          Any answer can also be read with the speaker button under it. Esc or a new request stops
+          it. Code is skipped.
         </p>
         <div className="voice-test">
           <button onClick={() => speak("test", "Hello, I'm Kairos. This is how I sound.")}>

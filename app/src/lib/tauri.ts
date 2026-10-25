@@ -536,6 +536,8 @@ export interface VoiceSettings {
   /** "en" | "fr" | "ar"; null = detect per recording. */
   language: string | null;
   read_aloud: boolean;
+  /** Answers to spoken requests are read aloud. */
+  answer_spoken: boolean;
   ptt_hotkey: string;
   downloading: boolean;
 }
@@ -556,7 +558,8 @@ export const saveVoiceSettings = (
   model: VoiceModelId,
   language: string | null,
   readAloud: boolean,
-) => call<VoiceSettings>("save_voice_settings", { model, language, readAloud });
+  answerSpoken: boolean,
+) => call<VoiceSettings>("save_voice_settings", { model, language, readAloud, answerSpoken });
 export const downloadVoiceModel = (id: VoiceModelId) => call<null>("download_voice_model", { id });
 export const deleteVoiceModel = (id: VoiceModelId) =>
   call<VoiceSettings>("delete_voice_model", { id });
