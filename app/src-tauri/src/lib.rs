@@ -156,7 +156,8 @@ pub fn run() {
             commands::brief_now,
             commands::accounts_state,
             commands::connect_account,
-            commands::disconnect_account
+            commands::disconnect_account,
+            commands::terminal_backend
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

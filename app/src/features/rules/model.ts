@@ -298,6 +298,24 @@ export const NEWER_STARTER_RULES: { after: string; rules: RuleDoc[] }[] = [
       },
     ],
   },
+  {
+    after: "no-safety-changes",
+    rules: [
+      {
+        id: "no-sandbox-changes",
+        description:
+          "The agent must not move its own commands out of the container (D-019); that is the user's setting.",
+        tools: ["terminal", "execute_code", "browser_exec"],
+        match: {
+          commands: [
+            "\\bhermes(\\.exe)?\\s+config\\s+(set|unset)\\s+terminal\\.",
+            "\\bhermes(\\.exe)?\\s+config\\s+edit\\b",
+          ],
+        },
+        action: "deny",
+      },
+    ],
+  },
 ];
 
 /** The newer starter rules this document doesn't have yet (matched by id). */

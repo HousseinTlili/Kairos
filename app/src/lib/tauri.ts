@@ -406,3 +406,7 @@ export const accountsState = () => call<AccountState[]>("accounts_state");
 export const connectAccount = (kind: AccountKind) => call<void>("connect_account", { kind });
 export const disconnectAccount = (kind: AccountKind) =>
   call<AccountState[]>("disconnect_account", { kind });
+
+// --- Models and sandbox (M7). ------------------------------------------------------------------
+
+export const terminalBackend = () => call<string | null>("terminal_backend");

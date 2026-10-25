@@ -1245,6 +1245,20 @@ pub async fn disconnect_account(kind: AccountKind) -> Result<Vec<AccountState>, 
     })?
 }
 
+// --- Models and sandbox (M7) -----------------------------------------------------------------
+
+/// Where the agent's commands run (`local`, `docker`, …), or `None` when Hermes can't say.
+#[tauri::command]
+pub async fn terminal_backend() -> Result<Option<String>, CommandError> {
+    let home = local::hermes_home()?;
+    tauri::async_runtime::spawn_blocking(move || local::terminal_backend(&home))
+        .await
+        .map_err(|err| CommandError {
+            kind: "internal",
+            message: format!("couldn't ask Hermes: {err}"),
+        })
+}
+
 static SPEED_TEST_RUNNING: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 

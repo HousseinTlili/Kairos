@@ -109,6 +109,22 @@
       "action": "deny"
     },
     {
+      "id": "no-sandbox-changes",
+      "description": "The agent must not move its own commands out of the container (D-019); that is the user's setting.",
+      "tools": [
+        "terminal",
+        "execute_code",
+        "browser_exec"
+      ],
+      "match": {
+        "commands": [
+          "\\bhermes(\\.exe)?\\s+config\\s+(set|unset)\\s+terminal\\.",
+          "\\bhermes(\\.exe)?\\s+config\\s+edit\\b"
+        ]
+      },
+      "action": "deny"
+    },
+    {
       "id": "kairos-plugin-source",
       "description": "Changing the Kairos plugin's source code changes Kairos's own safety rules.",
       "tools": [

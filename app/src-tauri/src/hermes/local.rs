@@ -91,9 +91,20 @@ fn hermes_cli(home: &Path) -> PathBuf {
 /// `hermes config get approvals.mode`, or `None` if the CLI can't answer. Blocking (the CLI takes
 /// about a second); call it off the async runtime.
 pub fn approval_mode(home: &Path) -> Option<String> {
+    config_word(home, "approvals.mode")
+}
+
+/// `hermes config get terminal.backend` (`local`, `docker`, …): where the agent's commands run
+/// (M7, D-019). `None` if the CLI can't answer. Blocking.
+pub fn terminal_backend(home: &Path) -> Option<String> {
+    config_word(home, "terminal.backend")
+}
+
+/// A one-word Hermes setting through the CLI (`admin_config_rw` is false, so not through the API).
+fn config_word(home: &Path, key: &str) -> Option<String> {
     let mut command = Command::new(hermes_cli(home));
     command
-        .args(["config", "get", "approvals.mode"])
+        .args(["config", "get", key])
         .env("HERMES_HOME", home)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())

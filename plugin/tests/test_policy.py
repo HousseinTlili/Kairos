@@ -192,6 +192,11 @@ class StarterRulesTest(unittest.TestCase):
         ("close_app", {"name": "LSASS"}, "deny", "system-processes"),
         ("close_app", {"name": "notepad.exe"}, "ask", "close-apps"),
         ("close_app", {"name": "Windows Explorer"}, "deny", "system-processes"),
+        # M7 sandbox (D-019): the agent can't switch its container off; reading the setting is fine
+        ("terminal", {"command": "hermes config set terminal.backend local"}, "deny", "no-sandbox-changes"),
+        ("terminal", {"command": "hermes.exe config unset terminal.docker_volumes"}, "deny", "no-sandbox-changes"),
+        ("terminal", {"command": "hermes config get terminal.backend"}, "inherit", None),
+        ("terminal", {"command": "hermes config set display.theme dark"}, "inherit", None),
         # M6 accounts (D-010): tokens are off-limits, writes and disconnects ask, reads don't
         ("read_file", {"path": r"C:\Users\u\AppData\Local\hermes\google_token.json"}, "deny", "no-account-tokens"),
         ("terminal", {"command": r"type %LOCALAPPDATA%\hermes\google_token.json"}, "deny", "no-account-tokens"),

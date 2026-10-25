@@ -2,7 +2,14 @@ import { create } from "zustand";
 
 export type View = "chat" | "system" | "notifications" | "settings";
 export type SettingsTab =
-  "connection" | "rules" | "system" | "notifications" | "briefing" | "accounts" | "startup";
+  | "connection"
+  | "rules"
+  | "system"
+  | "notifications"
+  | "briefing"
+  | "accounts"
+  | "models"
+  | "startup";
 
 interface ShellState {
   view: View;
