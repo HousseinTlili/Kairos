@@ -51,25 +51,29 @@ impl PluginRuntime {
         if !plugins_dir.join("kairos").join("policy.py").is_file() {
             return None;
         }
-        let mut pythons: Vec<PathBuf> = std::fs::read_dir(hermes_home.join("tools"))
-            .ok()?
-            .filter_map(|entry| entry.ok().map(|e| e.path()))
-            .filter(|p| {
-                p.file_name()
-                    .and_then(|n| n.to_str())
-                    .is_some_and(|n| n.starts_with("python-"))
-            })
-            .map(|p| p.join("python.exe"))
-            .filter(|p| p.is_file())
-            .collect();
-        // Newest first, so an upgraded Hermes's interpreter wins over a leftover old one.
-        pythons.sort();
-        let python = pythons.pop()?;
         Some(Self {
-            python,
+            python: hermes_python(hermes_home)?,
             plugins_dir,
         })
     }
+}
+
+/// `<hermes home>\tools\python-*\python.exe`, Hermes's bundled interpreter, newest first so an
+/// upgraded Hermes's wins over a leftover old one. Also runs the Google skill's disconnect (M6).
+pub fn hermes_python(hermes_home: &Path) -> Option<PathBuf> {
+    let mut pythons: Vec<PathBuf> = std::fs::read_dir(hermes_home.join("tools"))
+        .ok()?
+        .filter_map(|entry| entry.ok().map(|e| e.path()))
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.starts_with("python-"))
+        })
+        .map(|p| p.join("python.exe"))
+        .filter(|p| p.is_file())
+        .collect();
+    pythons.sort();
+    pythons.pop()
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

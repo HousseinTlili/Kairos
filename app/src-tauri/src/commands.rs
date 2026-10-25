@@ -9,6 +9,7 @@ use std::time::Duration;
 use serde::Serialize;
 use tauri::{Emitter, Manager};
 
+use crate::accounts::{self, AccountKind, AccountState};
 use crate::audit::{self, AuditEvent};
 use crate::briefing::facts::{self as briefing_facts, Briefing};
 use crate::briefing::rules::{self as briefing_rules, BriefingSettings, Reason};
@@ -1183,6 +1184,65 @@ pub async fn brief_now(app: tauri::AppHandle) -> Result<Option<Briefing>, Comman
             kind: "internal",
             message: format!("briefing failed: {err}"),
         })
+}
+
+// --- Accounts (M6 Step 3) ---------------------------------------------------------------------
+
+impl From<accounts::AccountError> for CommandError {
+    fn from(err: accounts::AccountError) -> Self {
+        Self {
+            kind: "account",
+            message: err.0,
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn accounts_state() -> Result<Vec<AccountState>, CommandError> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let home = local::hermes_home().ok();
+        accounts::states(home.as_deref())
+    })
+    .await
+    .map_err(|err| CommandError {
+        kind: "internal",
+        message: format!("couldn't read the accounts: {err}"),
+    })
+}
+
+/// GitHub: opens the sign-in window. Google's sign-in is a conversation with Hermes, started by
+/// the page, so it has nothing to do here.
+#[tauri::command]
+pub async fn connect_account(kind: AccountKind) -> Result<(), CommandError> {
+    match kind {
+        AccountKind::Github => Ok(accounts::github_connect()?),
+        AccountKind::Google => Err(CommandError {
+            kind: "account",
+            message: "Google is connected through a conversation with Hermes.".into(),
+        }),
+    }
+}
+
+/// Disconnects directly, not through the model, so it works whatever the model does. The page
+/// asks before calling this.
+#[tauri::command]
+pub async fn disconnect_account(kind: AccountKind) -> Result<Vec<AccountState>, CommandError> {
+    tauri::async_runtime::spawn_blocking(move || -> Result<Vec<AccountState>, CommandError> {
+        let home = local::hermes_home().ok();
+        match kind {
+            AccountKind::Github => accounts::github_disconnect()?,
+            AccountKind::Google => {
+                let home = home.as_deref().ok_or(LocalError::NoHome)?;
+                accounts::google_disconnect(home, rules::hermes_python(home))?
+            }
+        }
+        Ok(accounts::states(home.as_deref()))
+    })
+    .await
+    .map_err(|err| CommandError {
+        kind: "internal",
+        message: format!("disconnect failed: {err}"),
+    })?
 }
 
 static SPEED_TEST_RUNNING: std::sync::atomic::AtomicBool =

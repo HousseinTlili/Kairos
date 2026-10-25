@@ -1,4 +1,5 @@
 import { approvalWarning, useConnection } from "../connection/store";
+import { AccountsSettings } from "../accounts/AccountsSettings";
 import { BriefingSettings } from "../briefing/BriefingSettings";
 import { NotificationSettings } from "../notifications/NotificationSettings";
 import { RulesPage } from "../rules/RulesPage";
@@ -12,6 +13,7 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: "system", label: "System" },
   { id: "notifications", label: "Notifications" },
   { id: "briefing", label: "Briefing" },
+  { id: "accounts", label: "Accounts" },
   { id: "startup", label: "Startup" },
 ];
 
@@ -48,6 +50,8 @@ export function Settings() {
         <NotificationSettings />
       ) : settingsTab === "briefing" ? (
         <BriefingSettings />
+      ) : settingsTab === "accounts" ? (
+        <AccountsSettings />
       ) : settingsTab === "startup" ? (
         <StartupSettings />
       ) : (

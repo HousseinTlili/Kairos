@@ -392,3 +392,17 @@ export const briefNow = () => call<Briefing | null>("brief_now");
 export function onBriefing(handler: (notice: BriefingNotice) => void): Promise<UnlistenFn> {
   return listen<BriefingNotice>("briefing", (event) => handler(event.payload));
 }
+
+// --- Accounts (M6 §3). Shapes mirror src-tauri/src/accounts.rs. -------------------------------
+
+export type AccountKind = "google" | "github";
+
+export type AccountState =
+  | { kind: AccountKind; status: "connected" }
+  | { kind: AccountKind; status: "not_connected" }
+  | { kind: AccountKind; status: "unavailable"; reason: string };
+
+export const accountsState = () => call<AccountState[]>("accounts_state");
+export const connectAccount = (kind: AccountKind) => call<void>("connect_account", { kind });
+export const disconnectAccount = (kind: AccountKind) =>
+  call<AccountState[]>("disconnect_account", { kind });

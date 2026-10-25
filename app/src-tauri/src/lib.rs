@@ -1,3 +1,4 @@
+mod accounts;
 mod audit;
 mod briefing;
 mod commands;
@@ -152,7 +153,10 @@ pub fn run() {
             commands::briefing_settings,
             commands::save_briefing_settings,
             commands::latest_briefing,
-            commands::brief_now
+            commands::brief_now,
+            commands::accounts_state,
+            commands::connect_account,
+            commands::disconnect_account
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

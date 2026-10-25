@@ -1765,3 +1765,30 @@ pre {
   background: var(--surface);
   color: var(--fg);
 }
+
+/* ---------------------------------------------------------------- Accounts (M6 Step 3) */
+
+.account-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.account-list li {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.account-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-list .deny {
+  color: var(--oxblood);
+}
