@@ -1,4 +1,7 @@
 mod audit;
+// M5: wired up in Step 5, which removes this allowance.
+#[allow(dead_code)]
+mod briefing;
 mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
