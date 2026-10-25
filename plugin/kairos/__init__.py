@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .audit import AuditStore
 from .hooks import KairosHooks
-from .pctools import CLOSE_APP, LIST_RUNNING_APPS, OPEN_APP, PcTools
+from .pctools import CLOSE_APP, LIST_RUNNING_APPS, OPEN_APP, PcTools, steering
 from .policy import PolicyFile
 
 log = logging.getLogger("kairos")
@@ -53,6 +53,9 @@ def register_tools(ctx) -> None:
             (CLOSE_APP, tools.close_app),
         ):
             register_tool(name=schema["name"], toolset="kairos", schema=schema, handler=handler, check_fn=on_windows)
+        # Only where the tools exist: pointing the model at tools it can't see would mislead it.
+        if on_windows():
+            ctx.register_hook("pre_llm_call", steering)
     except Exception:  # noqa: BLE001
         log.exception("kairos: couldn't register the PC control tools")
 

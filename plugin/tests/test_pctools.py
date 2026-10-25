@@ -3,9 +3,10 @@ answers, not how Windows is called."""
 
 import json
 import unittest
+from unittest import mock
 
 import kairos
-from kairos.pctools import BUILTIN_APPS, PcTools, Window, match_name
+from kairos.pctools import BUILTIN_APPS, STEERING, PcTools, Window, match_name, steering
 
 
 class FakeWindows:
@@ -293,12 +294,60 @@ class RegisterToolsTest(unittest.TestCase):
             self.assertIsInstance(json.loads(handler({})), dict)
             self.assertTrue(callable(check_fn))
 
+    def test_the_steering_hook_is_registered_only_where_the_tools_exist(self):
+        def hooks_registered(platform):
+            hooks = []
+
+            class FakeCtx:
+                def register_hook(self, name, callback):
+                    hooks.append((name, callback))
+
+                def register_tool(self, **kwargs):
+                    pass
+
+            with mock.patch.object(kairos.sys, "platform", platform):
+                kairos.register_tools(FakeCtx())
+            return hooks
+
+        self.assertEqual(hooks_registered("win32"), [("pre_llm_call", steering)])
+        self.assertEqual(hooks_registered("linux"), [])
+
     def test_a_hermes_without_tool_registration_keeps_the_hooks(self):
         class OldCtx:
             def register_hook(self, name, callback):
                 pass
 
         kairos.register_tools(OldCtx())  # no exception
+
+
+class SteeringTest(unittest.TestCase):
+    """The pre_llm_call note that points the model at the PC tools (M3 acceptance finding)."""
+
+    def test_turns_about_apps_get_the_note(self):
+        for message in ("open notepad", "Close it", "i closed it so reopen it", "what apps are open",
+                        "Launch Spotify please", "quit chrome", "which programs are running?"):
+            with self.subTest(message):
+                self.assertEqual(steering(user_message=message), {"context": STEERING})
+
+    def test_other_turns_get_nothing(self):
+        for message in ("Reply with exactly: Kairos OK", "summarise this README", "what is 2+2?", "", None):
+            with self.subTest(message):
+                self.assertIsNone(steering(user_message=message))
+
+    def test_a_multimodal_turn_is_read_from_its_text_parts(self):
+        parts = [{"type": "image_url", "image_url": {"url": "data:,"}}, {"type": "text", "text": "close this app"}]
+        self.assertEqual(steering(user_message=parts), {"context": STEERING})
+
+    def test_the_note_names_the_tools_and_the_commands_to_avoid(self):
+        for word in ("open_app", "close_app", "list_running_apps", "taskkill", "tasklist", "save"):
+            self.assertIn(word, STEERING)
+
+    def test_unexpected_keywords_are_tolerated(self):
+        self.assertEqual(
+            steering(user_message="open notepad", session_id="s", conversation_history=[], is_first_turn=True,
+                     model="m", platform="api_server", future=1),
+            {"context": STEERING},
+        )
 
 
 if __name__ == "__main__":

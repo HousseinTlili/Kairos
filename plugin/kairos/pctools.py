@@ -323,3 +323,46 @@ CLOSE_APP = {
         "required": ["name"],
     },
 }
+
+
+# --- Steering (pre_llm_call) ---------------------------------------------------------------------
+
+# Checked on the PC (M3 acceptance, 2026-10-25): with the tools available, the free model still
+# opened, closed and listed apps through the terminal, so "close Notepad" became `taskkill /f` and
+# lost the app's chance to save. A short note on turns about apps points it at the tools. It is
+# guidance only; the rules (kill-processes, kill-system-processes) still enforce.
+STEERING = (
+    "Kairos PC control: to open, close or list apps on this PC, call the open_app, close_app and "
+    "list_running_apps tools. Don't use terminal commands for this (no `notepad`, `start` or "
+    "`Start-Process` to open; no `taskkill` or `Stop-Process` to close; no `tasklist` or "
+    "`Get-Process` to list): close_app asks the user and lets the app save before it closes, and "
+    "only uses force when the user asks for it."
+)
+
+# Words that make a turn about apps, including short follow-ups ("close it", "reopen it").
+APP_WORDS = re.compile(
+    r"\b(open|reopen|close|launch|start|quit|exit|kill|end|stop|run|running|app|apps|application|"
+    r"applications|program|programs|window|windows|process|processes|task manager)\b",
+    re.IGNORECASE,
+)
+
+
+def _message_text(message: Any) -> str:
+    if isinstance(message, str):
+        return message
+    if isinstance(message, list):  # multimodal turn: a list of content parts
+        return " ".join(
+            part.get("text", "") for part in message if isinstance(part, dict) and isinstance(part.get("text"), str)
+        )
+    return ""
+
+
+def steering(user_message: Any = None, **_: Any) -> dict | None:
+    """The pre_llm_call hook: the note above on turns that mention apps, nothing otherwise (Hermes
+    appends it to the user message, which keeps the prompt cache intact)."""
+    try:
+        if APP_WORDS.search(_message_text(user_message)):
+            return {"context": STEERING}
+    except Exception:  # noqa: BLE001 — a hook never raises into Hermes
+        log.exception("kairos: steering failed")
+    return None
