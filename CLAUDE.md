@@ -10,6 +10,9 @@ for the current milestone, read its spec in `docs/milestones/`.
 **M3** is in progress; its spec is `docs/milestones/M3.md`. Each step ends with a check; run it and
 show its output before saying the step is done. Checks marked **(on the PC)** need Windows, Hermes
 or the product owner and are not done until the product owner has run them.
+**M4** (notifications) is being built ahead of M3's sign-off on the branch `m4/notifications`;
+its spec is `docs/milestones/M4.md`. Its listener code waits for the Step 1 probe and the
+product owner's approval of the `windows` crate and D-018.
 
 ## Roles
 

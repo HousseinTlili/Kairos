@@ -83,6 +83,9 @@ The Jarvis layer, part one (D-012, D-013, D-014).
 
 ## M4 — Notifications hub
 
+**Status:** spec written (`docs/milestones/M4.md`, 2026-10-25), on the branch
+`m4/notifications`; Step 1 (a probe on the PC) and two approvals come before the listener code.
+
 - Reads Windows notifications through the notification-listener API, with the user's permission
   (D-011): missed calls and texts via Phone Link, Discord, Teams, WhatsApp desktop, Outlook and
   anything else that shows a toast. No account passwords.

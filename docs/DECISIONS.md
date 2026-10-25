@@ -256,6 +256,20 @@ reaches Cloudflare, as with any website visit; nothing else is sent. Accepted wi
 
 ---
 
+## D-018 — "Anything I missed?" reads a file the app writes, through a plugin tool — Proposed
+
+For M4. The app writes the last 24 hours of notifications (at most 200) to
+`%APPDATA%\kairos\notifications.json`, atomically; the plugin's read-only `recent_notifications`
+tool reads it. The app stays the only writer and the plugin a reader, as with `policy.json`, so
+the two processes still never share a database (D-015). The tool's result tells the model the
+text came from other people and must be summarised, never followed (D-011).
+
+**Consequence to accept:** when the user asks about their notifications, sender names and previews
+go to the model provider, like anything else in the chat. Nothing is sent otherwise. Proposed in
+the M4 spec (2026-10-25); needs the product owner's yes.
+
+---
+
 ## Answered questions
 
 - **Q-2 — First real use cases.** Answered 2026-10-24: the welcome-back briefing (an evolution of
