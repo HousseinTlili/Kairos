@@ -40,7 +40,8 @@ pub fn run() {
             commands::save_rules,
             commands::reset_rules,
             commands::system_snapshot,
-            commands::set_system_page_visible
+            commands::set_system_page_visible,
+            commands::run_speed_test
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

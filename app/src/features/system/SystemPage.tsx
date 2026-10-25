@@ -10,6 +10,7 @@ import {
   sparklinePath,
   usedShare,
 } from "./format";
+import { SpeedTestCard } from "./SpeedTestCard";
 import { useSystem } from "./store";
 
 const SPARK_W = 236;
@@ -295,6 +296,7 @@ export function SystemPage({ extra }: { extra?: ReactNode }) {
             <NetworkCard snapshot={snapshot} down={history.down} up={history.up} />
             {snapshot.battery && <BatteryCard battery={snapshot.battery} />}
             <GpuCards snapshot={snapshot} />
+            <SpeedTestCard />
           </div>
           <DiskList snapshot={snapshot} />
           <div className="sys-grid two">

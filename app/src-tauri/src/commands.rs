@@ -20,6 +20,7 @@ use crate::hermes::local::{self, LocalError};
 use crate::keyring::{self, KeyStoreError};
 use crate::rules;
 use crate::store::{self, Conversation, StoreError, Task, TaskStatus, TaskStore};
+use crate::system::speedtest::{self, SpeedTestResult};
 use crate::system::{SystemMonitor, SystemSnapshot};
 
 /// Shared between commands.
@@ -735,6 +736,31 @@ pub async fn set_system_page_visible(
 ) -> Result<(), CommandError> {
     monitor.set_visible(visible);
     Ok(())
+}
+
+static SPEED_TEST_RUNNING: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Measures latency, download and upload against speed.cloudflare.com (M3 §5.2, D-017), sending
+/// `speed-test` progress events. One at a time.
+#[tauri::command]
+pub async fn run_speed_test(app: tauri::AppHandle) -> Result<SpeedTestResult, CommandError> {
+    use std::sync::atomic::Ordering;
+    if SPEED_TEST_RUNNING.swap(true, Ordering::SeqCst) {
+        return Err(CommandError {
+            kind: "busy",
+            message: "A speed test is already running.".into(),
+        });
+    }
+    let outcome = speedtest::run(|progress| {
+        let _ = app.emit("speed-test", progress);
+    })
+    .await;
+    SPEED_TEST_RUNNING.store(false, Ordering::SeqCst);
+    outcome.map_err(|message| CommandError {
+        kind: "speed_test",
+        message,
+    })
 }
 
 #[cfg(test)]

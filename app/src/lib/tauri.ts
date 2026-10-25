@@ -227,3 +227,24 @@ export const setSystemPageVisible = (visible: boolean) =>
 export function onSystemSnapshot(handler: (snapshot: SystemSnapshot) => void): Promise<UnlistenFn> {
   return listen<SystemSnapshot>("system-snapshot", (event) => handler(event.payload));
 }
+
+export interface SpeedTestResult {
+  latency_ms: number;
+  download_mbps: number;
+  upload_mbps: number;
+  /** Unix milliseconds. */
+  finished_at: number;
+}
+
+export type SpeedTestProgress =
+  | { phase: "latency" }
+  | { phase: "download"; latency_ms: number }
+  | { phase: "upload"; latency_ms: number; download_mbps: number }
+  | { phase: "done"; result: SpeedTestResult }
+  | { phase: "failed"; message: string };
+
+export const runSpeedTest = () => call<SpeedTestResult>("run_speed_test");
+
+export function onSpeedTest(handler: (progress: SpeedTestProgress) => void): Promise<UnlistenFn> {
+  return listen<SpeedTestProgress>("speed-test", (event) => handler(event.payload));
+}

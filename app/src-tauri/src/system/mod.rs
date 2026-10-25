@@ -7,6 +7,7 @@
 pub mod parse;
 pub mod processes;
 pub mod rates;
+pub mod speedtest;
 
 use std::io::Read;
 use std::process::{Command, Stdio};
