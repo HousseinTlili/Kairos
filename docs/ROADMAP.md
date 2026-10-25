@@ -144,8 +144,9 @@ GitHub through Hermes's own sign-in routes; Outlook isn't possible yet without a
 
 ## M9 — Voice
 
-- Speech in and out (Hermes voice/TTS, or local Whisper and Piper); a wake word ("Kairos…");
-  the welcome-back briefing read aloud on request. Test English, French and Arabic first.
+- Speech in and out: push-to-talk with local Whisper (D-022, chosen 2026-10-25), answers and the
+  welcome-back briefing read aloud on request with Windows's voices. Test English, French and
+  Arabic first. Spec: `docs/milestones/M9.md`. A wake word ("Kairos…") is left for later.
 
 ## M10 — Persona and avatar (last)
 

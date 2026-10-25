@@ -111,3 +111,14 @@ new dependency).
       (asks first).
 - [ ] In a chat, asking the agent to schedule something asks first (`scheduled-jobs`).
 - [ ] Then sign M8 off.
+
+## M9 — Voice (`m9/voice`)
+
+Spec: `docs/milestones/M9.md`. **Not built yet**: first approve D-022 and the new dependency
+(`whisper-rs`, M9 §4).
+
+- [ ] Settings ▸ Voice ▸ Download Small (190 MB); it shows Ready.
+- [ ] Mic button: an English, a French and an Arabic sentence each appear correctly and are sent.
+- [ ] Hold Ctrl+Alt+J over another app, speak, release: the quick box answers.
+- [ ] Speaker button reads an answer aloud; Esc stops it; "Read it to me" on the briefing.
+- [ ] Then sign M9 off.
