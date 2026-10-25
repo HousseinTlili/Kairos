@@ -348,6 +348,28 @@
         "close_app"
       ],
       "action": "ask"
+    },
+    {
+      "id": "open-installers",
+      "description": "Installers and uninstallers change what is on the PC.",
+      "tools": [
+        "open_app"
+      ],
+      "match": {
+        "any_text": [
+          "*install*",
+          "*setup*"
+        ]
+      },
+      "action": "ask"
+    },
+    {
+      "id": "open-apps",
+      "description": "Opening an app from the Start menu is allowed.",
+      "tools": [
+        "open_app"
+      ],
+      "action": "allow"
     }
   ]
 }

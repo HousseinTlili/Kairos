@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import starterText from "../../../../plugin/kairos/policy.default.json?raw";
 import {
+  NEWER_STARTER_RULES,
+  addNewerRules,
   addRule,
   isEnabled,
+  missingNewerRules,
   moveRule,
   parsePolicy,
   removeRule,
@@ -23,7 +26,7 @@ describe("the rules model", () => {
   it("reads the plugin's starter rules in order", () => {
     const doc = starter();
     expect(doc.rules[0].id).toBe("no-credentials");
-    expect(doc.rules).toHaveLength(18);
+    expect(doc.rules).toHaveLength(20);
   });
 
   it("saves the starter rules unchanged when nothing was edited", () => {
@@ -103,5 +106,42 @@ describe("the rules model", () => {
     );
     const closeApps = starter().rules.find((r) => r.id === "close-apps")!;
     expect(summarizeRule(closeApps)).toBe("close_app · every call");
+  });
+});
+
+describe("rules added to the starter set later (M3)", () => {
+  const m2File = (): PolicyDoc => {
+    const doc = starter();
+    return {
+      ...doc,
+      rules: doc.rules.filter((r) => !["open-installers", "open-apps"].includes(r.id)),
+    };
+  };
+
+  it("are the same as in the plugin's starter rules", () => {
+    const byId = new Map(starter().rules.map((r) => [r.id, r]));
+    for (const group of NEWER_STARTER_RULES) {
+      for (const rule of group.rules) expect(byId.get(rule.id)).toEqual(rule);
+    }
+  });
+
+  it("are offered to a file written before them, and not to the current starter rules", () => {
+    expect(missingNewerRules(m2File()).map((r) => r.id)).toEqual(["open-installers", "open-apps"]);
+    expect(missingNewerRules(starter())).toEqual([]);
+  });
+
+  it("land where the starter set has them, so an older file ends up the same", () => {
+    expect(addNewerRules(m2File())).toEqual(starter());
+  });
+
+  it("go at the end when the rule they follow was removed, and only the missing ones", () => {
+    const doc = m2File();
+    const withoutAnchor: PolicyDoc = {
+      ...doc,
+      rules: [...doc.rules.filter((r) => r.id !== "close-apps"), NEWER_STARTER_RULES[0].rules[1]],
+    };
+    const ids = addNewerRules(withoutAnchor).rules.map((r) => r.id);
+    expect(ids.slice(-2)).toEqual(["open-apps", "open-installers"]);
+    expect(ids.filter((id) => id === "open-apps")).toHaveLength(1);
   });
 });

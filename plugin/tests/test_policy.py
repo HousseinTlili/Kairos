@@ -169,6 +169,14 @@ class StarterRulesTest(unittest.TestCase):
         ("close_app", {"name": "explorer.exe"}, "deny", "system-processes"),
         ("close_app", {"name": "LSASS"}, "deny", "system-processes"),
         ("close_app", {"name": "notepad.exe"}, "ask", "close-apps"),
+        ("close_app", {"name": "Windows Explorer"}, "deny", "system-processes"),
+        # M3 opening apps: allowed, except installers and uninstallers
+        ("open_app", {"name": "Notepad"}, "allow", "open-apps"),
+        ("open_app", {"name": "Visual Studio Code"}, "allow", "open-apps"),
+        ("open_app", {"name": "Uninstall Foo"}, "ask", "open-installers"),
+        ("open_app", {"name": "Foo Setup"}, "ask", "open-installers"),
+        ("open_app", {"name": "Visual Studio Installer"}, "ask", "open-installers"),
+        ("list_running_apps", {}, "inherit", None),
         # everything else falls through to Hermes
         ("web_extract", {"urls": ["https://example.com"]}, "inherit", None),
         ("search_files", {"path": r"C:\Users\u\Desktop\Projects\Kairos\docs", "pattern": "Hermes"}, "inherit", None),

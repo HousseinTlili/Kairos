@@ -146,3 +146,52 @@ export function summarizeRule(rule: RuleDoc): string {
   });
   return parts.length ? `${tools} · ${parts.join("; ")}` : `${tools} · every call`;
 }
+
+/**
+ * Rules added to the starter set after a user's file was written (M3 §6). A valid rules file is
+ * never rewritten behind the user's back, so the Rules page offers to add these instead. Kept
+ * identical to plugin/kairos/policy.default.json (a test compares them).
+ */
+export const NEWER_STARTER_RULES: { after: string; rules: RuleDoc[] }[] = [
+  {
+    after: "close-apps",
+    rules: [
+      {
+        id: "open-installers",
+        description: "Installers and uninstallers change what is on the PC.",
+        tools: ["open_app"],
+        match: { any_text: ["*install*", "*setup*"] },
+        action: "ask",
+      },
+      {
+        id: "open-apps",
+        description: "Opening an app from the Start menu is allowed.",
+        tools: ["open_app"],
+        action: "allow",
+      },
+    ],
+  },
+];
+
+/** The newer starter rules this document doesn't have yet (matched by id). */
+export function missingNewerRules(doc: PolicyDoc): RuleDoc[] {
+  const ids = new Set(doc.rules.map((r) => r.id));
+  return NEWER_STARTER_RULES.flatMap((group) => group.rules).filter((r) => !ids.has(r.id));
+}
+
+/**
+ * Adds the missing newer rules, each group straight after the rule it follows in the starter set
+ * (or at the end when the user removed that rule), keeping their order.
+ */
+export function addNewerRules(doc: PolicyDoc): PolicyDoc {
+  let rules = [...doc.rules];
+  for (const group of NEWER_STARTER_RULES) {
+    const ids = new Set(rules.map((r) => r.id));
+    const missing = group.rules.filter((r) => !ids.has(r.id));
+    if (missing.length === 0) continue;
+    const anchor = rules.findIndex((r) => r.id === group.after);
+    const at = anchor === -1 ? rules.length : anchor + 1;
+    rules = [...rules.slice(0, at), ...missing.map((r) => structuredClone(r)), ...rules.slice(at)];
+  }
+  return withRules(doc, rules);
+}

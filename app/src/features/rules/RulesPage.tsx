@@ -4,8 +4,10 @@ import {
   ACTION_LABEL,
   MATCH_KINDS,
   MATCH_LABEL,
+  addNewerRules,
   addRule,
   isEnabled,
+  missingNewerRules,
   moveRule,
   removeRule,
   setMatch,
@@ -185,6 +187,22 @@ export function RulesPage() {
       {saved.validation.result === "unavailable" && (
         <div className="status-card warn" role="alert">
           <p>Kairos can't check the rules: {saved.validation.reason}</p>
+        </div>
+      )}
+
+      {draft && saved.validation.result === "valid" && missingNewerRules(draft).length > 0 && (
+        <div className="status-card" role="status">
+          <p>
+            New starter rules came with this version of Kairos:{" "}
+            {missingNewerRules(draft)
+              .map((r) => r.id)
+              .join(", ")}
+            . Your rules file was written before them, so they aren't in it yet.
+          </p>
+          <div className="actions" style={{ marginTop: 10 }}>
+            <button onClick={() => edit(addNewerRules)}>Add the new rules</button>
+          </div>
+          <p className="detail">They are added to the list below; review them, then save.</p>
         </div>
       )}
 

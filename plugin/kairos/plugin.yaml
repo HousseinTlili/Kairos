@@ -1,3 +1,3 @@
 name: kairos
-version: "0.2.0"
-description: Kairos rules and audit log. Checks every tool call against Kairos's rules (%APPDATA%\kairos\policy.json) and records decisions, approvals and results in %APPDATA%\kairos\audit.db.
+version: "0.3.0"
+description: Kairos rules and audit log. Checks every tool call against Kairos's rules (%APPDATA%\kairos\policy.json) and records decisions, approvals and results in %APPDATA%\kairos\audit.db. From M3 it also provides the PC control tools list_running_apps, open_app and close_app (Windows only).
