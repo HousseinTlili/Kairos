@@ -25,6 +25,9 @@ keyring = { version = "=4.2.0", default-features = false, features = ["v1", "win
 rusqlite = { version = "=0.40.2", features = ["bundled"] }
 ulid = "=3.0.0"
 thiserror = "=2.0.21"
+# M3 §4: system readings (D-012).
+sysinfo = "=0.39.6"
+starship-battery = "=0.12.0"
 
 [profile.release]
 codegen-units = 1

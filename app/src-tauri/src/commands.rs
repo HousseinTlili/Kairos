@@ -3,7 +3,7 @@
 //! Nothing that crosses this boundary contains the API key.
 
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde::Serialize;
@@ -20,6 +20,7 @@ use crate::hermes::local::{self, LocalError};
 use crate::keyring::{self, KeyStoreError};
 use crate::rules;
 use crate::store::{self, Conversation, StoreError, Task, TaskStatus, TaskStore};
+use crate::system::{SystemMonitor, SystemSnapshot};
 
 /// Shared between commands.
 #[derive(Default)]
@@ -714,6 +715,26 @@ pub async fn save_rules(text: String) -> Result<RulesState, CommandError> {
 #[tauri::command]
 pub async fn reset_rules() -> Result<RulesState, CommandError> {
     save_rules(rules::STARTER_RULES.to_string()).await
+}
+
+// --- System page (M3 Step 2) ---------------------------------------------------------------
+
+/// The latest reading, for the page to draw at once when it opens; `None` until the first sample.
+#[tauri::command]
+pub async fn system_snapshot(
+    monitor: tauri::State<'_, Arc<SystemMonitor>>,
+) -> Result<Option<SystemSnapshot>, CommandError> {
+    Ok(monitor.latest())
+}
+
+/// The page says when it is on screen, so readings come every 2 s instead of every 15 s.
+#[tauri::command]
+pub async fn set_system_page_visible(
+    monitor: tauri::State<'_, Arc<SystemMonitor>>,
+    visible: bool,
+) -> Result<(), CommandError> {
+    monitor.set_visible(visible);
+    Ok(())
 }
 
 #[cfg(test)]
