@@ -1,5 +1,6 @@
 //! Local `kairos.db`: the `task` table (M1 §10, ARCHITECTURE.md §4), and from schema 2 the
-//! `setting` and `presence_event` tables (M3 §8).
+//! `setting` and `presence_event` tables (M3 §8), and from schema 3 the `notification` table
+//! (M4 §6, methods in `notifications/store.rs`).
 //!
 //! A task row is written *before* Hermes is called and its ID is the run's Idempotency-Key, so a
 //! retry after a crash or a network error can never start a second run (M1 §9 rule 1).
@@ -13,7 +14,7 @@ use serde::Serialize;
 use crate::hermes::events::RunEvent;
 use crate::presence::{PresenceEvent, PresenceKind};
 
-const SCHEMA_VERSION: i32 = 2;
+const SCHEMA_VERSION: i32 = 3;
 
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 #[error("local task database: {0}")]
@@ -215,6 +216,23 @@ impl TaskStore {
                  PRAGMA user_version = 2;",
             )?;
         }
+        if version < 3 {
+            conn.execute_batch(
+                "CREATE TABLE notification (
+                   id         INTEGER PRIMARY KEY,
+                   app_id     TEXT NOT NULL,
+                   app_name   TEXT NOT NULL,
+                   windows_id INTEGER NOT NULL,
+                   created_at INTEGER NOT NULL,
+                   title      TEXT NOT NULL,
+                   body       TEXT NOT NULL,
+                   read_at    INTEGER,
+                   UNIQUE (app_id, windows_id, created_at)
+                 );
+                 CREATE INDEX notification_created ON notification(created_at);
+                 PRAGMA user_version = 3;",
+            )?;
+        }
         Ok(Self { conn })
     }
 
@@ -322,6 +340,12 @@ impl TaskStore {
 }
 
 impl TaskStore {
+    /// For the other tables' modules (`notifications/store.rs`); the schema stays here.
+    #[allow(dead_code)] // M4: used once Step 5 wires up the notification commands.
+    pub(crate) fn conn(&self) -> &Connection {
+        &self.conn
+    }
+
     /// A setting's stored value, or `None` when it was never set.
     pub fn setting(&self, key: &str) -> Result<Option<String>, StoreError> {
         Ok(self
@@ -544,7 +568,7 @@ mod tests {
             .conn
             .pragma_query_value(None, "user_version", |row| row.get(0))
             .expect("version");
-        assert_eq!(version, 2);
+        assert_eq!(version, 3);
         let task = store.get("t1").expect("get").expect("kept");
         assert_eq!(task.status, TaskStatus::Completed);
         store.set_setting("alerts_enabled", "false").expect("set");
@@ -576,6 +600,35 @@ mod tests {
             [PresenceKind::Resume, PresenceKind::Unlock]
         );
         assert_eq!(recent[0].detail.as_deref(), Some("slept 2 h"));
+    }
+
+    #[test]
+    fn a_version_2_database_gains_notifications_and_keeps_presence_and_settings() {
+        let conn = Connection::open_in_memory().expect("conn");
+        conn.execute_batch(
+            "CREATE TABLE task (
+               id TEXT PRIMARY KEY, session_id TEXT NOT NULL, run_id TEXT, goal TEXT NOT NULL,
+               status TEXT NOT NULL, created_at INTEGER NOT NULL, finished_at INTEGER, outcome TEXT
+             );
+             CREATE TABLE presence_event (
+               id INTEGER PRIMARY KEY, at INTEGER NOT NULL, kind TEXT NOT NULL, detail TEXT
+             );
+             CREATE TABLE setting (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+             INSERT INTO presence_event (at, kind, detail) VALUES (5, 'unlock', NULL);
+             INSERT INTO setting VALUES ('alerts_enabled', 'false');
+             PRAGMA user_version = 2;",
+        )
+        .expect("v2 schema");
+        let store = TaskStore::init(conn).expect("migrate");
+        assert_eq!(
+            store.recent_presence(5).expect("presence")[0].kind,
+            PresenceKind::Unlock
+        );
+        assert_eq!(
+            store.setting("alerts_enabled").expect("setting").as_deref(),
+            Some("false")
+        );
+        assert_eq!(store.unread_notifications().expect("notifications"), 0);
     }
 
     #[test]

@@ -3,6 +3,9 @@ mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
 mod keyring;
+// M4: the commands that use it arrive in Step 5, which removes this allowance.
+#[allow(dead_code)]
+mod notifications;
 mod presence;
 mod rules;
 mod store;
