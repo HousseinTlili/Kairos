@@ -271,6 +271,26 @@ engineer's recommendation, to be confirmed when M4 is tested.
 
 ---
 
+## D-019 — Isolation is Hermes's Docker terminal backend, one container per conversation — Accepted
+
+For M7. The agent's commands run in Docker (Docker Desktop with WSL2) through Hermes's own
+`terminal.backend: docker`, with `container_persistent: false` (a fresh container per conversation)
+and only the product owner's project folders mounted. Set up by `scripts/setup-container.ps1`,
+which asks first and uses the Hermes CLI; the starter rule `no-sandbox-changes` stops the agent
+from switching it off. Accepted on 2026-10-25 when the product owner left the M7 choices to the
+engineer's recommendation, to be confirmed when M7 is tested.
+
+---
+
+## D-020 — Cost is estimated from Hermes's prices; Kairos enforces the cap by stopping the run — Accepted
+
+For M7. Each request's cost is its `usage` times the served model's price from
+`/api/model/options`, shown as an estimate. A per-request cap (off by default) is enforced by
+Kairos polling the run and calling `/v1/runs/{id}/stop` when the estimate passes it. Accepted on
+2026-10-25 on the same delegation as D-019.
+
+---
+
 ## Answered questions
 
 - **Q-2 — First real use cases.** Answered 2026-10-24: the welcome-back briefing (an evolution of

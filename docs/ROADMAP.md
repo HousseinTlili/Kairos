@@ -128,6 +128,8 @@ GitHub through Hermes's own sign-in routes; Outlook isn't possible yet without a
 
 ## M7 — Isolation, models and cost
 
+**Status:** being built on `m7/isolation-models` (spec `docs/milestones/M7.md`, 2026-10-25).
+
 - Commands run inside a container (Docker Desktop with WSL2) with the workspace mounted.
 - Model choice per conversation, a local Ollama model for private or offline work, Hermes fallback
   providers, usage and cost per task, and a per-task cost cap.
