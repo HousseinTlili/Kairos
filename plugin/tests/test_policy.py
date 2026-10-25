@@ -192,6 +192,11 @@ class StarterRulesTest(unittest.TestCase):
         ("close_app", {"name": "LSASS"}, "deny", "system-processes"),
         ("close_app", {"name": "notepad.exe"}, "ask", "close-apps"),
         ("close_app", {"name": "Windows Explorer"}, "deny", "system-processes"),
+        # M5 skills: editing Kairos's own skills asks; reading them doesn't
+        ("write_file", {"path": r"C:\Users\u\AppData\Local\hermes\skills\kairos\kairos-code-review\SKILL.md"}, "ask", "kairos-skills"),
+        ("skill_manage", {"action": "patch", "name": "kairos-code-review"}, "ask", "kairos-skills"),
+        ("skill_manage", {"action": "create", "name": "my-new-skill"}, "inherit", None),
+        ("read_file", {"path": r"C:\Users\u\AppData\Local\hermes\skills\kairos\kairos-code-review\SKILL.md"}, "inherit", None),
         # M3 opening apps: allowed, except installers and uninstallers
         ("open_app", {"name": "Notepad"}, "allow", "open-apps"),
         ("open_app", {"name": "Visual Studio Code"}, "allow", "open-apps"),

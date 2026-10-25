@@ -221,6 +221,26 @@ export const NEWER_STARTER_RULES: { after: string; rules: RuleDoc[] }[] = [
       },
     ],
   },
+  {
+    after: "kairos-plugin-source",
+    rules: [
+      {
+        id: "kairos-skills",
+        description: "These are Kairos's own skills: changing them changes how Kairos works.",
+        tools: ["write_file", "patch", "skill_manage"],
+        match: {
+          any_text: [
+            "**/hermes/skills/kairos/**",
+            "**/kairos/skills/kairos/**",
+            "kairos-debug-and-fix",
+            "kairos-code-review",
+            "kairos-documents-to-actions",
+          ],
+        },
+        action: "ask",
+      },
+    ],
+  },
 ];
 
 /** The newer starter rules this document doesn't have yet (matched by id). */
