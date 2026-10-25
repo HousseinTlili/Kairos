@@ -136,6 +136,8 @@ GitHub through Hermes's own sign-in routes; Outlook isn't possible yet without a
 
 ## M8 — Always-there assistant
 
+**Status:** being built on `m8/always-there` (spec `docs/milestones/M8.md`, 2026-10-25).
+
 - A global hotkey (for example Alt+Space) opens a small Kairos box over any app.
 - "What's on my screen?": a screenshot plus vision to explain an error dialog or a page.
 - Scheduled jobs from the app via `/api/jobs`, all under the same rules.
