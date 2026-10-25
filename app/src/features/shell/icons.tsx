@@ -69,3 +69,11 @@ export const LockIcon = () => (
     <path d="M8 11V8a4 4 0 0 1 8 0v3" />
   </Icon>
 );
+
+export const GaugeIcon = () => (
+  <Icon>
+    <path d="M4 15a8 8 0 1 1 16 0" />
+    <path d="M12 15l4-5" />
+    <circle cx="12" cy="15" r="1" />
+  </Icon>
+);

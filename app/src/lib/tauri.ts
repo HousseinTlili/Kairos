@@ -161,3 +161,69 @@ export const rulesState = () => call<RulesState>("rules_state");
 export const validateRules = (text: string) => call<RulesValidation>("validate_rules", { text });
 export const saveRules = (text: string) => call<RulesState>("save_rules", { text });
 export const resetRules = () => call<RulesState>("reset_rules");
+
+// --- System page (M3 §5). Shapes mirror src-tauri/src/system/. -------------------------------
+
+export interface WifiInfo {
+  ssid: string;
+  signal_percent: number | null;
+}
+
+export interface GpuInfo {
+  name: string;
+  load_percent: number | null;
+  memory_used: number | null;
+  memory_total: number | null;
+  temperature_c: number | null;
+}
+
+export interface DiskReading {
+  mount: string;
+  name: string;
+  kind: "ssd" | "hdd" | "unknown";
+  removable: boolean;
+  total: number;
+  available: number;
+  read_per_s: number | null;
+  write_per_s: number | null;
+}
+
+export interface BatteryReading {
+  percent: number;
+  state: "charging" | "discharging" | "full" | "unknown";
+  time_to_empty_s: number | null;
+  time_to_full_s: number | null;
+  health_percent: number | null;
+}
+
+export interface ProcessGroup {
+  name: string;
+  count: number;
+  /** Share of the whole CPU, as in Task Manager. */
+  cpu_percent: number;
+  memory: number;
+}
+
+export interface SystemSnapshot {
+  /** Unix milliseconds. */
+  taken_at: number;
+  cpu: { name: string; frequency_mhz: number; total: number | null; per_core: number[] };
+  memory: { used: number; total: number; swap_used: number; swap_total: number };
+  disks: DiskReading[];
+  network: { down_per_s: number | null; up_per_s: number | null };
+  wifi: WifiInfo | null;
+  gpus: GpuInfo[];
+  battery: BatteryReading | null;
+  uptime_s: number;
+  top_cpu: ProcessGroup[];
+  top_memory: ProcessGroup[];
+  notes: string[];
+}
+
+export const systemSnapshot = () => call<SystemSnapshot | null>("system_snapshot");
+export const setSystemPageVisible = (visible: boolean) =>
+  call<void>("set_system_page_visible", { visible });
+
+export function onSystemSnapshot(handler: (snapshot: SystemSnapshot) => void): Promise<UnlistenFn> {
+  return listen<SystemSnapshot>("system-snapshot", (event) => handler(event.payload));
+}

@@ -5,12 +5,15 @@ import { ConnectScreen } from "../features/connection/ConnectScreen";
 import { useConnection } from "../features/connection/store";
 import { Settings } from "../features/shell/Settings";
 import { Sidebar } from "../features/shell/Sidebar";
+import { SystemPage } from "../features/system/SystemPage";
+import { useSystem } from "../features/system/store";
 import { useShell } from "../features/shell/store";
 
 export default function App() {
   const connected = useConnection((state) => state.info?.status === "connected");
   const view = useShell((state) => state.view);
   const resume = useChat((state) => state.resume);
+  const startSystem = useSystem((state) => state.start);
 
   useEffect(() => {
     // Listen before anything can be sent or resumed, so no run event is missed.
@@ -19,6 +22,14 @@ export default function App() {
       void stop.then((unlisten) => unlisten());
     };
   }, []);
+
+  useEffect(() => {
+    // System readings don't need Hermes (D-012): follow them from the start.
+    const stop = startSystem();
+    return () => {
+      void stop.then((unlisten) => unlisten());
+    };
+  }, [startSystem]);
 
   useEffect(() => {
     // M1 §9 rule 6: once connected, settle or re-follow requests from before a restart.
@@ -31,6 +42,8 @@ export default function App() {
       <main className="main">
         {view === "settings" ? (
           <Settings />
+        ) : view === "system" ? (
+          <SystemPage />
         ) : connected ? (
           <ChatView />
         ) : (

@@ -3,7 +3,7 @@ import { useChat } from "../chat/store";
 import { useConnection } from "../connection/store";
 import type { Conversation, OtherConversation } from "../../lib/tauri";
 import { ClockMark } from "./ClockMark";
-import { ChevronIcon, PlusIcon, SettingsIcon } from "./icons";
+import { ChevronIcon, GaugeIcon, PlusIcon, SettingsIcon } from "./icons";
 import { useShell } from "./store";
 
 const DAY = 24 * 60 * 60;
@@ -94,6 +94,14 @@ export function Sidebar() {
         disabled={!connected || (busy && sessionId === null)}
       >
         <PlusIcon /> New conversation
+      </button>
+
+      <button
+        className={`nav-item ${view === "system" ? "active" : ""}`}
+        onClick={() => show("system")}
+        aria-current={view === "system" ? "page" : undefined}
+      >
+        <GaugeIcon /> System
       </button>
 
       <div className="sidebar-scroll">
