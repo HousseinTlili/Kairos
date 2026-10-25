@@ -112,6 +112,13 @@ pub struct SystemSnapshot {
     pub notes: Vec<String>,
 }
 
+/// How a drive is named in a sentence: `C:\\` → `C:`; a root mount (`/`) keeps its name instead of
+/// trimming to nothing.
+pub fn drive_label(mount: &str) -> &str {
+    let trimmed = mount.trim_end_matches(['\\', '/']);
+    if trimmed.is_empty() { mount } else { trimmed }
+}
+
 /// Runs a console tool with no window and a time limit; its stdout, or why there is none.
 fn run_tool(program: &str, args: &[&str]) -> Result<String, String> {
     let mut command = Command::new(program);
@@ -471,6 +478,13 @@ mod tests {
         assert!(second.uptime_s > 0);
         assert!(!second.all_processes.is_empty());
         assert!(second.top_cpu.len() <= TOP_PROCESSES);
+    }
+
+    #[test]
+    fn drives_are_named_without_a_trailing_slash_but_never_empty() {
+        assert_eq!(drive_label("C:\\"), "C:");
+        assert_eq!(drive_label("/mnt/data/"), "/mnt/data");
+        assert_eq!(drive_label("/"), "/");
     }
 
     #[test]

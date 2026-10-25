@@ -176,7 +176,7 @@ impl Alerts {
                 }
             } else if full {
                 self.disks.insert(key);
-                let drive = disk.mount.trim_end_matches(['\\', '/']);
+                let drive = crate::system::drive_label(&disk.mount);
                 out.fired.push(Alert {
                     id,
                     kind: AlertKind::DiskFull,

@@ -128,7 +128,7 @@ pub fn build(inputs: &Inputs<'_>) -> Vec<Fact> {
             let used =
                 (disk.total - disk.available.min(disk.total)) as f64 / disk.total as f64 * 100.0;
             if used >= DISK_WARN_PERCENT {
-                let drive = disk.mount.trim_end_matches(['\\', '/']);
+                let drive = crate::system::drive_label(&disk.mount);
                 facts.push(fact(
                     FactKind::Disk,
                     Tone::Warn,
