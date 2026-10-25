@@ -98,6 +98,16 @@ switching to the container.
 
 ## M8 — Always-there assistant (`m8/always-there`)
 
-Details: `docs/milestones/M8-acceptance.md` (written when M8's steps are done).
+Details: `docs/milestones/M8-acceptance.md`. About 30 minutes. `pnpm -C app install` first (one
+new dependency).
 
-- [ ] (filled in as M8 is built)
+- [ ] Settings ▸ Rules ▸ Add the new rules (`screen-capture`, `scheduled-jobs`,
+      `scheduled-jobs-cli`).
+- [ ] Ctrl+Alt+Space over another app opens the quick box; a question gets an answer; Esc and
+      clicking away hide it; "Open in Kairos" works; the hotkey changes in Settings ▸ Quick box.
+- [ ] "What's on my screen?" asks first; allowed, the box hides and the answer describes the
+      screen; denied, nothing is captured; only 20 screenshots are kept.
+- [ ] Scheduled page: create "every 2m: say hello", see it run, pause, resume, run now, delete
+      (asks first).
+- [ ] In a chat, asking the agent to schedule something asks first (`scheduled-jobs`).
+- [ ] Then sign M8 off.
