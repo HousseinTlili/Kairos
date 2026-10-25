@@ -21,7 +21,7 @@ use crate::keyring::{self, KeyStoreError};
 use crate::rules;
 use crate::store::{self, Conversation, StoreError, Task, TaskStatus, TaskStore};
 use crate::system::speedtest::{self, SpeedTestResult};
-use crate::system::{SystemMonitor, SystemSnapshot};
+use crate::system::{AlertSwitch, SystemMonitor, SystemSnapshot};
 
 /// Shared between commands.
 #[derive(Default)]
@@ -736,6 +736,38 @@ pub async fn set_system_page_visible(
 ) -> Result<(), CommandError> {
     monitor.set_visible(visible);
     Ok(())
+}
+
+/// Whether alerts are on, from `kairos.db`; on unless the user switched them off (M3 §7). A
+/// database problem leaves them on: missing a low-battery warning is worse than an extra one.
+pub fn stored_alerts_enabled(state: &AppState) -> bool {
+    state
+        .with_store(|store| store.setting(AlertSwitch::SETTING))
+        .ok()
+        .flatten()
+        .is_none_or(|value| value != "false")
+}
+
+#[tauri::command]
+pub async fn alerts_enabled(
+    switch: tauri::State<'_, Arc<AlertSwitch>>,
+) -> Result<bool, CommandError> {
+    Ok(switch.enabled())
+}
+
+#[tauri::command]
+pub async fn set_alerts_enabled(
+    state: tauri::State<'_, AppState>,
+    switch: tauri::State<'_, Arc<AlertSwitch>>,
+    enabled: bool,
+) -> Result<bool, CommandError> {
+    state.with_store(|store| {
+        store.set_setting(AlertSwitch::SETTING, if enabled { "true" } else { "false" })
+    })?;
+    switch
+        .0
+        .store(enabled, std::sync::atomic::Ordering::Relaxed);
+    Ok(enabled)
 }
 
 static SPEED_TEST_RUNNING: std::sync::atomic::AtomicBool =

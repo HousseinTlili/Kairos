@@ -24,6 +24,13 @@ pub struct ProcessGroup {
     pub memory: u64,
 }
 
+/// Windows system processes: never the subject of a CPU alert, since they can't be closed. The
+/// same names as the `system-processes` rule (M2 §6) and the plugin's protected list (M3 §6).
+pub const PROTECTED: &[&str] = &[
+    "explorer", "winlogon", "csrss", "lsass", "services", "svchost", "smss", "wininit", "dwm",
+    "system", "idle", "registry", "kairos",
+];
+
 /// `Chrome.EXE` → `chrome`: names compare case-insensitively and without `.exe`.
 pub fn base_name(name: &str) -> String {
     let lower = name.trim().to_lowercase();
@@ -31,6 +38,11 @@ pub fn base_name(name: &str) -> String {
         .strip_suffix(".exe")
         .map(str::to_string)
         .unwrap_or(lower)
+}
+
+pub fn is_protected(name: &str) -> bool {
+    let base = base_name(name);
+    base.is_empty() || PROTECTED.contains(&base.as_str()) || base == "system idle process"
 }
 
 /// Groups readings by executable, normalises CPU to the whole machine, and returns the groups.
@@ -154,5 +166,22 @@ mod tests {
             memory.iter().map(|g| g.name.as_str()).collect::<Vec<_>>(),
             ["a.exe", "c.exe"]
         );
+    }
+
+    #[test]
+    fn system_processes_and_kairos_are_protected_but_apps_are_not() {
+        for name in [
+            "explorer.exe",
+            "LSASS.EXE",
+            "svchost",
+            "dwm.exe",
+            "kairos.exe",
+            "",
+        ] {
+            assert!(is_protected(name), "{name}");
+        }
+        for name in ["notepad.exe", "chrome.exe", "explorer-helper.exe"] {
+            assert!(!is_protected(name), "{name}");
+        }
     }
 }

@@ -1,10 +1,12 @@
 import { approvalWarning, useConnection } from "../connection/store";
 import { RulesPage } from "../rules/RulesPage";
+import { useSystem } from "../system/store";
 import { useShell, type SettingsTab } from "./store";
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: "connection", label: "Connection" },
   { id: "rules", label: "Rules" },
+  { id: "system", label: "System" },
 ];
 
 const MODE_TEXT: Record<string, string> = {
@@ -32,7 +34,13 @@ export function Settings() {
           </button>
         ))}
       </div>
-      {settingsTab === "rules" ? <RulesPage /> : <ConnectionSettings />}
+      {settingsTab === "rules" ? (
+        <RulesPage />
+      ) : settingsTab === "system" ? (
+        <SystemSettings />
+      ) : (
+        <ConnectionSettings />
+      )}
     </section>
   );
 }
@@ -97,5 +105,29 @@ function ConnectionSettings() {
         </p>
       </div>
     </>
+  );
+}
+
+function SystemSettings() {
+  const { alertsOn, setAlertsOn } = useSystem();
+  return (
+    <div className="settings-section">
+      <h2>Alerts</h2>
+      <label className="switch-row">
+        <input
+          type="checkbox"
+          checked={alertsOn ?? true}
+          disabled={alertsOn === null}
+          onChange={(e) => void setAlertsOn(e.target.checked)}
+        />
+        <span>Warn me about a low battery, a nearly full drive, or an app hogging the CPU</span>
+      </label>
+      <p className="muted small">
+        Shown as a Windows notification and a banner in Kairos, once each time it happens. Battery
+        at 20 % and 10 %, a drive 90 % full (or C: under 5 GB free), one app above 80 % of the CPU
+        for a minute. &quot;Close it?&quot; asks Hermes to close the app, and your close-apps rule
+        asks you first.
+      </p>
+    </div>
   );
 }

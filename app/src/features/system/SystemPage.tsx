@@ -266,7 +266,7 @@ function ProcessTable({
   );
 }
 
-export function SystemPage({ extra }: { extra?: ReactNode }) {
+export function SystemPage() {
   const { snapshot, history, error, setVisible } = useSystem();
 
   useEffect(() => {
@@ -280,7 +280,6 @@ export function SystemPage({ extra }: { extra?: ReactNode }) {
         <h1 id="system-title">System</h1>
         {snapshot && <span className="muted">Up {formatDuration(snapshot.uptime_s)}</span>}
       </div>
-      {extra}
       {error && (
         <div className="status-card bad" role="alert">
           <p>{error}</p>

@@ -1,4 +1,5 @@
-//! Local `kairos.db` and its `task` table (M1 §10, ARCHITECTURE.md §4).
+//! Local `kairos.db`: the `task` table (M1 §10, ARCHITECTURE.md §4), and from schema 2 the
+//! `setting` and `presence_event` tables (M3 §8).
 //!
 //! A task row is written *before* Hermes is called and its ID is the run's Idempotency-Key, so a
 //! retry after a crash or a network error can never start a second run (M1 §9 rule 1).
@@ -11,7 +12,7 @@ use serde::Serialize;
 
 use crate::hermes::events::RunEvent;
 
-const SCHEMA_VERSION: i32 = 1;
+const SCHEMA_VERSION: i32 = 2;
 
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 #[error("local task database: {0}")]
@@ -197,6 +198,22 @@ impl TaskStore {
                  PRAGMA user_version = 1;",
             )?;
         }
+        if version < 2 {
+            conn.execute_batch(
+                "CREATE TABLE presence_event (
+                   id     INTEGER PRIMARY KEY,
+                   at     INTEGER NOT NULL,
+                   kind   TEXT NOT NULL,
+                   detail TEXT
+                 );
+                 CREATE INDEX presence_event_at ON presence_event(at);
+                 CREATE TABLE setting (
+                   key   TEXT PRIMARY KEY,
+                   value TEXT NOT NULL
+                 );
+                 PRAGMA user_version = 2;",
+            )?;
+        }
         Ok(Self { conn })
     }
 
@@ -300,6 +317,29 @@ impl TaskStore {
         let mut statement = self.conn.prepare(sql)?;
         let rows = statement.query_map(params, row_to_task)?;
         Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+}
+
+impl TaskStore {
+    /// A setting's stored value, or `None` when it was never set.
+    pub fn setting(&self, key: &str) -> Result<Option<String>, StoreError> {
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT value FROM setting WHERE key = ?1",
+                params![key],
+                |row| row.get(0),
+            )
+            .optional()?)
+    }
+
+    pub fn set_setting(&self, key: &str, value: &str) -> Result<(), StoreError> {
+        self.conn.execute(
+            "INSERT INTO setting (key, value) VALUES (?1, ?2)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            params![key, value],
+        )?;
+        Ok(())
     }
 }
 
@@ -451,6 +491,43 @@ mod tests {
             .map(|t| t.id)
             .collect();
         assert_eq!(open, ["a"]);
+    }
+
+    #[test]
+    fn a_version_1_database_is_migrated_and_keeps_its_tasks() {
+        let conn = Connection::open_in_memory().expect("conn");
+        conn.execute_batch(
+            "CREATE TABLE task (
+               id TEXT PRIMARY KEY, session_id TEXT NOT NULL, run_id TEXT, goal TEXT NOT NULL,
+               status TEXT NOT NULL, created_at INTEGER NOT NULL, finished_at INTEGER, outcome TEXT
+             );
+             CREATE INDEX task_session ON task(session_id, created_at);
+             INSERT INTO task VALUES ('t1', 'kairos-s1', 'run_1', 'hello', 'completed', 1, 2, 'ok');
+             PRAGMA user_version = 1;",
+        )
+        .expect("v1 schema");
+        let store = TaskStore::init(conn).expect("migrate");
+        let version: i32 = store
+            .conn
+            .pragma_query_value(None, "user_version", |row| row.get(0))
+            .expect("version");
+        assert_eq!(version, 2);
+        let task = store.get("t1").expect("get").expect("kept");
+        assert_eq!(task.status, TaskStatus::Completed);
+        store.set_setting("alerts_enabled", "false").expect("set");
+        assert_eq!(
+            store.setting("alerts_enabled").expect("read").as_deref(),
+            Some("false")
+        );
+    }
+
+    #[test]
+    fn a_setting_is_none_until_set_and_the_last_value_wins() {
+        let store = store();
+        assert_eq!(store.setting("x").expect("read"), None);
+        store.set_setting("x", "1").expect("set");
+        store.set_setting("x", "2").expect("set");
+        assert_eq!(store.setting("x").expect("read").as_deref(), Some("2"));
     }
 
     #[test]

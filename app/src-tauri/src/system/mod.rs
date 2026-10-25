@@ -4,6 +4,7 @@
 //! One background thread owns the readers and samples every 2 s while the System page is visible,
 //! every 15 s otherwise (alerts still need readings while the window sits in the tray).
 
+pub mod alerts;
 pub mod parse;
 pub mod processes;
 pub mod rates;
@@ -374,6 +375,18 @@ fn gpus(notes: &mut Vec<String>) -> Vec<GpuInfo> {
             Vec::new()
         }
         Err(_) => Vec::new(),
+    }
+}
+
+/// Settings ▸ System's "alerts" switch, shared between the monitor thread and the commands.
+#[derive(Debug)]
+pub struct AlertSwitch(pub AtomicBool);
+
+impl AlertSwitch {
+    pub const SETTING: &'static str = "alerts_enabled";
+
+    pub fn enabled(&self) -> bool {
+        self.0.load(Ordering::Relaxed)
     }
 }
 

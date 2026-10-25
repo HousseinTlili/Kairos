@@ -5,6 +5,7 @@ import { ConnectScreen } from "../features/connection/ConnectScreen";
 import { useConnection } from "../features/connection/store";
 import { Settings } from "../features/shell/Settings";
 import { Sidebar } from "../features/shell/Sidebar";
+import { AlertBanners } from "../features/system/AlertBanners";
 import { SystemPage } from "../features/system/SystemPage";
 import { useSystem } from "../features/system/store";
 import { useShell } from "../features/shell/store";
@@ -40,6 +41,7 @@ export default function App() {
     <div className="shell">
       <Sidebar />
       <main className="main">
+        {view !== "settings" && <AlertBanners />}
         {view === "settings" ? (
           <Settings />
         ) : view === "system" ? (

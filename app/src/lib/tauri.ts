@@ -248,3 +248,28 @@ export const runSpeedTest = () => call<SpeedTestResult>("run_speed_test");
 export function onSpeedTest(handler: (progress: SpeedTestProgress) => void): Promise<UnlistenFn> {
   return listen<SpeedTestProgress>("speed-test", (event) => handler(event.payload));
 }
+
+export interface SystemAlert {
+  /** Stable for the episode: "battery", "disk:C:\\", "cpu:chrome". */
+  id: string;
+  kind: "battery_low" | "battery_critical" | "disk_full" | "cpu_hog";
+  title: string;
+  message: string;
+  process: string | null;
+  cpu_percent: number | null;
+}
+
+export interface AlertEvaluation {
+  fired: SystemAlert[];
+  cleared: string[];
+}
+
+export const alertsEnabled = () => call<boolean>("alerts_enabled");
+export const setAlertsEnabled = (enabled: boolean) =>
+  call<boolean>("set_alerts_enabled", { enabled });
+
+export function onSystemAlerts(
+  handler: (evaluation: AlertEvaluation) => void,
+): Promise<UnlistenFn> {
+  return listen<AlertEvaluation>("system-alerts", (event) => handler(event.payload));
+}
