@@ -150,5 +150,7 @@ GitHub through Hermes's own sign-in routes; Outlook isn't possible yet without a
 
 ## M10 — Persona and avatar (last)
 
-- The Kairos persona via Hermes's personality / `SOUL.md`.
+- The Kairos persona via Hermes's `SOUL.md` (D-023): JARVIS-like, calls the product owner "Master",
+  always English. Spec: `docs/milestones/M10.md`. Built first; the avatar comes after the memory
+  milestone.
 - The animated avatar driven by run events (`idle`, `listening`, `thinking`, `speaking`).

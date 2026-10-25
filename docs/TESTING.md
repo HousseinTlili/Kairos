@@ -127,3 +127,13 @@ downloaded (the agent's real-download check).
 - [ ] Speaker button reads an answer aloud; Esc stops it; "Read it to me" on the briefing.
 - [ ] Offline (Wi-Fi off), transcription still works.
 - [ ] Then sign M9 off.
+
+## M10 — Persona (`m10/persona`)
+
+Spec: `docs/milestones/M10.md`. About 5 minutes.
+
+- [ ] Settings ▸ Persona ▸ **Use the Kairos persona** ▸ **Save**.
+- [ ] New conversation: "Who are you?" — Kairos introduces itself, calls you Master, in English.
+- [ ] Ask in French (typed or spoken): the answer is still in English.
+- [ ] **Restore the original** (asks first) brings Hermes's default back; then save Kairos again.
+- [ ] Then sign the persona off.
