@@ -82,6 +82,15 @@ Cloud setup.
 
 ## M7 — Isolation, models and cost (`m7/isolation-models`)
 
-Details: `docs/milestones/M7-acceptance.md` (written when M7's steps are done).
+Details: `docs/milestones/M7-acceptance.md`. About 40 minutes. Run the M5 evaluation **before**
+switching to the container.
 
-- [ ] (filled in as M7 is built)
+- [ ] Settings ▸ Rules ▸ Add the new rules (`no-sandbox-changes`).
+- [ ] The model menu lists your providers with prices; a chosen model shows as the served model
+      and is remembered per conversation.
+- [ ] Tokens and "≈ $…" under each answer; total in the header.
+- [ ] Cost cap `0.0001` on a paid model: stopped mid-run? (If not, say so: it tells us how Hermes
+      reports usage.)
+- [ ] `scripts/setup-container.ps1`; restart the gateway; `uname -a` says Linux; only your chosen
+      folder is visible; switching the backend back is blocked; `-Undo` works.
+- [ ] Then sign M7 off.
