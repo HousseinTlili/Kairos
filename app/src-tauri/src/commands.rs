@@ -10,6 +10,9 @@ use serde::Serialize;
 use tauri::{Emitter, Manager};
 
 use crate::audit::{self, AuditEvent};
+use crate::briefing::facts::{self as briefing_facts, Briefing};
+use crate::briefing::rules::{self as briefing_rules, BriefingSettings, Reason};
+use crate::briefing::{self, BriefingClock, BriefingNotice};
 use crate::hermes::client::{
     ApiKey, ApprovalChoice, Capabilities, CreateRunRequest, CreateRunResponse, DEFAULT_BASE_URL,
     Health, HermesClient, PendingControl, RunStatus,
@@ -1035,6 +1038,151 @@ pub async fn clear_notifications(
     let removed = state.with_store(|store| store.clear_notifications(app_id.as_deref()))?;
     notifications_changed(&app);
     Ok(removed)
+}
+
+// --- Welcome-back briefing (M5 Step 5) --------------------------------------------------------
+
+/// Decides and, if it's time, builds, stores and announces a briefing (M5 §2). `away_s` is how
+/// long the user was away; `asked` skips the rules ("Brief me now").
+pub fn brief(app: &tauri::AppHandle, away_s: Option<i64>, asked: bool) -> Option<Briefing> {
+    let state = app.state::<AppState>();
+    let clock = app.state::<Arc<BriefingClock>>();
+    let now = presence::unix_now();
+    let outcome = state.with_store(|store| {
+        let settings = briefing::load_settings(store)?;
+        let last = briefing::load_last(store)?;
+        let reason = if asked {
+            Some(Reason::Asked)
+        } else {
+            briefing_rules::decide(
+                &settings,
+                &briefing_rules::Moment {
+                    now,
+                    utc_offset_min: clock.offset().unwrap_or(0),
+                    away_s,
+                    last_briefing_at: last.as_ref().map(|b| b.at),
+                },
+            )
+        };
+        let Some(reason) = reason else {
+            return Ok(None);
+        };
+        // "While you were away": since the user left, or since the last briefing when unknown.
+        let since = away_s
+            .map(|a| now - a)
+            .or(last.as_ref().map(|b| b.at))
+            .unwrap_or(now - 24 * 3600);
+        let snapshot = app.state::<Arc<SystemMonitor>>().latest();
+        let counts = store.notification_counts()?;
+        let facts = briefing_facts::build(&briefing_facts::Inputs {
+            away_s,
+            snapshot: snapshot.as_ref(),
+            notifications: &counts,
+            tasks: store.task_summary_since(since)?,
+        });
+        let briefing = Briefing {
+            at: now,
+            reason,
+            away_s,
+            facts,
+        };
+        briefing::save_last(store, &briefing)?;
+        Ok(Some((briefing, settings)))
+    });
+    let (briefing, settings) = match outcome {
+        Ok(Some(found)) => found,
+        Ok(None) => return None,
+        Err(err) => {
+            eprintln!("kairos: couldn't prepare the briefing: {}", err.message);
+            return None;
+        }
+    };
+    let _ = app.emit(
+        "briefing",
+        BriefingNotice {
+            briefing: briefing.clone(),
+            ai_summary: settings.ai_summary,
+            projects: settings.projects.clone(),
+        },
+    );
+    {
+        use tauri_plugin_notification::NotificationExt;
+        let body = briefing
+            .facts
+            .iter()
+            .find(|f| f.tone == briefing_facts::Tone::Warn)
+            .or(briefing.facts.first())
+            .map_or_else(
+                || "Nothing needs your attention.".to_string(),
+                |f| f.text.clone(),
+            );
+        let _ = app
+            .notification()
+            .builder()
+            .title("Welcome back")
+            .body(body)
+            .show();
+    }
+    Some(briefing)
+}
+
+/// A return to the PC (M3 presence event): startup waits for the page's clock (quiet hours are
+/// local), the others are judged at once.
+pub fn on_presence(app: &tauri::AppHandle, event: &PresenceEvent) {
+    let clock = app.state::<Arc<BriefingClock>>();
+    if event.kind == presence::PresenceKind::Startup && clock.offset().is_none() {
+        clock.hold_startup(event.away_s);
+        return;
+    }
+    brief(app, event.away_s, false);
+}
+
+/// The page's UTC offset in minutes (east of UTC positive), at startup and every hour.
+#[tauri::command]
+pub async fn set_utc_offset(app: tauri::AppHandle, minutes: i32) -> Result<(), CommandError> {
+    let pending = app.state::<Arc<BriefingClock>>().set_offset(minutes);
+    if let Some(away_s) = pending {
+        let handle = app.clone();
+        tauri::async_runtime::spawn_blocking(move || brief(&handle, away_s, false));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn briefing_settings(
+    state: tauri::State<'_, AppState>,
+) -> Result<BriefingSettings, CommandError> {
+    state.with_store(briefing::load_settings)
+}
+
+#[tauri::command]
+pub async fn save_briefing_settings(
+    state: tauri::State<'_, AppState>,
+    settings: BriefingSettings,
+) -> Result<BriefingSettings, CommandError> {
+    state.with_store(|store| {
+        briefing::save_settings(store, &settings)?;
+        briefing::load_settings(store)
+    })
+}
+
+#[tauri::command]
+pub async fn latest_briefing(
+    state: tauri::State<'_, AppState>,
+) -> Result<Option<Briefing>, CommandError> {
+    state.with_store(briefing::load_last)
+}
+
+/// "Brief me now": a briefing whatever the rules say, for testing and on request.
+#[tauri::command]
+pub async fn brief_now(app: tauri::AppHandle) -> Result<Option<Briefing>, CommandError> {
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || brief(&handle, None, true))
+        .await
+        .map_err(|err| CommandError {
+            kind: "internal",
+            message: format!("briefing failed: {err}"),
+        })
 }
 
 static SPEED_TEST_RUNNING: std::sync::atomic::AtomicBool =

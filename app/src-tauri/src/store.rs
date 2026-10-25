@@ -299,7 +299,6 @@ impl TaskStore {
     /// (M1 §9 rule 6).
     /// Requests that ended since `since` (completed, and failed or cut short), and those waiting
     /// for an approval now: the briefing's "while you were away" line (M5 §2.2).
-    #[allow(dead_code)] // M5: used once Step 5 wires up the briefing.
     pub fn task_summary_since(&self, since: i64) -> Result<TaskSummary, StoreError> {
         let count = |sql: &str, with_since: bool| -> Result<i64, StoreError> {
             Ok(if with_since {

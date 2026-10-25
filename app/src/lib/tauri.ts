@@ -349,3 +349,46 @@ export const clearNotifications = (appId: string | null) =>
 export function onNotificationsChanged(handler: () => void): Promise<UnlistenFn> {
   return listen<null>("notifications-changed", () => handler());
 }
+
+// --- Welcome-back briefing (M5 §2). Shapes mirror src-tauri/src/briefing/. ---------------------
+
+export interface BriefingFact {
+  kind: "away" | "battery" | "network" | "disk" | "notifications" | "tasks";
+  tone: "info" | "warn";
+  text: string;
+}
+
+export interface Briefing {
+  /** Unix seconds. */
+  at: number;
+  reason: "first_of_day" | "away" | "asked";
+  away_s: number | null;
+  facts: BriefingFact[];
+}
+
+export interface BriefingNotice {
+  briefing: Briefing;
+  ai_summary: boolean;
+  projects: string[];
+}
+
+export interface BriefingSettings {
+  enabled: boolean;
+  min_away_min: number;
+  /** Minutes after local midnight; null = no quiet hours. */
+  quiet_start: number | null;
+  quiet_end: number | null;
+  ai_summary: boolean;
+  projects: string[];
+}
+
+export const setUtcOffset = (minutes: number) => call<void>("set_utc_offset", { minutes });
+export const briefingSettings = () => call<BriefingSettings>("briefing_settings");
+export const saveBriefingSettings = (settings: BriefingSettings) =>
+  call<BriefingSettings>("save_briefing_settings", { settings });
+export const latestBriefing = () => call<Briefing | null>("latest_briefing");
+export const briefNow = () => call<Briefing | null>("brief_now");
+
+export function onBriefing(handler: (notice: BriefingNotice) => void): Promise<UnlistenFn> {
+  return listen<BriefingNotice>("briefing", (event) => handler(event.payload));
+}

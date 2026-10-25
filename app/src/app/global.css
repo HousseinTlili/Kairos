@@ -1688,3 +1688,80 @@ pre {
   color: var(--brass);
   text-decoration: underline;
 }
+
+/* ---------------------------------------------------------------- Briefing (M5 Step 5) */
+
+.briefing-card {
+  margin: 12px 16px 0;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brass);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.briefing-card header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.briefing-card h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.25rem;
+}
+
+.briefing-card ul {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+.briefing-card li.warn {
+  color: var(--warn);
+}
+
+.briefing-card .link {
+  border: none;
+  background: none;
+  color: var(--muted);
+  text-decoration: underline;
+}
+
+.briefing-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 6px 0 8px;
+}
+
+.briefing-fields label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.briefing-fields input {
+  font: inherit;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--fg);
+  width: 9rem;
+}
+
+.projects-input {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--fg);
+}

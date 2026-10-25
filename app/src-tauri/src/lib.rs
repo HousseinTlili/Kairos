@@ -1,6 +1,4 @@
 mod audit;
-// M5: wired up in Step 5, which removes this allowance.
-#[allow(dead_code)]
 mod briefing;
 mod commands;
 // Public so the fixture tests in tests/ can drive it.
@@ -86,6 +84,8 @@ pub fn run() {
             };
             commands::set_last_seen(&app.state::<commands::AppState>(), now);
             commands::record_presence(&app.state::<commands::AppState>(), &startup);
+            app.manage(Arc::new(briefing::BriefingClock::default()));
+            commands::on_presence(app.handle(), &startup);
             let notification_switch =
                 commands::stored_notification_switch(&app.state::<commands::AppState>());
             app.manage(Arc::new(notification_switch));
@@ -100,6 +100,7 @@ pub fn run() {
                 move |event| {
                     commands::record_presence(&handle.state::<commands::AppState>(), &event);
                     let _ = handle.emit("presence", &event);
+                    commands::on_presence(&handle, &event);
                 },
                 move |now| commands::set_last_seen(&heartbeat.state::<commands::AppState>(), now),
             )?;
@@ -146,7 +147,12 @@ pub fn run() {
             commands::set_notifications_enabled,
             commands::list_notifications,
             commands::mark_notifications_read,
-            commands::clear_notifications
+            commands::clear_notifications,
+            commands::set_utc_offset,
+            commands::briefing_settings,
+            commands::save_briefing_settings,
+            commands::latest_briefing,
+            commands::brief_now
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

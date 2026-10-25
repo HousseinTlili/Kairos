@@ -1,7 +1,7 @@
 //! The instant part of the briefing (M5 §2.2): facts Kairos already has, no AI. Pure, so each
 //! line is tested; notification *text* never appears, only app names and counts.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::rules::Reason;
 use crate::notifications::store::AppCount;
@@ -15,7 +15,7 @@ const BATTERY_WARN_PERCENT: f32 = 20.0;
 /// App names listed in the notifications line before "and N more".
 const APPS_LISTED: usize = 4;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FactKind {
     Away,
@@ -26,21 +26,21 @@ pub enum FactKind {
     Tasks,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Tone {
     Info,
     Warn,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Fact {
     pub kind: FactKind,
     pub tone: Tone,
     pub text: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Briefing {
     /// Unix seconds.
     pub at: i64,

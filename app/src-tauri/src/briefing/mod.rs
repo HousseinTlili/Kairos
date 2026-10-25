@@ -3,9 +3,66 @@
 pub mod facts;
 pub mod rules;
 
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
+
+use serde::Serialize;
+
+use facts::Briefing;
 use rules::{BriefingSettings, format_hhmm, parse_hhmm};
 
 use crate::store::{StoreError, TaskStore};
+
+/// The local clock as the page reports it (M5 §2.1): its UTC offset, and a startup trigger held
+/// until that offset is known, so quiet hours are judged in local time from the first briefing.
+#[derive(Debug, Default)]
+pub struct BriefingClock {
+    offset_min: AtomicI32,
+    known: AtomicBool,
+    /// `Some(away_s)` while a startup briefing waits for the page's clock.
+    pending_startup: Mutex<Option<Option<i64>>>,
+}
+
+impl BriefingClock {
+    pub fn offset(&self) -> Option<i32> {
+        self.known
+            .load(Ordering::SeqCst)
+            .then(|| self.offset_min.load(Ordering::SeqCst))
+    }
+
+    /// Records the offset; returns the startup trigger that was waiting for it, if any.
+    pub fn set_offset(&self, minutes: i32) -> Option<Option<i64>> {
+        self.offset_min.store(minutes, Ordering::SeqCst);
+        self.known.store(true, Ordering::SeqCst);
+        self.pending_startup.lock().ok().and_then(|mut p| p.take())
+    }
+
+    pub fn hold_startup(&self, away_s: Option<i64>) {
+        if let Ok(mut pending) = self.pending_startup.lock() {
+            *pending = Some(away_s);
+        }
+    }
+}
+
+/// What the page receives with a briefing: the facts, and whether to start the AI summary.
+#[derive(Debug, Clone, Serialize)]
+pub struct BriefingNotice {
+    pub briefing: Briefing,
+    pub ai_summary: bool,
+    pub projects: Vec<String>,
+}
+
+/// The latest briefing, kept for the sidebar.
+pub fn load_last(store: &TaskStore) -> Result<Option<Briefing>, StoreError> {
+    Ok(store
+        .setting(LAST_BRIEFING)?
+        .and_then(|text| serde_json::from_str(&text).ok()))
+}
+
+pub fn save_last(store: &TaskStore, briefing: &Briefing) -> Result<(), StoreError> {
+    let text = serde_json::to_string(briefing).map_err(|err| StoreError::new(err.to_string()))?;
+    store.set_setting(LAST_BRIEFING, &text)
+}
 
 const ENABLED: &str = "briefing_enabled";
 const MIN_AWAY: &str = "briefing_min_away_min";
@@ -70,6 +127,30 @@ pub fn save_settings(store: &TaskStore, settings: &BriefingSettings) -> Result<(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_startup_trigger_waits_for_the_local_clock() {
+        let clock = BriefingClock::default();
+        assert_eq!(clock.offset(), None);
+        clock.hold_startup(Some(3600));
+        assert_eq!(clock.set_offset(60), Some(Some(3600)));
+        assert_eq!(clock.offset(), Some(60));
+        assert_eq!(clock.set_offset(120), None, "handed over once");
+    }
+
+    #[test]
+    fn the_latest_briefing_round_trips() {
+        let store = TaskStore::open_in_memory().expect("store");
+        assert_eq!(load_last(&store).expect("none"), None);
+        let briefing = Briefing {
+            at: 10,
+            reason: rules::Reason::Away,
+            away_s: Some(4000),
+            facts: vec![],
+        };
+        save_last(&store, &briefing).expect("save");
+        assert_eq!(load_last(&store).expect("load"), Some(briefing));
+    }
 
     #[test]
     fn nothing_stored_means_the_defaults() {

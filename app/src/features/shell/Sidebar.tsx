@@ -3,9 +3,10 @@ import { useChat } from "../chat/store";
 import { useConnection } from "../connection/store";
 import type { Conversation, OtherConversation } from "../../lib/tauri";
 import { ClockMark } from "./ClockMark";
+import { useBriefing } from "../briefing/store";
 import { badgeText } from "../notifications/model";
 import { useNotifications } from "../notifications/store";
-import { BellIcon, ChevronIcon, GaugeIcon, PlusIcon, SettingsIcon } from "./icons";
+import { BellIcon, ChevronIcon, GaugeIcon, PlusIcon, SettingsIcon, SunIcon } from "./icons";
 import { useShell } from "./store";
 
 const DAY = 24 * 60 * 60;
@@ -80,6 +81,7 @@ export function Sidebar() {
   );
   const groups = groupByAge(conversations.kairos);
   const badge = badgeText(useNotifications((s) => s.state?.unread ?? 0));
+  const reopenBriefing = useBriefing((s) => s.reopen);
 
   return (
     <nav className="sidebar" aria-label="Conversations">
@@ -118,6 +120,17 @@ export function Sidebar() {
             {badge}
           </span>
         )}
+      </button>
+
+      <button
+        className="nav-item"
+        onClick={() => {
+          show("chat");
+          void reopenBriefing();
+        }}
+        title="Show the latest welcome-back briefing"
+      >
+        <SunIcon /> Briefing
       </button>
 
       <div className="sidebar-scroll">

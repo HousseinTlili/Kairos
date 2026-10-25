@@ -70,13 +70,15 @@ pub fn local_day_and_minute(unix: i64, utc_offset_min: i32) -> (i64, u16) {
     )
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Reason {
     /// The first return to the PC of the local day.
     FirstOfDay,
     /// Away at least the set time.
     Away,
+    /// "Brief me now" (Settings ▸ Briefing); `decide` never returns it.
+    Asked,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { BriefingCard } from "../features/briefing/BriefingCard";
+import { useBriefing } from "../features/briefing/store";
 import { ChatView } from "../features/chat/ChatView";
 import { startChatEvents, useChat } from "../features/chat/store";
 import { ConnectScreen } from "../features/connection/ConnectScreen";
@@ -21,6 +23,7 @@ export default function App() {
   const startSystem = useSystem((state) => state.start);
   const startStartup = useStartup((state) => state.start);
   const startNotifications = useNotifications((state) => state.start);
+  const startBriefing = useBriefing((state) => state.start);
   const show = useShell((state) => state.show);
 
   useEffect(() => {
@@ -43,6 +46,7 @@ export default function App() {
     const stops = [
       startStartup(),
       startNotifications(),
+      startBriefing(),
       // The tray menu's "System" item.
       onNavigate((target) => {
         if (target === "system") show("system");
@@ -51,7 +55,7 @@ export default function App() {
     return () => {
       for (const stop of stops) void stop.then((unlisten) => unlisten());
     };
-  }, [startStartup, startNotifications, show]);
+  }, [startStartup, startNotifications, startBriefing, show]);
 
   useEffect(() => {
     // M1 §9 rule 6: once connected, settle or re-follow requests from before a restart.
@@ -63,6 +67,7 @@ export default function App() {
       <Sidebar />
       <main className="main">
         {view !== "settings" && <AlertBanners />}
+        {view === "chat" && <BriefingCard />}
         {view === "settings" ? (
           <Settings />
         ) : view === "system" ? (
