@@ -16,6 +16,7 @@ import {
   turnFromTask,
   turnsFromHistory,
   type Turn,
+  conversationCost,
 } from "./turn";
 import simpleSse from "../../../../fixtures/hermes-0.22.5/run-simple/02-events.sse?raw";
 import autoApproveSse from "../../../../fixtures/hermes-0.22.5/run-smart-autoapprove/02-events.sse?raw";
@@ -351,5 +352,52 @@ describe("approvals from a Kairos rule (M2 Step 8 recordings)", () => {
     const approvals = turn.items.filter((i) => i.kind === "approval");
     expect(approvals.map((a) => a.kind === "approval" && a.source)).toEqual(["kairos", "hermes"]);
     expect(turn.items.map((i) => i.kind)).toEqual(["approval", "tool", "approval"]);
+  });
+});
+
+describe("conversation cost (M7)", () => {
+  it("adds the known costs and counts the requests with no price", () => {
+    const base = newTurn("x");
+    const usage = (cost: number | null) => ({
+      input: 1,
+      output: 1,
+      cacheRead: 0,
+      cost,
+      provider: "p",
+      model: "m",
+    });
+    const turns = [
+      { ...base, usage: usage(0.01) },
+      { ...base, usage: usage(0.02) },
+      { ...base, usage: usage(null) },
+      base,
+    ];
+    const spent = conversationCost(turns);
+    expect(spent.total).toBeCloseTo(0.03);
+    expect(spent.unknown).toBe(1);
+  });
+
+  it("a stored task brings its usage back", () => {
+    const turn = turnFromTask({
+      id: "t1",
+      session_id: "s",
+      run_id: "r",
+      goal: "g",
+      status: "completed",
+      created_at: 1,
+      finished_at: 2,
+      outcome: "ok",
+      ...NO_USAGE,
+      input_tokens: 1200,
+      output_tokens: 300,
+      cost_usd: 0.0021,
+      served_model: "example/large",
+    });
+    expect(turn.usage).toMatchObject({
+      input: 1200,
+      output: 300,
+      cost: 0.0021,
+      model: "example/large",
+    });
   });
 });

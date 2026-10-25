@@ -149,7 +149,6 @@ pub fn estimate_cost(usage: &Usage, price: &Price) -> f64 {
 }
 
 /// Whether a running request has gone over its cap (D-020). No cap or no price: never.
-#[allow(dead_code)] // M7: the cap watcher arrives in Step 5.
 pub fn over_cap(cost: Option<f64>, cap: Option<f64>) -> bool {
     matches!((cost, cap), (Some(cost), Some(cap)) if cap > 0.0 && cost > cap)
 }

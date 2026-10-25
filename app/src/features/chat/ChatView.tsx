@@ -12,8 +12,16 @@ import { useShell } from "../shell/store";
 import { ApprovalCard } from "./ApprovalCard";
 import { MarkdownView } from "./MarkdownView";
 import { useChat } from "./store";
-import { blockedCount, decisionText, isFinished, toolLabel, type Turn } from "./turn";
+import {
+  blockedCount,
+  conversationCost,
+  decisionText,
+  isFinished,
+  toolLabel,
+  type Turn,
+} from "./turn";
 import { ModelPicker } from "../models/ModelPicker";
+import { costLabel, tokens } from "../models/model";
 
 const SUGGESTIONS = [
   "What can you help me with?",
@@ -113,6 +121,20 @@ function TurnView({ turn }: { turn: Turn }) {
           working && <span className="thinking" aria-label="Kairos is working" />
         )}
         {status && <p className={`turn-status ${status.tone}`}>{status.text}</p>}
+        {turn.costCap && (
+          <p className="turn-status bad">
+            Kairos stopped this request: it passed your cost cap of ${turn.costCap.cap.toFixed(2)}{" "}
+            (≈ ${turn.costCap.cost.toFixed(4)} so far).
+          </p>
+        )}
+        {turn.usage && (
+          <p className="turn-usage">
+            {tokens(turn.usage.input)} in · {tokens(turn.usage.output)} out
+            {costLabel(turn.usage.cost, turn.usage.provider) &&
+              ` · ${costLabel(turn.usage.cost, turn.usage.provider)}`}
+            {turn.usage.model && ` · ${turn.usage.model}`}
+          </p>
+        )}
       </div>
     </article>
   );
@@ -185,6 +207,8 @@ export function ChatView() {
     inputRef.current?.focus();
   }, [sessionId]);
 
+  const spent = conversationCost(turns);
+
   if (peekId) return <PeekView id={peekId} />;
 
   function submit(event?: FormEvent) {
@@ -207,6 +231,18 @@ export function ChatView() {
         <h1 className="chat-title" title={title}>
           {title}
         </h1>
+        {spent.total > 0 && (
+          <span
+            className="cost-badge"
+            title={
+              spent.unknown > 0
+                ? `Estimate; ${spent.unknown} request(s) had no price`
+                : "Estimated cost of this conversation"
+            }
+          >
+            ≈ ${spent.total < 0.01 ? spent.total.toPrecision(2) : spent.total.toFixed(2)}
+          </span>
+        )}
         {approvalMode && (
           <span
             className={`mode-badge ${approvalMode === "manual" || approvalMode === "smart" ? "" : "warn"}`}

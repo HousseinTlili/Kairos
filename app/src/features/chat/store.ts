@@ -6,13 +6,17 @@ import {
   conversationTasks,
   createRun,
   listConversations,
+  onCostCap,
   onRunEvent,
   onRunStreamEnd,
+  onTaskUsage,
   resumeOpenTasks,
   stopRun,
   subscribeRun,
   type ApprovalChoice,
   type CommandError,
+  type CostCapHit,
+  type TaskUsage,
   type ConversationList,
 } from "../../lib/tauri";
 import {
@@ -50,6 +54,10 @@ interface ChatState {
   resume: () => Promise<void>;
   receive: (payload: RunEventPayload) => void;
   streamEnded: (payload: RunStreamEnd) => void;
+  /** The core stored a finished request's usage (M7). */
+  usageRecorded: (usage: TaskUsage) => void;
+  /** Kairos stopped a request at the cost cap (M7, D-020). */
+  costCapped: (hit: CostCapHit) => void;
 }
 
 function messageOf(err: unknown): string {
@@ -197,6 +205,24 @@ export const useChat = create<ChatState>((set, get) => {
       }
     },
 
+    usageRecorded(usage) {
+      updateTask(usage.task_id, (turn) => ({
+        ...turn,
+        usage: {
+          input: usage.input_tokens,
+          output: usage.output_tokens,
+          cacheRead: usage.cache_read_tokens,
+          cost: usage.cost_usd,
+          provider: usage.served_provider,
+          model: usage.served_model,
+        },
+      }));
+    },
+
+    costCapped(hit) {
+      updateTask(hit.task_id, (turn) => ({ ...turn, costCap: { cap: hit.cap, cost: hit.cost } }));
+    },
+
     receive({ task_id, envelope, approval_live }) {
       updateTask(task_id, (turn) => applyEvent(turn, envelope, approval_live === true));
       const name = envelope.event.event;
@@ -227,8 +253,12 @@ export const useChat = create<ChatState>((set, get) => {
 export async function startChatEvents(): Promise<() => void> {
   const offEvent = await onRunEvent((payload) => useChat.getState().receive(payload));
   const offEnd = await onRunStreamEnd((payload) => useChat.getState().streamEnded(payload));
+  const offUsage = await onTaskUsage((usage) => useChat.getState().usageRecorded(usage));
+  const offCap = await onCostCap((hit) => useChat.getState().costCapped(hit));
   return () => {
     offEvent();
     offEnd();
+    offUsage();
+    offCap();
   };
 }

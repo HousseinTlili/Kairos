@@ -363,6 +363,7 @@ async fn create_with_retry(
 /// Starts a run. The task row exists before Hermes is called and its ID is the Idempotency-Key.
 #[tauri::command]
 pub async fn create_run(
+    app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
     session_id: Option<String>,
     input: String,
@@ -388,6 +389,16 @@ pub async fn create_run(
     match create_with_retry(&client, &input, &session_id, &choice, &task_id).await {
         Ok(created) => {
             state.with_store(|store| store.set_run(&task_id, &created.run_id))?;
+            if let Some(cap) = stored_cost_cap(&state) {
+                watch_cost(
+                    app.clone(),
+                    client.clone(),
+                    task_id.clone(),
+                    created.run_id.clone(),
+                    choice.clone(),
+                    cap,
+                );
+            }
             Ok(TaskRef {
                 task_id,
                 session_id,
@@ -462,12 +473,7 @@ pub async fn subscribe_run(
                         *status != TaskStatus::WaitingForApproval || approval_live == Some(true)
                     });
                     if let RunEvent::RunCompleted { usage, runtime, .. } = &envelope.event {
-                        record_run_usage(
-                            &app.state::<AppState>(),
-                            &task.id,
-                            usage,
-                            runtime.as_ref(),
-                        );
+                        record_run_usage(&app, &task.id, usage, runtime.as_ref());
                     }
                     if let Some(status) = status_change {
                         let outcome = outcome_of(&envelope.event);
@@ -499,25 +505,142 @@ pub async fn subscribe_run(
     Ok(())
 }
 
-/// Stores a finished run's tokens, the served model and the estimated cost (M7 §5, D-020). The
-/// price comes from the cached catalogue; without one the cost is unknown, not zero.
-fn record_run_usage(
+/// A request's usage as the chat shows it (M7 §5), sent as `task-usage` once it is stored.
+#[derive(Debug, Clone, Serialize)]
+pub struct TaskUsage {
+    pub task_id: String,
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+    pub cache_read_tokens: u64,
+    /// Estimate; `None` = price unknown.
+    pub cost_usd: Option<f64>,
+    pub served_provider: Option<String>,
+    pub served_model: Option<String>,
+}
+
+/// The estimated cost of `usage` on the served model, from the cached catalogue (D-020); `None`
+/// when there is no price, never zero.
+fn estimate(
     state: &AppState,
+    usage: &crate::hermes::events::Usage,
+    served: Option<&crate::hermes::events::Runtime>,
+) -> Option<f64> {
+    let served = served?;
+    let catalog = state.catalog.lock().ok()?;
+    let price = catalog.as_ref()?.price(&served.provider, &served.model)?;
+    Some(models::estimate_cost(usage, &price))
+}
+
+/// Stores a finished run's tokens, the served model and the estimated cost, and tells the chat.
+fn record_run_usage(
+    app: &tauri::AppHandle,
     task_id: &str,
     usage: &crate::hermes::events::Usage,
     served: Option<&crate::hermes::events::Runtime>,
 ) {
-    let cost = served.and_then(|served| {
-        let catalog = state.catalog.lock().ok()?;
-        let price = catalog.as_ref()?.price(&served.provider, &served.model)?;
-        Some(models::estimate_cost(usage, &price))
-    });
+    let state = app.state::<AppState>();
+    let cost = estimate(&state, usage, served);
     if let Err(err) = state.with_store(|store| store.record_usage(task_id, usage, cost, served)) {
         eprintln!(
             "[kairos] couldn't store the usage of {task_id}: {}",
             err.message
         );
     }
+    let named = |s: Option<&str>| s.filter(|s| !s.is_empty()).map(str::to_string);
+    let _ = app.emit(
+        "task-usage",
+        TaskUsage {
+            task_id: task_id.to_string(),
+            input_tokens: usage.input_tokens,
+            output_tokens: usage.output_tokens,
+            cache_read_tokens: usage.cache_read_tokens,
+            cost_usd: cost,
+            served_provider: named(served.map(|r| r.provider.as_str())),
+            served_model: named(served.map(|r| r.model.as_str())),
+        },
+    );
+}
+
+const COST_CAP: &str = "cost_cap_usd";
+const CAP_POLL: Duration = Duration::from_secs(10);
+
+/// The per-request cost cap in dollars (M7 §5), `None` when off.
+fn stored_cost_cap(state: &AppState) -> Option<f64> {
+    state
+        .with_store(|store| store.setting(COST_CAP))
+        .ok()
+        .flatten()
+        .and_then(|v| v.parse::<f64>().ok())
+        .filter(|v| v.is_finite() && *v > 0.0)
+}
+
+#[tauri::command]
+pub async fn cost_cap(state: tauri::State<'_, AppState>) -> Result<Option<f64>, CommandError> {
+    Ok(stored_cost_cap(&state))
+}
+
+/// Sets or clears (`None`, zero) the per-request cap.
+#[tauri::command]
+pub async fn set_cost_cap(
+    state: tauri::State<'_, AppState>,
+    cap: Option<f64>,
+) -> Result<Option<f64>, CommandError> {
+    let cap = cap.filter(|v| v.is_finite() && *v > 0.0);
+    state.with_store(|store| {
+        store.set_setting(COST_CAP, &cap.map(|v| v.to_string()).unwrap_or_default())
+    })?;
+    Ok(cap)
+}
+
+/// Sent as `cost-cap` when Kairos stops a request for going over the cap.
+#[derive(Debug, Clone, Serialize)]
+pub struct CostCapHit {
+    pub task_id: String,
+    pub cap: f64,
+    pub cost: f64,
+}
+
+/// Watches a capped run (D-020): every 10 s, its usage so far priced on the served model (or the
+/// conversation's chosen one while Hermes hasn't named it); over the cap, Kairos stops it. If
+/// Hermes reports usage only at the end, this never fires mid-run; testing records which.
+fn watch_cost(
+    app: tauri::AppHandle,
+    client: HermesClient,
+    task_id: String,
+    run_id: String,
+    chosen: ModelChoice,
+    cap: f64,
+) {
+    tauri::async_runtime::spawn(async move {
+        loop {
+            let _ = tauri::async_runtime::spawn_blocking(|| std::thread::sleep(CAP_POLL)).await;
+            let Ok(status) = client.run_status(&run_id).await else {
+                continue;
+            };
+            if TaskStatus::from_hermes(&status.status).is_none_or(TaskStatus::is_terminal) {
+                break;
+            }
+            let served = status.runtime.clone().or_else(|| {
+                Some(crate::hermes::events::Runtime {
+                    provider: chosen.provider.clone()?,
+                    model: chosen.model.clone()?,
+                })
+            });
+            let cost = estimate(&app.state::<AppState>(), &status.usage, served.as_ref());
+            if models::over_cap(cost, Some(cap)) {
+                let _ = client.stop_run(&run_id).await;
+                let _ = app.emit(
+                    "cost-cap",
+                    CostCapHit {
+                        task_id: task_id.clone(),
+                        cap,
+                        cost: cost.unwrap_or_default(),
+                    },
+                );
+                break;
+            }
+        }
+    });
 }
 
 fn approval_is_live(pending: &[PendingControl], prompt_id: &str) -> bool {

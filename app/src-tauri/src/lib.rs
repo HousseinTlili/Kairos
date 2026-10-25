@@ -160,7 +160,9 @@ pub fn run() {
             commands::disconnect_account,
             commands::terminal_backend,
             commands::model_catalog,
-            commands::conversation_model
+            commands::conversation_model,
+            commands::cost_cap,
+            commands::set_cost_cap
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

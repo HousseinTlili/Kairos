@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use super::errors::{HermesError, error_from_response};
-use super::events::{RunEventEnvelope, Usage, parse_run_event};
+use super::events::{RunEventEnvelope, Runtime, Usage, parse_run_event};
 use super::sse::{SseItem, SseParser};
 
 pub const DEFAULT_BASE_URL: &str = "http://127.0.0.1:8642";
@@ -130,6 +130,9 @@ pub struct RunStatus {
     pub output: String,
     #[serde(default)]
     pub usage: Usage,
+    /// The provider and model serving the run (M7); documented for completed runs.
+    #[serde(default)]
+    pub runtime: Option<Runtime>,
     #[serde(default)]
     pub execution_generation: Option<u32>,
     #[serde(default)]

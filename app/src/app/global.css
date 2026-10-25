@@ -1814,3 +1814,37 @@ pre {
   background: var(--surface);
   color: var(--fg);
 }
+
+/* ---------------------------------------------------------------- Cost (M7 Step 5) */
+
+.turn-usage {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cost-badge {
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+.cap-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cap-row input {
+  font: inherit;
+  width: 7rem;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--fg);
+}

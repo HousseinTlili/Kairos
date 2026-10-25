@@ -84,6 +84,32 @@ export interface Turn {
   lastSeq: number;
   /** Rebuilt from kairos.db: only the request and its outcome are known, not the tool calls. */
   fromHistory: boolean;
+  /** Tokens, estimated cost and served model, once the request finished (M7). */
+  usage: TurnUsage | null;
+  /** Set when Kairos stopped the request at the cost cap (M7, D-020). */
+  costCap: { cap: number; cost: number } | null;
+}
+
+export interface TurnUsage {
+  input: number;
+  output: number;
+  cacheRead: number;
+  /** Estimate in dollars; null = price unknown. */
+  cost: number | null;
+  provider: string | null;
+  model: string | null;
+}
+
+/** The conversation's known cost so far, and whether some requests had no price. */
+export function conversationCost(turns: Turn[]): { total: number; unknown: number } {
+  let total = 0;
+  let unknown = 0;
+  for (const turn of turns) {
+    if (!turn.usage) continue;
+    if (turn.usage.cost == null) unknown += 1;
+    else total += turn.usage.cost;
+  }
+  return { total, unknown };
 }
 
 export function newTurn(input: string): Turn {
@@ -94,6 +120,8 @@ export function newTurn(input: string): Turn {
     items: [],
     text: "",
     status: "sending",
+    usage: null,
+    costCap: null,
     error: null,
     lastSeq: -1,
     fromHistory: false,
@@ -126,6 +154,17 @@ export function turnFromTask(task: StoredTask): Turn {
     text: failed ? "" : (task.outcome ?? ""),
     error: failed ? task.outcome : null,
     fromHistory: true,
+    usage:
+      task.input_tokens == null
+        ? null
+        : {
+            input: task.input_tokens,
+            output: task.output_tokens ?? 0,
+            cacheRead: task.cache_read_tokens ?? 0,
+            cost: task.cost_usd,
+            provider: task.served_provider,
+            model: task.served_model,
+          },
   };
 }
 

@@ -447,3 +447,31 @@ export interface Catalog {
 export const modelCatalog = () => call<Catalog>("model_catalog");
 export const conversationModel = (sessionId: string) =>
   call<ModelChoice>("conversation_model", { sessionId });
+
+/** A request's usage once stored (M7), sent by the core as `task-usage`. */
+export interface TaskUsage {
+  task_id: string;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cost_usd: number | null;
+  served_provider: string | null;
+  served_model: string | null;
+}
+
+export interface CostCapHit {
+  task_id: string;
+  cap: number;
+  cost: number;
+}
+
+export const costCap = () => call<number | null>("cost_cap");
+export const setCostCap = (cap: number | null) => call<number | null>("set_cost_cap", { cap });
+
+export function onTaskUsage(handler: (usage: TaskUsage) => void): Promise<UnlistenFn> {
+  return listen<TaskUsage>("task-usage", (event) => handler(event.payload));
+}
+
+export function onCostCap(handler: (hit: CostCapHit) => void): Promise<UnlistenFn> {
+  return listen<CostCapHit>("cost-cap", (event) => handler(event.payload));
+}
