@@ -301,7 +301,7 @@ last 20 kept. Accepted on 2026-10-25 on the product owner's delegation, to confi
 
 ---
 
-## D-022 — Speech to text is local Whisper in the app, push-to-talk only — Proposed
+## D-022 — Speech to text is local Whisper in the app, push-to-talk only — Accepted
 
 For M9. The product owner chose, on 2026-10-25, local Whisper over Windows's online speech
 recognition and Hermes's dashboard server, and push-to-talk over a wake word. The webview records
@@ -310,6 +310,7 @@ transcribes it with `whisper-rs` (whisper.cpp, CPU). Audio stays in memory and i
 to disk or sent anywhere; the transcript is ordinary chat text under the Kairos rules. The model
 is downloaded once, on the user's click, and checked against its SHA-256. Answers are read aloud
 only on request, with Windows's voices. New dependency: `whisper-rs =0.16.0` (see M9 §4).
+Accepted by the product owner on 2026-10-25, with the dependency and the build settings.
 
 ---
 

@@ -35,6 +35,10 @@ tauri-plugin-autostart = "=2.7.0"
 tauri-plugin-single-instance = "=2.5.4"
 # M8 §2 (D-021): the quick box's global hotkey.
 tauri-plugin-global-shortcut = "=2.4.1"
+# M9 §4 (D-022): local speech to text (whisper.cpp, CPU), and the model download's hash check
+# (sha2 was already in Cargo.lock through Tauri). Builds need CMake and libclang: .cargo/config.toml.
+whisper-rs = "=0.16.0"
+sha2 = "=0.10.9"
 
 [target.'cfg(windows)'.dependencies]
 # M3 §4: the session's lock state, for unlock detection. Already in Cargo.lock through Tauri.

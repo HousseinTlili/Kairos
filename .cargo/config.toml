@@ -1,0 +1,6 @@
+# whisper-rs (M9 §4, D-022) builds whisper.cpp with CMake and generates its bindings with
+# libclang. These are the standard locations on the product owner's PC (VS Build Tools 2022's own
+# CMake, LLVM's installer); a value already set in the environment wins.
+[env]
+CMAKE = { value = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe', force = false }
+LIBCLANG_PATH = { value = 'C:\Program Files\LLVM\bin', force = false }

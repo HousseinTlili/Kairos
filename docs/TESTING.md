@@ -114,8 +114,8 @@ new dependency).
 
 ## M9 — Voice (`m9/voice`)
 
-Spec: `docs/milestones/M9.md`. **Not built yet**: first approve D-022 and the new dependency
-(`whisper-rs`, M9 §4).
+Spec: `docs/milestones/M9.md`. D-022 and `whisper-rs` approved 2026-10-25. The build needs CMake and
+libclang (`.cargo/config.toml` points at VS Build Tools' CMake and `C:\Program Files\LLVM`).
 
 - [ ] Settings ▸ Voice ▸ Download Small (190 MB); it shows Ready.
 - [ ] Mic button: an English, a French and an Arabic sentence each appear correctly and are sent.
