@@ -97,6 +97,101 @@ Python 3.14.9.
 first launch; `pnpm tauri dev` never does, so the entry can't point at a debug build. To test
 criterion 3, run `pnpm -C app tauri build`, start the built Kairos once, then reboot.
 
+## Final checklist (product owner, one sitting, about 30 minutes)
+
+The three checks left before sign-off. Do them in this order; write down what you see at each
+"Look for", including failures and their exact messages. Run commands in PowerShell from the
+Kairos folder. Hermes must be running (`curl http://127.0.0.1:8642/health` answers) for parts A
+and B; part C restarts the PC.
+
+### A. Speed test (2 minutes)
+
+1. Open Kairos (`pnpm -C app tauri dev` is fine) ▸ **System** ▸ **Internet speed** ▸
+   **Run speed test**.
+2. **Look for:** the card goes "Checking latency…" → "Measuring download…" → "Measuring
+   upload…" and shows Download, Upload (Mbps) and Latency (ms) within about 40 s.
+3. In a browser, open <https://speed.cloudflare.com> and let it finish.
+4. **Look for:** Kairos's figures in the same range as the browser's (speed tests vary run to
+   run; a factor of two on a busy line is not a failure, ten times is).
+
+### B. Resume from sleep (5 minutes)
+
+1. Kairos running (dev or release). Unplug the charger if you can: Modern Standby behaves
+   differently on battery (see "Resume under Modern Standby"), and battery is the case that
+   matters most.
+2. Start ▸ Power ▸ **Sleep**. Wait **at least 2 minutes** (watch a phone clock). Wake the laptop
+   and sign in.
+3. Wait 10 seconds, then open Kairos ▸ Settings ▸ **Startup** ▸ **Recently**.
+4. **Look for:** a line **"PC woke from sleep (slept N min)"** with N about the time you waited,
+   and a "PC unlocked" line just before or after it.
+5. Check the database directly (uses Hermes's own Python, read-only):
+
+   ```powershell
+   @'
+   import os, sqlite3
+   db = os.path.join(os.environ["APPDATA"], "kairos", "kairos.db")
+   for row in sqlite3.connect(db).execute(
+       "SELECT datetime(at, 'unixepoch', 'localtime'), kind, detail "
+       "FROM presence_event ORDER BY id DESC LIMIT 5"):
+       print(*row)
+   '@ | & (Get-Item "$env:LOCALAPPDATA\hermes\tools\python-*\python.exe")[0] -
+   ```
+
+6. **Look for:** a `resume` row with detail `slept N min`. If there is an `unlock` row but **no**
+   `resume` row, the check fails: record it, and if you have time repeat it once on the charger, so
+   we know whether battery vs charger makes the difference.
+
+### C. Reboot with nobody starting anything (20 minutes, most of it the build)
+
+1. **Quit every running Kairos** (tray icon ▸ Quit Kairos). The release build and the dev app share
+   one identity, so a running dev app would swallow the release launch.
+2. Build the release app:
+
+   ```powershell
+   pnpm -C app tauri build
+   ```
+
+   **Look for:** it ends with the bundle paths. The app itself is
+   `app\src-tauri\target\release\kairos.exe`. (If only the installer step fails, for example
+   while fetching WiX, the `.exe` is still built and is enough for this check.)
+3. Start it once: `.\app\src-tauri\target\release\kairos.exe`. A release build switches
+   "start at login" on by itself on first launch (D-013).
+   **Look for:** Settings ▸ Startup ▸ "Start Kairos when I log in to Windows" is ticked, and Task
+   Manager ▸ Startup apps lists Kairos as Enabled.
+4. Set up Hermes's own login start:
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-gateway-autostart.ps1
+   ```
+
+   Answer **y** to the script, then **yes** to Hermes's "Start the gateway automatically on
+   Windows login". **Look for:** `[ok] Scheduled Task 'Hermes_Gateway' exists` (or "Startup-folder
+   entry exists"). Settings ▸ Startup ▸ Hermes then says "Starts at login".
+5. Close any terminal running `hermes gateway run` and Hermes Desktop, then **restart Windows**
+   and sign in. Don't open anything.
+6. Wait **one minute** (Hermes starts 30 s after logon), then:
+   - **Look for:** the Kairos icon in the tray (it starts hidden there; no window).
+   - `curl http://127.0.0.1:8642/health` answers with Hermes's version.
+   - Open Kairos from the tray: it says Connected; Settings ▸ Startup ▸ Recently shows
+     "Kairos started at login".
+7. Optional: `hermes gateway status` reports the gateway running.
+
+### Undo afterwards (if you don't want login start yet)
+
+- Kairos: Settings ▸ Startup ▸ untick "Start Kairos when I log in to Windows". It stays off: the
+  first-launch default is applied only once.
+- Hermes:
+
+  ```powershell
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-gateway-autostart.ps1 -Uninstall
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-gateway-autostart.ps1 -Status
+  ```
+
+  **Look for:** "The gateway does not start by itself at login yet." Start Hermes again the usual
+  way (`hermes gateway run` in a terminal you keep open).
+- Kairos's login entry points at `target\release\kairos.exe`; a later `cargo clean` would leave
+  it pointing at nothing, so untick it first if you clean.
+
 ## Acceptance criteria (ROADMAP M3)
 
 | Criterion | Result |
