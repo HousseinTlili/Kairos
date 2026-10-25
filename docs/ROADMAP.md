@@ -61,7 +61,8 @@ Kairos's own safety layer, before Kairos is given any more power (D-004). Spec:
 
 ## M3 — System dashboard and PC control
 
-**Status:** in progress; spec `docs/milestones/M3.md` (2026-10-25).
+**Status:** built (Steps 1–7, 2026-10-25); waiting for the product owner's checks on the PC
+(`docs/milestones/M3-acceptance.md`). Spec: `docs/milestones/M3.md`.
 
 The Jarvis layer, part one (D-012, D-013, D-014).
 
