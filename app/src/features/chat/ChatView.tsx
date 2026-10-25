@@ -13,6 +13,7 @@ import { ApprovalCard } from "./ApprovalCard";
 import { MarkdownView } from "./MarkdownView";
 import { useChat } from "./store";
 import { blockedCount, decisionText, isFinished, toolLabel, type Turn } from "./turn";
+import { ModelPicker } from "../models/ModelPicker";
 
 const SUGGESTIONS = [
   "What can you help me with?",
@@ -232,6 +233,7 @@ export function ChatView() {
             {notice}
           </p>
         )}
+        <ModelPicker disabled={Boolean(active)} />
         <form className="composer" onSubmit={submit}>
           <textarea
             ref={inputRef}

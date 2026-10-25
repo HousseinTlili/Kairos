@@ -22,12 +22,13 @@ use crate::hermes::errors::HermesError;
 use crate::hermes::events::{RunEvent, RunEventEnvelope};
 use crate::hermes::local::{self, LocalError};
 use crate::keyring::{self, KeyStoreError};
+use crate::models::{self, Catalog};
 use crate::notifications::collect::{self as collect, Access, CollectState};
 use crate::notifications::store::{AppCount, StoredNotification};
 use crate::notifications::{self, ENABLED_SETTING, NotificationSwitch, SINCE_SETTING};
 use crate::presence::{self, PresenceEvent};
 use crate::rules;
-use crate::store::{self, Conversation, StoreError, Task, TaskStatus, TaskStore};
+use crate::store::{self, Conversation, ModelChoice, StoreError, Task, TaskStatus, TaskStore};
 use crate::system::speedtest::{self, SpeedTestResult};
 use crate::system::{AlertSwitch, SystemMonitor, SystemSnapshot};
 
@@ -38,6 +39,8 @@ pub struct AppState {
     pub client: Mutex<Option<HermesClient>>,
     /// Opened on first use, so a database problem shows as an error instead of a crash at startup.
     pub store: Mutex<Option<TaskStore>>,
+    /// The latest model catalogue (M7), kept for pricing finished runs.
+    pub catalog: Mutex<Option<Catalog>>,
 }
 
 impl AppState {
@@ -334,9 +337,15 @@ async fn create_with_retry(
     client: &HermesClient,
     input: &str,
     session_id: &str,
+    choice: &ModelChoice,
     idempotency_key: &str,
 ) -> Result<CreateRunResponse, HermesError> {
-    let request = CreateRunRequest { input, session_id };
+    let request = CreateRunRequest {
+        input,
+        session_id,
+        model: choice.model.as_deref(),
+        provider: choice.provider.as_deref(),
+    };
     let mut attempt = 1;
     loop {
         match client.create_run(&request, idempotency_key).await {
@@ -357,6 +366,7 @@ pub async fn create_run(
     state: tauri::State<'_, AppState>,
     session_id: Option<String>,
     input: String,
+    choice: Option<ModelChoice>,
 ) -> Result<TaskRef, CommandError> {
     let input = input.trim().to_string();
     if input.is_empty() {
@@ -368,9 +378,14 @@ pub async fn create_run(
     let client = state.connected_client()?;
     let session_id = session_for(session_id)?;
     let task_id = new_id();
-    state.with_store(|store| store.create(&task_id, &session_id, &input))?;
+    // The page sends the conversation's model with every request (M7 §4); kept for reopening.
+    let choice = choice.unwrap_or_default();
+    state.with_store(|store| {
+        store.set_conversation_model(&session_id, &choice)?;
+        store.create(&task_id, &session_id, &input)
+    })?;
 
-    match create_with_retry(&client, &input, &session_id, &task_id).await {
+    match create_with_retry(&client, &input, &session_id, &choice, &task_id).await {
         Ok(created) => {
             state.with_store(|store| store.set_run(&task_id, &created.run_id))?;
             Ok(TaskRef {
@@ -446,6 +461,14 @@ pub async fn subscribe_run(
                     let status_change = TaskStatus::after(&envelope.event).filter(|status| {
                         *status != TaskStatus::WaitingForApproval || approval_live == Some(true)
                     });
+                    if let RunEvent::RunCompleted { usage, runtime, .. } = &envelope.event {
+                        record_run_usage(
+                            &app.state::<AppState>(),
+                            &task.id,
+                            usage,
+                            runtime.as_ref(),
+                        );
+                    }
                     if let Some(status) = status_change {
                         let outcome = outcome_of(&envelope.event);
                         let state = app.state::<AppState>();
@@ -474,6 +497,27 @@ pub async fn subscribe_run(
         );
     });
     Ok(())
+}
+
+/// Stores a finished run's tokens, the served model and the estimated cost (M7 §5, D-020). The
+/// price comes from the cached catalogue; without one the cost is unknown, not zero.
+fn record_run_usage(
+    state: &AppState,
+    task_id: &str,
+    usage: &crate::hermes::events::Usage,
+    served: Option<&crate::hermes::events::Runtime>,
+) {
+    let cost = served.and_then(|served| {
+        let catalog = state.catalog.lock().ok()?;
+        let price = catalog.as_ref()?.price(&served.provider, &served.model)?;
+        Some(models::estimate_cost(usage, &price))
+    });
+    if let Err(err) = state.with_store(|store| store.record_usage(task_id, usage, cost, served)) {
+        eprintln!(
+            "[kairos] couldn't store the usage of {task_id}: {}",
+            err.message
+        );
+    }
 }
 
 fn approval_is_live(pending: &[PendingControl], prompt_id: &str) -> bool {
@@ -1246,6 +1290,25 @@ pub async fn disconnect_account(kind: AccountKind) -> Result<Vec<AccountState>, 
 }
 
 // --- Models and sandbox (M7) -----------------------------------------------------------------
+
+/// The models Hermes can route to, with prices (M7 §4). Also kept to price finished runs.
+#[tauri::command]
+pub async fn model_catalog(state: tauri::State<'_, AppState>) -> Result<Catalog, CommandError> {
+    let client = state.connected_client()?;
+    let catalog = models::parse_catalog(&client.model_options().await?);
+    if let Ok(mut cached) = state.catalog.lock() {
+        *cached = Some(catalog.clone());
+    }
+    Ok(catalog)
+}
+
+#[tauri::command]
+pub async fn conversation_model(
+    state: tauri::State<'_, AppState>,
+    session_id: String,
+) -> Result<ModelChoice, CommandError> {
+    state.with_store(|store| store.conversation_model(&session_id))
+}
 
 /// Where the agent's commands run (`local`, `docker`, …), or `None` when Hermes can't say.
 #[tauri::command]

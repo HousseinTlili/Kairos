@@ -1,6 +1,7 @@
 //! Local `kairos.db`: the `task` table (M1 §10, ARCHITECTURE.md §4), and from schema 2 the
 //! `setting` and `presence_event` tables (M3 §8), and from schema 3 the `notification` table
-//! (M4 §6, methods in `notifications/store.rs`).
+//! (M4 §6, methods in `notifications/store.rs`), and from schema 4 each conversation's model and
+//! each request's usage and estimated cost (M7 §5).
 //!
 //! A task row is written *before* Hermes is called and its ID is the run's Idempotency-Key, so a
 //! retry after a crash or a network error can never start a second run (M1 §9 rule 1).
@@ -14,7 +15,7 @@ use serde::Serialize;
 use crate::hermes::events::RunEvent;
 use crate::presence::{PresenceEvent, PresenceKind};
 
-const SCHEMA_VERSION: i32 = 3;
+const SCHEMA_VERSION: i32 = 4;
 
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 #[error("local task database: {0}")]
@@ -142,6 +143,21 @@ pub struct Task {
     pub created_at: i64,
     pub finished_at: Option<i64>,
     pub outcome: Option<String>,
+    /// From `run.completed` (M7): tokens, the estimated cost (`None` = price unknown) and the
+    /// provider and model that actually served the request.
+    pub input_tokens: Option<i64>,
+    pub output_tokens: Option<i64>,
+    pub cache_read_tokens: Option<i64>,
+    pub cost_usd: Option<f64>,
+    pub served_provider: Option<String>,
+    pub served_model: Option<String>,
+}
+
+/// A conversation's chosen model (M7 §4); both `None` means Hermes's default.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, serde::Deserialize)]
+pub struct ModelChoice {
+    pub provider: Option<String>,
+    pub model: Option<String>,
 }
 
 pub struct TaskStore {
@@ -233,6 +249,22 @@ impl TaskStore {
                  PRAGMA user_version = 3;",
             )?;
         }
+        if version < 4 {
+            conn.execute_batch(
+                "CREATE TABLE conversation (
+                   session_id TEXT PRIMARY KEY,
+                   provider   TEXT,
+                   model      TEXT
+                 );
+                 ALTER TABLE task ADD COLUMN input_tokens INTEGER;
+                 ALTER TABLE task ADD COLUMN output_tokens INTEGER;
+                 ALTER TABLE task ADD COLUMN cache_read_tokens INTEGER;
+                 ALTER TABLE task ADD COLUMN cost_usd REAL;
+                 ALTER TABLE task ADD COLUMN served_provider TEXT;
+                 ALTER TABLE task ADD COLUMN served_model TEXT;
+                 PRAGMA user_version = 4;",
+            )?;
+        }
         Ok(Self { conn })
     }
 
@@ -278,7 +310,8 @@ impl TaskStore {
         Ok(self
             .conn
             .query_row(
-                "SELECT id, session_id, run_id, goal, status, created_at, finished_at, outcome
+                "SELECT id, session_id, run_id, goal, status, created_at, finished_at, outcome,
+                    input_tokens, output_tokens, cache_read_tokens, cost_usd, served_provider, served_model
                  FROM task WHERE id = ?1",
                 params![id],
                 row_to_task,
@@ -289,7 +322,8 @@ impl TaskStore {
     /// A conversation's tasks, oldest first.
     pub fn for_session(&self, session_id: &str) -> Result<Vec<Task>, StoreError> {
         self.query_tasks(
-            "SELECT id, session_id, run_id, goal, status, created_at, finished_at, outcome
+            "SELECT id, session_id, run_id, goal, status, created_at, finished_at, outcome,
+                    input_tokens, output_tokens, cache_read_tokens, cost_usd, served_provider, served_model
              FROM task WHERE session_id = ?1 ORDER BY created_at, rowid",
             params![session_id],
         )
@@ -327,7 +361,8 @@ impl TaskStore {
 
     pub fn open_tasks(&self) -> Result<Vec<Task>, StoreError> {
         self.query_tasks(
-            "SELECT id, session_id, run_id, goal, status, created_at, finished_at, outcome
+            "SELECT id, session_id, run_id, goal, status, created_at, finished_at, outcome,
+                    input_tokens, output_tokens, cache_read_tokens, cost_usd, served_provider, served_model
              FROM task
              WHERE status NOT IN ('completed', 'incomplete', 'failed', 'cancelled', 'interrupted', 'lost')
              ORDER BY created_at, rowid",
@@ -368,6 +403,72 @@ impl TaskStore {
 }
 
 impl TaskStore {
+    pub fn conversation_model(&self, session_id: &str) -> Result<ModelChoice, StoreError> {
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT provider, model FROM conversation WHERE session_id = ?1",
+                params![session_id],
+                |row| {
+                    Ok(ModelChoice {
+                        provider: row.get(0)?,
+                        model: row.get(1)?,
+                    })
+                },
+            )
+            .optional()?
+            .unwrap_or_default())
+    }
+
+    /// Remembers a conversation's model; the default (both `None`) removes the row.
+    pub fn set_conversation_model(
+        &self,
+        session_id: &str,
+        choice: &ModelChoice,
+    ) -> Result<(), StoreError> {
+        if choice.provider.is_none() && choice.model.is_none() {
+            self.conn.execute(
+                "DELETE FROM conversation WHERE session_id = ?1",
+                params![session_id],
+            )?;
+        } else {
+            self.conn.execute(
+                "INSERT INTO conversation (session_id, provider, model) VALUES (?1, ?2, ?3)
+                 ON CONFLICT(session_id) DO UPDATE SET provider = excluded.provider,
+                                                       model = excluded.model",
+                params![session_id, choice.provider, choice.model],
+            )?;
+        }
+        Ok(())
+    }
+
+    /// What `run.completed` reported for a task (M7 §5).
+    pub fn record_usage(
+        &self,
+        task_id: &str,
+        usage: &crate::hermes::events::Usage,
+        cost_usd: Option<f64>,
+        served: Option<&crate::hermes::events::Runtime>,
+    ) -> Result<(), StoreError> {
+        self.conn.execute(
+            "UPDATE task SET input_tokens = ?2, output_tokens = ?3, cache_read_tokens = ?4,
+                             cost_usd = ?5, served_provider = ?6, served_model = ?7
+             WHERE id = ?1",
+            params![
+                task_id,
+                usage.input_tokens as i64,
+                usage.output_tokens as i64,
+                usage.cache_read_tokens as i64,
+                cost_usd,
+                served
+                    .map(|r| r.provider.as_str())
+                    .filter(|s| !s.is_empty()),
+                served.map(|r| r.model.as_str()).filter(|s| !s.is_empty()),
+            ],
+        )?;
+        Ok(())
+    }
+
     /// For the other tables' modules (`notifications/store.rs`); the schema stays here.
     pub(crate) fn conn(&self) -> &Connection {
         &self.conn
@@ -459,6 +560,12 @@ fn row_to_task(row: &rusqlite::Row<'_>) -> rusqlite::Result<Task> {
         created_at: row.get(5)?,
         finished_at: row.get(6)?,
         outcome: row.get(7)?,
+        input_tokens: row.get(8)?,
+        output_tokens: row.get(9)?,
+        cache_read_tokens: row.get(10)?,
+        cost_usd: row.get(11)?,
+        served_provider: row.get(12)?,
+        served_model: row.get(13)?,
     })
 }
 
@@ -609,7 +716,7 @@ mod tests {
             .conn
             .pragma_query_value(None, "user_version", |row| row.get(0))
             .expect("version");
-        assert_eq!(version, 3);
+        assert_eq!(version, SCHEMA_VERSION);
         let task = store.get("t1").expect("get").expect("kept");
         assert_eq!(task.status, TaskStatus::Completed);
         store.set_setting("alerts_enabled", "false").expect("set");
@@ -704,6 +811,87 @@ mod tests {
                 waiting: 1
             }
         );
+    }
+
+    #[test]
+    fn a_version_3_database_gains_models_and_usage_and_keeps_its_tasks() {
+        let conn = Connection::open_in_memory().expect("conn");
+        conn.execute_batch(
+            "CREATE TABLE task (
+               id TEXT PRIMARY KEY, session_id TEXT NOT NULL, run_id TEXT, goal TEXT NOT NULL,
+               status TEXT NOT NULL, created_at INTEGER NOT NULL, finished_at INTEGER, outcome TEXT
+             );
+             INSERT INTO task VALUES ('t1', 'kairos-s1', 'run_1', 'hello', 'completed', 1, 2, 'ok');
+             CREATE TABLE presence_event (id INTEGER PRIMARY KEY, at INTEGER NOT NULL, kind TEXT NOT NULL, detail TEXT);
+             CREATE TABLE setting (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+             CREATE TABLE notification (
+               id INTEGER PRIMARY KEY, app_id TEXT NOT NULL, app_name TEXT NOT NULL,
+               windows_id INTEGER NOT NULL, created_at INTEGER NOT NULL, title TEXT NOT NULL,
+               body TEXT NOT NULL, read_at INTEGER, UNIQUE (app_id, windows_id, created_at)
+             );
+             PRAGMA user_version = 3;",
+        )
+        .expect("v3 schema");
+        let store = TaskStore::init(conn).expect("migrate");
+        let task = store.get("t1").expect("get").expect("kept");
+        assert_eq!(task.goal, "hello");
+        assert_eq!(task.cost_usd, None);
+        assert_eq!(
+            store.conversation_model("kairos-s1").expect("model"),
+            ModelChoice::default()
+        );
+    }
+
+    #[test]
+    fn a_conversation_remembers_its_model_and_forgets_it_on_default() {
+        let store = store();
+        let choice = ModelChoice {
+            provider: Some("openrouter".into()),
+            model: Some("example/large".into()),
+        };
+        store
+            .set_conversation_model("kairos-s", &choice)
+            .expect("set");
+        assert_eq!(store.conversation_model("kairos-s").expect("get"), choice);
+        store
+            .set_conversation_model("kairos-s", &ModelChoice::default())
+            .expect("default");
+        assert_eq!(
+            store.conversation_model("kairos-s").expect("get"),
+            ModelChoice::default()
+        );
+    }
+
+    #[test]
+    fn usage_and_the_served_model_are_stored_on_the_task() {
+        use crate::hermes::events::{Runtime, Usage};
+        let store = store();
+        store.create("a", "kairos-s", "hi").expect("create");
+        let usage = Usage {
+            input_tokens: 1200,
+            output_tokens: 300,
+            total_tokens: 1500,
+            cache_read_tokens: 200,
+            cache_write_tokens: 0,
+        };
+        let served = Runtime {
+            provider: "openrouter".into(),
+            model: "example/large".into(),
+        };
+        store
+            .record_usage("a", &usage, Some(0.0021), Some(&served))
+            .expect("record");
+        let task = store.get("a").expect("get").expect("task");
+        assert_eq!(
+            (
+                task.input_tokens,
+                task.output_tokens,
+                task.cache_read_tokens
+            ),
+            (Some(1200), Some(300), Some(200))
+        );
+        assert_eq!(task.cost_usd, Some(0.0021));
+        assert_eq!(task.served_model.as_deref(), Some("example/large"));
     }
 
     #[test]

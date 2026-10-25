@@ -5,8 +5,6 @@ mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
 mod keyring;
-// M7: wired up in Steps 4 and 5, which remove this allowance.
-#[allow(dead_code)]
 mod models;
 mod notifications;
 mod presence;
@@ -160,7 +158,9 @@ pub fn run() {
             commands::accounts_state,
             commands::connect_account,
             commands::disconnect_account,
-            commands::terminal_backend
+            commands::terminal_backend,
+            commands::model_catalog,
+            commands::conversation_model
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

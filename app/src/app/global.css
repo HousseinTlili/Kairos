@@ -1792,3 +1792,25 @@ pre {
 .account-list .deny {
   color: var(--oxblood);
 }
+
+/* ---------------------------------------------------------------- Models (M7 Step 4) */
+
+.model-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 760px;
+  margin: 0 auto 6px;
+  width: 100%;
+}
+
+.model-picker select {
+  font: inherit;
+  font-size: 0.8125rem;
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--fg);
+}

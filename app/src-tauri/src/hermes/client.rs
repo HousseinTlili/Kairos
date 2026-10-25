@@ -89,6 +89,11 @@ impl Capabilities {
 pub struct CreateRunRequest<'a> {
     pub input: &'a str,
     pub session_id: &'a str,
+    /// The conversation's chosen model (M7 §4); left out for Hermes's own choice and fallbacks.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider: Option<&'a str>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -264,6 +269,12 @@ impl HermesClient {
             &serde_json::json!({}),
         )
         .await
+    }
+
+    /// `GET /api/model/options` (M7 §4): providers, models and prices, read leniently by
+    /// `models::parse_catalog`.
+    pub async fn model_options(&self) -> Result<serde_json::Value, HermesError> {
+        self.get_json("/api/model/options").await
     }
 
     pub async fn list_sessions(&self) -> Result<SessionList, HermesError> {

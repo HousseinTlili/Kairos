@@ -24,6 +24,16 @@ import stopSse from "../../../../fixtures/hermes-0.22.5/run-stop/03-events.sse?r
 import kairosDenySse from "../../../../fixtures/hermes-0.22.5/run-kairos-rule-deny/events.sse?raw";
 import doublePromptSse from "../../../../fixtures/hermes-0.22.5/run-kairos-rule-double-prompt/events.sse?raw";
 
+/** Stored tasks from before M7 have no usage. */
+const NO_USAGE = {
+  input_tokens: null,
+  output_tokens: null,
+  cache_read_tokens: null,
+  cost_usd: null,
+  served_provider: null,
+  served_model: null,
+};
+
 // The Rust side sends {run_id, seq, timestamp, event: {event, ...fields}}; recorded Hermes data
 // lines are flat, so wrap them the same way.
 function envelopes(sse: string): RunEventEnvelope[] {
@@ -178,6 +188,7 @@ describe("approvals, stop and history (M1 §9 rules 2, 4, 5)", () => {
       created_at: 1,
       finished_at: 2,
       outcome: "Kairos OK",
+      ...NO_USAGE,
     });
     expect(turn).toMatchObject({ input: "Reply with exactly: Kairos OK", text: "Kairos OK" });
     expect(isFinished(turn.status)).toBe(true);
@@ -193,6 +204,7 @@ describe("approvals, stop and history (M1 §9 rules 2, 4, 5)", () => {
       created_at: 1,
       finished_at: 2,
       outcome: "Hermes no longer knows this run",
+      ...NO_USAGE,
     });
     expect(turn).toMatchObject({ text: "", error: "Hermes no longer knows this run" });
   });
@@ -273,6 +285,7 @@ describe("the Kairos audit on tool rows (M2 Step 6)", () => {
       created_at,
       finished_at: created_at + 5,
       outcome: "done",
+      ...NO_USAGE,
     });
     const turns = turnsFromHistory(
       [task("a", 100, "read the readme"), task("b", 200, "read my key")],

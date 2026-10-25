@@ -67,6 +67,8 @@ fn a_simple_run_streams_to_completion_and_a_retry_never_runs_twice() {
         let request = CreateRunRequest {
             input: "Reply with exactly: Kairos live test OK",
             session_id: &session,
+            model: None,
+            provider: None,
         };
 
         let created = client.create_run(&request, &key).await.expect("create run");
@@ -107,6 +109,8 @@ fn a_simple_run_streams_to_completion_and_a_retry_never_runs_twice() {
         let other = CreateRunRequest {
             input: "something else",
             session_id: &session,
+            model: None,
+            provider: None,
         };
         assert!(matches!(
             client.create_run(&other, &key).await,

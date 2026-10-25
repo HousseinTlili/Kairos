@@ -50,8 +50,14 @@ export const connect = () => call<ConnectInfo>("connect");
 export const reloadKey = () => call<ConnectInfo>("reload_key");
 
 // Tauri maps camelCase argument names here to the snake_case Rust parameters.
-export const createRun = (sessionId: string | null, input: string) =>
-  call<TaskRef>("create_run", { sessionId, input });
+/** A conversation's model (M7); both null = Hermes's own choice. */
+export interface ModelChoice {
+  provider: string | null;
+  model: string | null;
+}
+
+export const createRun = (sessionId: string | null, input: string, choice: ModelChoice | null) =>
+  call<TaskRef>("create_run", { sessionId, input, choice });
 export const subscribeRun = (taskId: string, runId: string) =>
   call<void>("subscribe_run", { taskId, runId });
 
@@ -87,6 +93,13 @@ export interface StoredTask {
   created_at: number;
   finished_at: number | null;
   outcome: string | null;
+  /** From run.completed (M7). cost_usd null = price unknown. */
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cache_read_tokens: number | null;
+  cost_usd: number | null;
+  served_provider: string | null;
+  served_model: string | null;
 }
 
 export interface Conversation {
@@ -410,3 +423,27 @@ export const disconnectAccount = (kind: AccountKind) =>
 // --- Models and sandbox (M7). ------------------------------------------------------------------
 
 export const terminalBackend = () => call<string | null>("terminal_backend");
+
+export interface Price {
+  /** Dollars per million tokens. */
+  input: number;
+  output: number;
+  cache: number | null;
+}
+
+export interface ProviderModels {
+  slug: string;
+  name: string;
+  is_current: boolean;
+  models: { id: string; price: Price | null }[];
+}
+
+export interface Catalog {
+  current_provider: string | null;
+  current_model: string | null;
+  providers: ProviderModels[];
+}
+
+export const modelCatalog = () => call<Catalog>("model_catalog");
+export const conversationModel = (sessionId: string) =>
+  call<ModelChoice>("conversation_model", { sessionId });

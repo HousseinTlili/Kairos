@@ -24,6 +24,7 @@ import {
   turnsFromHistory,
   type Turn,
 } from "./turn";
+import { useModels } from "../models/store";
 
 // Hermes writes audit rows from its own process a moment after the events arrive here, so the
 // audit is re-read shortly after a tool call or run ends, not on every event.
@@ -88,7 +89,7 @@ export const useChat = create<ChatState>((set, get) => {
       const patch = (change: (turn: Turn) => Turn) =>
         set({ turns: get().turns.map((turn, i) => (i === index ? change(turn) : turn)) });
       try {
-        const task = await createRun(get().sessionId, text);
+        const task = await createRun(get().sessionId, text, useModels.getState().choice);
         set({ sessionId: task.session_id });
         patch((turn) => ({
           ...turn,
@@ -105,6 +106,7 @@ export const useChat = create<ChatState>((set, get) => {
 
     newConversation() {
       set({ sessionId: null, turns: [], notice: null });
+      void useModels.getState().loadFor(null);
     },
 
     async openConversation(sessionId) {
@@ -116,6 +118,7 @@ export const useChat = create<ChatState>((set, get) => {
         ]);
         const turns = turnsFromHistory(tasks, events);
         set({ sessionId, turns, notice: null });
+        void useModels.getState().loadFor(sessionId);
         await subscribeUnfinished(turns);
       } catch (err) {
         set({ notice: `Couldn't open that conversation: ${messageOf(err)}` });
