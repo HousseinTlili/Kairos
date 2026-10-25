@@ -1,6 +1,8 @@
 # M3 acceptance record
 
-**Status: waiting for the product owner's checks on the PC.** Steps 1–7 are built and committed;
+**Status: checks run on the PC (2026-10-25); not ready for sign-off.** See "The main finding".
+
+~~Waiting for the product owner's checks on the PC.~~ Steps 1–7 are built and committed;
 everything that could run without Windows, Hermes or a person was run on 2026-10-25 in a Linux
 cloud session (results below). Nothing marked "On the PC" has been seen yet.
 
@@ -50,23 +52,33 @@ from the command line, so `close_app`'s protections could be skipped. Three new 
 (`kill-system-processes` deny, `kill-processes` ask, `run-installers` ask; M3 §6), 149 policy
 cases across 23 rules, and the Rules page offers them to existing files.
 
-## On the PC (product owner)
+## On the PC (product owner, 2026-10-25)
 
-| Step | Check | Result |
-|---|---|---|
-| 2 | System page figures look plausible: CPU, cores, RAM, each drive with read/write, Wi-Fi name and signal, GPU (NVIDIA), battery on a laptop | |
-| 3 | System page vs Task Manager, side by side for a minute: CPU, RAM, disk, network, GPU within a few percent (CPU may read lower; M3 §5.3) | |
-| 4 | "Run speed test" finishes in under 40 s, close to speed.cloudflare.com in a browser | |
-| 5 | Chat "open Notepad": Notepad opens with no prompt; tool row says "allowed by open-apps" | |
-| 5 | Chat "close Notepad" (with unsaved text): approval card from `close-apps`; after allowing, Kairos reports Notepad is still open because it is asking to save, and does **not** force it | |
-| 5 | Chat "close explorer": blocked by `system-processes` | |
-| 5 | Chat "what apps are open?": uses `list_running_apps`, no terminal | |
-| 6 | A CPU-burning app raises the alert within about a minute; Windows toast and banner; "Close it?" opens a conversation and leads to a `close-apps` approval card. The threshold is 80 % of the **whole** CPU, summed over an app's processes, so one busy loop isn't enough: start `powershell -NoProfile -Command "while(1){}"` once per logical core (Task Manager ▸ Performance ▸ CPU shows the count) | |
-| 6 | Settings ▸ System ▸ alerts off: no more toasts; back on: no replay of old ones | |
-| 7 | Closing the window leaves Kairos in the tray; tray "System" opens the System page; "Quit Kairos" exits | |
-| 7 | Starting Kairos a second time focuses the running one | |
-| 7 | Lock (Win+L) and unlock: "PC unlocked" in Settings ▸ Startup ▸ Recently. Sleep and wake: "PC woke from sleep (slept N min)" | |
-| 7 | Settings ▸ Startup switch on/off changes the login entry (Task Manager ▸ Startup apps shows Kairos) | |
+The product owner ran the checklist and reported every item as passed. The checks that leave a
+record were then compared with `audit.db` and `kairos.db`; where the record differs, it wins
+("Don't claim what you didn't see").
+
+| Step | Check | Result | Evidence |
+|---|---|---|---|
+| 2 | System page figures plausible: CPU, cores, RAM, drives with read/write, Wi-Fi, GPU, battery | Pass | Product owner |
+| 3 | System page vs Task Manager side by side | Pass | Product owner |
+| 4 | Speed test finishes in under 40 s, close to speed.cloudflare.com | Pass | Product owner |
+| — | Settings ▸ Rules "Add the new rules", then Save | Pass | `policy.json` now has 23 rules, valid, identical to the starter set |
+| 5 | "Open Notepad" opens with no prompt, through `open_app` | **Partly** | Notepad opened with no prompt, but through `terminal` (`notepad`), not `open_app`; so no "allowed by open-apps" |
+| 5 | "Close Notepad" asks, then closes gently and lets it ask to save | **No** | The model ran `taskkill /f /im notepad.exe` in the terminal. `kill-processes` (added in the review) asked; after Allow, Notepad was **force-killed**. Without that rule the force-kill would have run unasked |
+| 5 | "Close explorer" blocked by `system-processes` | Not run | No such call in `audit.db` |
+| 5 | "What apps are open?" uses `list_running_apps` | **No** | The model used `tasklist` and `Get-Process` in the terminal |
+| 6 | CPU alert, toast, banner, "Close it?" → approval card | Pass | Product owner |
+| 6 | Alerts off: no more toasts; back on: no replay | Pass | Product owner |
+| 7 | Closing the window keeps Kairos in the tray; tray menu works | Pass | Product owner |
+| 7 | Starting Kairos a second time focuses the running one | Pass | Product owner |
+| 7 | Lock and unlock: "PC unlocked" in Settings ▸ Startup | **Open** | `kairos.db` holds one `startup` event (09:46) and no `unlock` or `wake` |
+| 7 | Settings ▸ Startup switch changes the login entry | Pass | Product owner |
+
+**The main finding:** none of the three PC tools was ever called. The free model
+(`upstage/solar-mini4:free`) reaches for the terminal for every app action. The rules kept the
+risky part in check, but `close_app`'s gentle close (and its save prompt) never happens, and the
+tool rows can't say "allowed by open-apps". M3 can't be accepted until the model uses the tools.
 
 **Note on the login entry.** Only a **release** build switches "start at login" on by itself on
 first launch; `pnpm tauri dev` never does, so the entry can't point at a debug build. To test
@@ -76,9 +88,9 @@ criterion 3, run `pnpm -C app tauri build`, start the built Kairos once, then re
 
 | Criterion | Result |
 |---|---|
-| The System page matches Task Manager within a few percent | |
-| "Open Notepad" runs; "close Notepad" asks first | |
-| After a reboot, Kairos (in the tray) and Hermes are both running with nobody starting them | |
+| The System page matches Task Manager within a few percent | Pass (product owner) |
+| "Open Notepad" runs; "close Notepad" asks first | **Partly**: both happen, but through the terminal; the close was a force-kill |
+| After a reboot, Kairos (in the tray) and Hermes are both running with nobody starting them | Not run: needs a release build and `install-gateway-autostart.ps1` |
 
 ## Known limits
 
