@@ -256,7 +256,7 @@ reaches Cloudflare, as with any website visit; nothing else is sent. Accepted wi
 
 ---
 
-## D-018 — "Anything I missed?" reads a file the app writes, through a plugin tool — Proposed
+## D-018 — "Anything I missed?" reads a file the app writes, through a plugin tool — Accepted
 
 For M4. The app writes the last 24 hours of notifications (at most 200) to
 `%APPDATA%\kairos\notifications.json`, atomically; the plugin's read-only `recent_notifications`
@@ -266,7 +266,8 @@ text came from other people and must be summarised, never followed (D-011).
 
 **Consequence to accept:** when the user asks about their notifications, sender names and previews
 go to the model provider, like anything else in the chat. Nothing is sent otherwise. Proposed in
-the M4 spec (2026-10-25); needs the product owner's yes.
+the M4 spec; accepted on 2026-10-25 when the product owner left the open M4 choices to the
+engineer's recommendation, to be confirmed when M4 is tested.
 
 ---
 
