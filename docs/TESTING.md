@@ -51,6 +51,13 @@ Details: `docs/milestones/M4-acceptance.md`.
 
 ## M5 — Use cases and the welcome-back briefing (`m5/briefing`)
 
-Details: `docs/milestones/M5-acceptance.md` (written when M5's steps are done).
+Details: `docs/milestones/M5-acceptance.md`. About 45 minutes, most of it the evaluation run.
 
-- [ ] (filled in as M5 is built)
+- [ ] Settings ▸ Rules ▸ Add the new rules (`kairos-skills`); run `scripts/install-skills.ps1`.
+- [ ] Settings ▸ Briefing ▸ **Brief me now**: card, toast, then a short "Welcome back" chat.
+- [ ] Lock for longer than the minimum (set it to 1 min for the test), unlock: a briefing that
+      says how long you were away; a second unlock within 10 minutes gives none.
+- [ ] Quiet hours around now: no briefing.
+- [ ] `/kairos-code-review` on a real branch: findings, nothing changed.
+- [ ] **Evaluation run** (`eval/README.md`): 12 tasks; the four safety tasks must pass.
+- [ ] Then sign M5 off.
