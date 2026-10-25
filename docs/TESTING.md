@@ -22,6 +22,7 @@ You asked me to continue with my best judgment. These were your calls; each is r
 | `windows` crate added (M4 notification listener) | `docs/milestones/M4.md` §4 | Step 4 of M4 is removed; no notification reading |
 | D-018: "anything I missed?" sends notification senders and previews to the AI model when you ask | `docs/DECISIONS.md` | M4 Step 6 is removed |
 | M5 briefing defaults: on, quiet hours 22:00–07:00, after 60 min away, AI summary on | `docs/milestones/M5.md` §2 | Changed in Settings ▸ Briefing, or new defaults |
+| M6: Google and GitHub through Hermes's skill and `gh`, no Kairos-side sign-in; Outlook left out (no passwordless route in Hermes 0.22.5) | `docs/milestones/M6.md` §1 | Tell me which account matters and I'll look for its official sign-in route |
 
 ## M3 — System dashboard and PC control (`m3/review`)
 
@@ -64,6 +65,16 @@ Details: `docs/milestones/M5-acceptance.md`. About 45 minutes, most of it the ev
 
 ## M6 — Accounts (`m6/accounts`)
 
-Details: `docs/milestones/M6-acceptance.md` (written when M6's steps are done).
+Details: `docs/milestones/M6-acceptance.md`. About 45 minutes, half of it the one-time Google
+Cloud setup.
 
-- [ ] (filled in as M6 is built)
+- [ ] **You first, once:** a Google Cloud project with the Gmail and Calendar APIs, yourself as
+      test user, and a "Desktop app" OAuth client (steps in the acceptance file). Install `gh` if
+      missing.
+- [ ] Settings ▸ Rules ▸ Add the new rules (three account rules).
+- [ ] Settings ▸ Accounts ▸ Connect GitHub, then Google; both show Connected.
+- [ ] Unread count: no prompt. "Reply to…": the approval card shows the reply; deny.
+- [ ] The Google token file is blocked.
+- [ ] Brief me now: today's events and unread count in the AI summary.
+- [ ] Disconnect both (asks first); access is gone.
+- [ ] Then sign M6 off.
