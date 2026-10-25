@@ -7,6 +7,7 @@ pub mod hermes;
 mod keyring;
 mod models;
 mod notifications;
+mod persona;
 mod presence;
 mod quick;
 mod rules;
@@ -208,7 +209,10 @@ pub fn run() {
             commands::delete_voice_model,
             commands::transcribe,
             commands::ptt_hotkey,
-            commands::set_ptt_hotkey
+            commands::set_ptt_hotkey,
+            commands::persona_state,
+            commands::save_persona,
+            commands::restore_persona
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1973,3 +1973,43 @@ pub async fn set_ptt_hotkey(
     state.with_store(|store| store.set_setting(voice::PTT_SETTING, &hotkey))?;
     Ok(hotkey)
 }
+
+// --- Persona (M10, D-023) ----------------------------------------------------------------------
+
+use crate::persona::{PersonaError, PersonaFiles, PersonaState};
+
+impl From<PersonaError> for CommandError {
+    fn from(err: PersonaError) -> Self {
+        Self {
+            kind: "persona",
+            message: err.to_string(),
+        }
+    }
+}
+
+fn persona_files() -> Result<PersonaFiles, CommandError> {
+    let kairos_dir = store::default_path()?
+        .parent()
+        .map(std::path::Path::to_path_buf)
+        .ok_or_else(|| CommandError {
+            kind: "persona",
+            message: "couldn't find the Kairos folder".into(),
+        })?;
+    Ok(PersonaFiles::new(&local::hermes_home()?, &kairos_dir))
+}
+
+#[tauri::command]
+pub async fn persona_state() -> Result<PersonaState, CommandError> {
+    Ok(persona_files()?.state()?)
+}
+
+/// Writes Hermes's SOUL.md, only on the user's Save (D-023).
+#[tauri::command]
+pub async fn save_persona(text: String) -> Result<PersonaState, CommandError> {
+    Ok(persona_files()?.save(&text)?)
+}
+
+#[tauri::command]
+pub async fn restore_persona() -> Result<PersonaState, CommandError> {
+    Ok(persona_files()?.restore()?)
+}

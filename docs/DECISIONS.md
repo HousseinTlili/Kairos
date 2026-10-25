@@ -319,7 +319,7 @@ Accepted by the product owner on 2026-10-25, with the dependency and the build s
 For M10. Hermes reads `<HERMES_HOME>\SOUL.md` into the system prompt whenever it builds one, so the
 Kairos persona (JARVIS-like, calls the product owner "Master", always answers in English; chosen
 2026-10-26) is written there, by the app, only when the user presses Save in Settings ▸ Persona.
-The first write backs the original up to `%APPDATA%\kairosackups\SOUL.md.before-kairos`, and
+The first write backs the original up to `%APPDATA%\kairos\backups\SOUL.md.before-kairos`, and
 "Restore the original" puts it back. No Hermes code changes and no per-turn prompt injection.
 Accepted when the product owner chose "persona now" on 2026-10-26.
 
