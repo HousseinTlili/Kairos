@@ -26,7 +26,7 @@ describe("the rules model", () => {
   it("reads the plugin's starter rules in order", () => {
     const doc = starter();
     expect(doc.rules[0].id).toBe("no-credentials");
-    expect(doc.rules).toHaveLength(20);
+    expect(doc.rules).toHaveLength(23);
   });
 
   it("saves the starter rules unchanged when nothing was edited", () => {
@@ -128,6 +128,22 @@ describe("rules added to the starter set later (M3)", () => {
   it("are offered to a file written before them, and not to the current starter rules", () => {
     expect(missingNewerRules(m2File()).map((r) => r.id)).toEqual(["open-installers", "open-apps"]);
     expect(missingNewerRules(starter())).toEqual([]);
+  });
+
+  it("bring a file written at M2 sign-off up to the current starter set", () => {
+    // The product owner's policy.json: the 18 rules from M2, before either M3 group.
+    const newer = NEWER_STARTER_RULES.flatMap((g) => g.rules.map((r) => r.id));
+    const doc = starter();
+    const m2SignOff: PolicyDoc = { ...doc, rules: doc.rules.filter((r) => !newer.includes(r.id)) };
+    expect(m2SignOff.rules).toHaveLength(18);
+    expect(missingNewerRules(m2SignOff).map((r) => r.id)).toEqual([
+      "open-installers",
+      "open-apps",
+      "kill-system-processes",
+      "kill-processes",
+      "run-installers",
+    ]);
+    expect(addNewerRules(m2SignOff)).toEqual(starter());
   });
 
   it("land where the starter set has them, so an older file ends up the same", () => {

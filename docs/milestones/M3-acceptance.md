@@ -11,9 +11,9 @@ cloud session (results below). Nothing marked "On the PC" has been seen yet.
 3. **Restart the Hermes gateway** in a Terminal panel tab: the plugin's PC tools are new Python
    code, and Hermes imports the plugin once (M2 §4).
 4. Settings ▸ Rules shows "New starter rules came with this version": press **Add the new rules**,
-   then **Save rules**. (Your `policy.json` predates `open-installers` and `open-apps`; without
-   them `open_app` still works through Hermes's own rules, but the tool row won't say
-   "allowed by open-apps" and installers won't ask.)
+   then **Save rules**. Your `policy.json` predates five of them: `open-installers` and `open-apps`,
+   and the three added in the Windows review (`kill-system-processes`, `kill-processes`,
+   `run-installers`). Until they are added, ending a program from the terminal isn't covered.
 5. Optional, for criterion 3: `powershell -NoProfile -ExecutionPolicy Bypass -File
    scripts/install-gateway-autostart.ps1` (asks first; answer yes to "start on login").
 
@@ -29,6 +29,26 @@ cloud session (results below). Nothing marked "On the PC" has been seen yet.
 | `winapps.py` | Byte-compiles; **never run** (Windows only) |
 | App smoke run under a virtual display (Linux) | Starts without errors; records `startup` in `kairos.db`; the System page shows live CPU, memory, network and disks and updates |
 | Speed test | **Not run**: the cloud session's network doesn't allow `speed.cloudflare.com` |
+
+## Checks run on the PC by the agent (2026-10-25)
+
+Reviewed and re-run on Windows 11 in the desktop session, against the real Hermes 0.22.5.
+
+| Check | Result |
+|---|---|
+| Plugin tests on Hermes's own Python 3.14.9 | 70 passed |
+| `winapps.py`, first run on Windows | Works: enumerated the open app windows and read 208 Start-menu apps (Notepad among them) |
+| `cargo clippy --all-targets -- -D warnings` (MSVC), `cargo fmt --check` | Clean |
+| `cargo test` (MSVC) | 92 unit and 19 fixture tests passed |
+| `cargo test -- --ignored` (live Hermes) | 4 passed |
+| `pnpm -C app test`, lint, `tsc --noEmit` | 65 passed; clean |
+| Hermes loads the plugin | `kairos` 0.3.0 enabled; `/v1/toolsets` lists the `kairos` toolset with `close_app`, `list_running_apps`, `open_app` |
+| "Open Notepad" through the API | Notepad opened with no prompt, **but through the terminal, not `open_app`**: the free model ignored the tool |
+
+**Found and fixed:** with the model free to use the terminal, nothing covered ending programs
+from the command line, so `close_app`'s protections could be skipped. Three new starter rules
+(`kill-system-processes` deny, `kill-processes` ask, `run-installers` ask; M3 §6), 149 policy
+cases across 23 rules, and the Rules page offers them to existing files.
 
 ## On the PC (product owner)
 

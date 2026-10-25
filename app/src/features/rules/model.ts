@@ -171,6 +171,56 @@ export const NEWER_STARTER_RULES: { after: string; rules: RuleDoc[] }[] = [
       },
     ],
   },
+  {
+    after: "permission-changes",
+    rules: [
+      {
+        id: "kill-system-processes",
+        description:
+          "Ending a Windows system process can crash or log out the computer. Kairos never does it.",
+        tools: ["terminal", "execute_code", "browser_exec"],
+        match: {
+          commands: [
+            "\\b(taskkill(\\.exe)?|stop-process|spps|kill|pkill|killall|tskill|wmic(\\.exe)?)\\b[^;&|\\n]*\\b(explorer|winlogon|csrss|lsass|services|svchost|smss|wininit|dwm)(\\.exe)?\\b",
+            "\\bget-process\\b[^;&\\n]*\\b(explorer|winlogon|csrss|lsass|services|svchost|smss|wininit|dwm)\\b[^;&\\n]*\\|\\s*(stop-process|spps|kill)\\b",
+          ],
+        },
+        action: "deny",
+      },
+      {
+        id: "kill-processes",
+        description:
+          "Ending a program from the command line can lose unsaved work. Use the close_app tool instead: it asks the user and lets the app save first.",
+        tools: ["terminal", "execute_code", "browser_exec"],
+        match: {
+          commands: [
+            "\\btaskkill(\\.exe)?\\b",
+            "\\btskill\\b",
+            "\\b(stop-process|spps)\\b",
+            "\\|\\s*kill\\b",
+            "(^|[;&|]\\s*)kill\\s+(-\\S+\\s+)*(%?\\d+|\\$\\S+)",
+            "\\b(pkill|killall)\\b",
+            "\\bwmic(\\.exe)?\\b[^;&|\\n]*\\bprocess\\b[^;&|\\n]*\\b(delete|terminate)\\b",
+            "\\.(Kill|terminate)\\s*\\(",
+          ],
+        },
+        action: "ask",
+      },
+      {
+        id: "run-installers",
+        description: "This starts an installer, which can change the computer.",
+        tools: ["terminal", "execute_code", "browser_exec"],
+        match: {
+          commands: [
+            "\\b(start|start-process|saps|invoke-item|ii|cmd\\s+/c\\s+start)\\b[^;&|\\n]*\\S*(setup|install)\\S*\\.exe\\b",
+            "(^|[;&|]\\s*)\\.?[\\\\/]?\\S*(setup|install)\\S*\\.exe\\b",
+            "\\S\\.msi\\b",
+          ],
+        },
+        action: "ask",
+      },
+    ],
+  },
 ];
 
 /** The newer starter rules this document doesn't have yet (matched by id). */
