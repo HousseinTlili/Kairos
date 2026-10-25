@@ -52,6 +52,35 @@ pub fn register<R: Runtime>(
     old: Option<&str>,
     new: &str,
 ) -> Result<(), String> {
+    replace(app, old, new, |app, state| {
+        if state == ShortcutState::Pressed {
+            toggle(app);
+        }
+    })
+}
+
+/// Push-to-talk (M9 §3): holding the key opens the quick box listening; letting go ends the
+/// recording. The quick box's page does the recording; this only says when.
+pub fn register_ptt<R: Runtime>(
+    app: &AppHandle<R>,
+    old: Option<&str>,
+    new: &str,
+) -> Result<(), String> {
+    replace(app, old, new, |app, state| {
+        let held = state == ShortcutState::Pressed;
+        if held {
+            show(app);
+        }
+        let _ = app.emit_to(QUICK_WINDOW, "push-to-talk", held);
+    })
+}
+
+fn replace<R: Runtime>(
+    app: &AppHandle<R>,
+    old: Option<&str>,
+    new: &str,
+    on_key: impl Fn(&AppHandle<R>, ShortcutState) + Send + Sync + 'static,
+) -> Result<(), String> {
     let shortcut = parse_hotkey(new)?;
     let manager = app.global_shortcut();
     if let Some(old) = old.and_then(|o| parse_hotkey(o).ok())
@@ -63,10 +92,8 @@ pub fn register<R: Runtime>(
         return Ok(());
     }
     manager
-        .on_shortcut(shortcut, |app, _shortcut, event| {
-            if event.state == ShortcutState::Pressed {
-                toggle(app);
-            }
+        .on_shortcut(shortcut, move |app, _shortcut, event| {
+            on_key(app, event.state)
         })
         .map_err(|err| format!("Windows refused {new}: it may be taken by another app ({err})."))
 }
@@ -77,7 +104,13 @@ mod tests {
 
     #[test]
     fn the_default_and_common_hotkeys_parse() {
-        for text in [DEFAULT_HOTKEY, "Alt+Space", "Ctrl+Shift+K", "Super+J"] {
+        for text in [
+            DEFAULT_HOTKEY,
+            crate::voice::DEFAULT_PTT,
+            "Alt+Space",
+            "Ctrl+Shift+K",
+            "Super+J",
+        ] {
             assert!(parse_hotkey(text).is_ok(), "{text}");
         }
     }

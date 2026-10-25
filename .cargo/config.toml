@@ -4,3 +4,8 @@
 [env]
 CMAKE = { value = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe', force = false }
 LIBCLANG_PATH = { value = 'C:\Program Files\LLVM\bin', force = false }
+# The cmake crate replaces CMake's Release flags with its own and leaves out optimisation under
+# MSVC (the generated project said <Optimization></Optimization>): whisper.cpp then ran ~10x
+# slower (34 s for a 2 s sentence). whisper-rs-sys passes CMAKE_* variables on to CMake.
+CMAKE_C_FLAGS_RELEASE = { value = '/O2 /Ob2 /DNDEBUG', force = false }
+CMAKE_CXX_FLAGS_RELEASE = { value = '/O2 /Ob2 /DNDEBUG', force = false }

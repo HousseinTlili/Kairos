@@ -13,6 +13,7 @@ mod rules;
 mod store;
 mod system;
 mod tray;
+mod voice;
 
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -84,6 +85,21 @@ pub fn run() {
             if let Err(err) = quick::register(app.handle(), None, &hotkey) {
                 eprintln!("kairos: {err}");
             }
+            let ptt = commands::stored_ptt_hotkey(&app.state::<commands::AppState>());
+            if let Err(err) = quick::register_ptt(app.handle(), None, &ptt) {
+                eprintln!("kairos: push-to-talk: {err}");
+            }
+            // The voice model is freed after ten minutes without speech (M9 §3).
+            let voice = Arc::new(voice::VoiceState::default());
+            app.manage(Arc::clone(&voice));
+            std::thread::Builder::new()
+                .name("kairos-voice-idle".into())
+                .spawn(move || {
+                    loop {
+                        std::thread::sleep(std::time::Duration::from_secs(60));
+                        voice.engine.unload_if_idle();
+                    }
+                })?;
             // The window starts hidden (tauri.conf.json); a login start stays in the tray.
             if !at_login {
                 tray::show_main(app.handle());
@@ -185,7 +201,14 @@ pub fn run() {
             commands::list_jobs,
             commands::create_job,
             commands::job_action,
-            commands::delete_job
+            commands::delete_job,
+            commands::voice_state,
+            commands::save_voice_settings,
+            commands::download_voice_model,
+            commands::delete_voice_model,
+            commands::transcribe,
+            commands::ptt_hotkey,
+            commands::set_ptt_hotkey
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

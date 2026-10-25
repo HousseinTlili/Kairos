@@ -1757,3 +1757,211 @@ mod tests {
         assert_eq!(resumed_status(&gone), TaskStatus::Lost);
     }
 }
+
+// --- Voice (M9, D-022) --------------------------------------------------------------------------
+
+use crate::voice::models::{self as voice_models, DownloadProgress, ModelId, ModelInfo};
+use crate::voice::{self, VoiceError, VoiceState};
+
+impl From<VoiceError> for CommandError {
+    fn from(err: VoiceError) -> Self {
+        Self {
+            kind: "voice",
+            message: err.to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct VoiceSettings {
+    pub models: Vec<ModelInfo>,
+    pub model: ModelId,
+    /// `None` = detect per recording.
+    pub language: Option<String>,
+    pub read_aloud: bool,
+    pub ptt_hotkey: String,
+    pub downloading: bool,
+}
+
+fn setting_or(state: &AppState, key: &str) -> Option<String> {
+    state
+        .with_store(|store| store.setting(key))
+        .ok()
+        .flatten()
+        .filter(|v| !v.trim().is_empty())
+}
+
+pub fn stored_ptt_hotkey(state: &AppState) -> String {
+    setting_or(state, voice::PTT_SETTING).unwrap_or_else(|| voice::DEFAULT_PTT.to_string())
+}
+
+fn stored_voice_model(state: &AppState) -> ModelId {
+    setting_or(state, voice::MODEL_SETTING)
+        .and_then(|m| ModelId::parse(&m))
+        .unwrap_or(ModelId::Small)
+}
+
+fn voice_settings(state: &AppState, voice: &VoiceState) -> Result<VoiceSettings, CommandError> {
+    let dir = voice_models::default_dir()?;
+    Ok(VoiceSettings {
+        models: voice_models::list(&dir),
+        model: stored_voice_model(state),
+        language: setting_or(state, voice::LANGUAGE_SETTING)
+            .filter(|l| crate::voice::stt::language_setting(Some(l)).is_some()),
+        read_aloud: setting_or(state, voice::READ_ALOUD_SETTING).as_deref() == Some("1"),
+        ptt_hotkey: stored_ptt_hotkey(state),
+        downloading: voice.downloading.load(std::sync::atomic::Ordering::SeqCst),
+    })
+}
+
+#[tauri::command]
+pub async fn voice_state(
+    state: tauri::State<'_, AppState>,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+) -> Result<VoiceSettings, CommandError> {
+    voice_settings(&state, &voice)
+}
+
+/// Saves the model, language and read-aloud choices (not the hotkey: `set_ptt_hotkey`).
+#[tauri::command]
+pub async fn save_voice_settings(
+    state: tauri::State<'_, AppState>,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+    model: ModelId,
+    language: Option<String>,
+    read_aloud: bool,
+) -> Result<VoiceSettings, CommandError> {
+    let language = language
+        .as_deref()
+        .and_then(|l| crate::voice::stt::language_setting(Some(l)))
+        .unwrap_or("");
+    state.with_store(|store| {
+        store.set_setting(voice::MODEL_SETTING, model.as_str())?;
+        store.set_setting(voice::LANGUAGE_SETTING, language)?;
+        store.set_setting(
+            voice::READ_ALOUD_SETTING,
+            if read_aloud { "1" } else { "0" },
+        )
+    })?;
+    voice_settings(&state, &voice)
+}
+
+/// Downloads a model on the user's click, sending `voice-model` progress events.
+#[tauri::command]
+pub async fn download_voice_model(
+    app: tauri::AppHandle,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+    id: ModelId,
+) -> Result<(), CommandError> {
+    use std::sync::atomic::Ordering;
+    if voice.downloading.swap(true, Ordering::SeqCst) {
+        return Err(CommandError {
+            kind: "busy",
+            message: "A voice model is already downloading.".into(),
+        });
+    }
+    let dir = voice_models::default_dir();
+    let outcome = match dir {
+        Ok(dir) => {
+            voice_models::download(&dir, id, |progress| {
+                let _ = app.emit("voice-model", progress);
+            })
+            .await
+        }
+        Err(err) => Err(err),
+    };
+    voice.downloading.store(false, Ordering::SeqCst);
+    let _ = app.emit(
+        "voice-model",
+        match &outcome {
+            Ok(()) => DownloadProgress::Done { id },
+            Err(err) => DownloadProgress::Failed {
+                id,
+                message: err.to_string(),
+            },
+        },
+    );
+    Ok(outcome?)
+}
+
+#[tauri::command]
+pub async fn delete_voice_model(
+    state: tauri::State<'_, AppState>,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+    id: ModelId,
+) -> Result<VoiceSettings, CommandError> {
+    voice.engine.unload();
+    voice_models::delete(&voice_models::default_dir()?, id)?;
+    voice_settings(&state, &voice)
+}
+
+/// Transcribes one recording. The body is the raw audio, 16 kHz mono signed 16-bit little-endian
+/// (half the size of floats, and no JSON for a minute of samples); the `language` header is "en",
+/// "fr", "ar" or absent (detect).
+#[tauri::command]
+pub async fn transcribe(
+    state: tauri::State<'_, AppState>,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+    request: tauri::ipc::Request<'_>,
+) -> Result<crate::voice::stt::Transcript, CommandError> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(VoiceError::Audio("expected raw audio".into()).into());
+    };
+    let samples = crate::voice::stt::pcm16_to_f32(bytes);
+    let language = request
+        .headers()
+        .get("language")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_string);
+    let id = stored_voice_model(&state);
+    let dir = voice_models::default_dir()?;
+    if !voice_models::is_ready(&dir, id) {
+        return Err(CommandError {
+            kind: "voice_model_missing",
+            message: "Download a voice model first: Settings ▸ Voice.".into(),
+        });
+    }
+    let model = voice_models::path(&dir, id);
+    let voice = Arc::clone(&voice);
+    tauri::async_runtime::spawn_blocking(move || {
+        voice
+            .engine
+            .transcribe(&model, &samples, language.as_deref())
+    })
+    .await
+    .map_err(|err| CommandError {
+        kind: "internal",
+        message: format!("transcription stopped: {err}"),
+    })?
+    .map_err(CommandError::from)
+}
+
+#[tauri::command]
+pub async fn ptt_hotkey(state: tauri::State<'_, AppState>) -> Result<String, CommandError> {
+    Ok(stored_ptt_hotkey(&state))
+}
+
+/// Registers a new push-to-talk key and keeps it only if Windows accepts it.
+#[tauri::command]
+pub async fn set_ptt_hotkey(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    hotkey: String,
+) -> Result<String, CommandError> {
+    if crate::quick::parse_hotkey(&hotkey).ok()
+        == crate::quick::parse_hotkey(&stored_hotkey(&state)).ok()
+    {
+        return Err(CommandError {
+            kind: "hotkey",
+            message: "That's the quick box's hotkey; push-to-talk needs its own.".into(),
+        });
+    }
+    let old = stored_ptt_hotkey(&state);
+    crate::quick::register_ptt(&app, Some(&old), &hotkey).map_err(|message| CommandError {
+        kind: "hotkey",
+        message,
+    })?;
+    let hotkey = hotkey.trim().to_string();
+    state.with_store(|store| store.set_setting(voice::PTT_SETTING, &hotkey))?;
+    Ok(hotkey)
+}

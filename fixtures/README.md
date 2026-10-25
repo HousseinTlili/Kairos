@@ -34,3 +34,12 @@ Recorded responses can contain personal data. Before committing a new fixture:
   nothing.
 - Fixture bytes are kept exactly as recorded (`.gitattributes` marks them `-text`, so Git never
   rewrites line endings).
+
+## `voice/`
+
+Synthetic speech for the M9 transcription test, made on 2026-10-25 with Windows's built-in
+"Microsoft Zira Desktop" voice (`System.Speech`), 16 kHz 16-bit mono. No one's real voice.
+
+| File | Says |
+|---|---|
+| `open-notepad.wav` | "Please open Notepad for me." |
