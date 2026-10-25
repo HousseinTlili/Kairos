@@ -26,7 +26,7 @@ describe("the rules model", () => {
   it("reads the plugin's starter rules in order", () => {
     const doc = starter();
     expect(doc.rules[0].id).toBe("no-credentials");
-    expect(doc.rules).toHaveLength(28);
+    expect(doc.rules).toHaveLength(29);
   });
 
   it("saves the starter rules unchanged when nothing was edited", () => {
@@ -147,6 +147,7 @@ describe("rules added to the starter set later (M3)", () => {
       "account-writes",
       "account-disconnect",
       "no-sandbox-changes",
+      "screen-capture",
     ]);
     expect(addNewerRules(m2SignOff)).toEqual(starter());
   });

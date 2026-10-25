@@ -518,6 +518,14 @@
         "open_app"
       ],
       "action": "allow"
+    },
+    {
+      "id": "screen-capture",
+      "description": "A screenshot can show anything on the screen; the user decides each time (D-021).",
+      "tools": [
+        "screen_capture"
+      ],
+      "action": "ask"
     }
   ]
 }

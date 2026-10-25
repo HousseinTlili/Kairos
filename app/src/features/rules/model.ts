@@ -316,6 +316,18 @@ export const NEWER_STARTER_RULES: { after: string; rules: RuleDoc[] }[] = [
       },
     ],
   },
+  {
+    after: "open-apps",
+    rules: [
+      {
+        id: "screen-capture",
+        description:
+          "A screenshot can show anything on the screen; the user decides each time (D-021).",
+        tools: ["screen_capture"],
+        action: "ask",
+      },
+    ],
+  },
 ];
 
 /** The newer starter rules this document doesn't have yet (matched by id). */

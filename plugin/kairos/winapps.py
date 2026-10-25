@@ -156,3 +156,97 @@ class Win32Layer:
             return kernel32.WaitForSingleObject(handle, 0) == WAIT_TIMEOUT
         finally:
             kernel32.CloseHandle(handle)
+
+
+# --- Screen capture (M8 §4) ----------------------------------------------------------------------
+
+gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
+
+SM_CXSCREEN, SM_CYSCREEN = 0, 1
+SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN = 76, 77, 78, 79
+SRCCOPY = 0x00CC0020
+CAPTUREBLT = 0x40000000
+DIB_RGB_COLORS = 0
+# Per-monitor-aware for this thread only, so the copy is in real pixels without changing how the
+# Hermes process itself is scaled.
+DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = ctypes.c_void_p(-4)
+
+
+class BITMAPINFOHEADER(ctypes.Structure):
+    _fields_ = [
+        ("biSize", wintypes.DWORD),
+        ("biWidth", wintypes.LONG),
+        ("biHeight", wintypes.LONG),
+        ("biPlanes", wintypes.WORD),
+        ("biBitCount", wintypes.WORD),
+        ("biCompression", wintypes.DWORD),
+        ("biSizeImage", wintypes.DWORD),
+        ("biXPelsPerMeter", wintypes.LONG),
+        ("biYPelsPerMeter", wintypes.LONG),
+        ("biClrUsed", wintypes.DWORD),
+        ("biClrImportant", wintypes.DWORD),
+    ]
+
+
+user32.GetSystemMetrics.argtypes = [ctypes.c_int]
+user32.GetSystemMetrics.restype = ctypes.c_int
+user32.GetDC.argtypes = [wintypes.HWND]
+user32.GetDC.restype = wintypes.HDC
+user32.ReleaseDC.argtypes = [wintypes.HWND, wintypes.HDC]
+user32.ReleaseDC.restype = ctypes.c_int
+gdi32.CreateCompatibleDC.argtypes = [wintypes.HDC]
+gdi32.CreateCompatibleDC.restype = wintypes.HDC
+gdi32.CreateCompatibleBitmap.argtypes = [wintypes.HDC, ctypes.c_int, ctypes.c_int]
+gdi32.CreateCompatibleBitmap.restype = wintypes.HBITMAP
+gdi32.SelectObject.argtypes = [wintypes.HDC, wintypes.HGDIOBJ]
+gdi32.SelectObject.restype = wintypes.HGDIOBJ
+gdi32.BitBlt.argtypes = [wintypes.HDC, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.HDC, ctypes.c_int, ctypes.c_int, wintypes.DWORD]
+gdi32.BitBlt.restype = wintypes.BOOL
+gdi32.GetDIBits.argtypes = [wintypes.HDC, wintypes.HBITMAP, wintypes.UINT, wintypes.UINT, ctypes.c_void_p, ctypes.c_void_p, wintypes.UINT]
+gdi32.GetDIBits.restype = ctypes.c_int
+gdi32.DeleteObject.argtypes = [wintypes.HGDIOBJ]
+gdi32.DeleteObject.restype = wintypes.BOOL
+gdi32.DeleteDC.argtypes = [wintypes.HDC]
+gdi32.DeleteDC.restype = wintypes.BOOL
+
+
+def capture_screen(everything: bool) -> tuple[int, int, bytes]:
+    """(width, height, BGRA top-down) of the primary display, or of all displays."""
+    previous = None
+    set_context = getattr(user32, "SetThreadDpiAwarenessContext", None)
+    if set_context is not None:
+        set_context.argtypes = [ctypes.c_void_p]
+        set_context.restype = ctypes.c_void_p
+        previous = set_context(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+    try:
+        if everything:
+            x, y = user32.GetSystemMetrics(SM_XVIRTUALSCREEN), user32.GetSystemMetrics(SM_YVIRTUALSCREEN)
+            width, height = user32.GetSystemMetrics(SM_CXVIRTUALSCREEN), user32.GetSystemMetrics(SM_CYVIRTUALSCREEN)
+        else:
+            x, y = 0, 0
+            width, height = user32.GetSystemMetrics(SM_CXSCREEN), user32.GetSystemMetrics(SM_CYSCREEN)
+        screen = user32.GetDC(None)
+        memory = gdi32.CreateCompatibleDC(screen)
+        bitmap = gdi32.CreateCompatibleBitmap(screen, width, height)
+        old = gdi32.SelectObject(memory, bitmap)
+        try:
+            if not gdi32.BitBlt(memory, 0, 0, width, height, screen, x, y, SRCCOPY | CAPTUREBLT):
+                raise OSError("BitBlt failed")
+            header = BITMAPINFOHEADER()
+            header.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+            header.biWidth = width
+            header.biHeight = -height  # negative: top row first
+            header.biPlanes = 1
+            header.biBitCount = 32
+            buffer = ctypes.create_string_buffer(width * height * 4)
+            if gdi32.GetDIBits(memory, bitmap, 0, height, buffer, ctypes.byref(header), DIB_RGB_COLORS) != height:
+                raise OSError("GetDIBits failed")
+            return width, height, buffer.raw
+        finally:
+            gdi32.SelectObject(memory, old)
+            gdi32.DeleteObject(bitmap)
+            gdi32.DeleteDC(memory)
+            user32.ReleaseDC(None, screen)
+    finally:
+        if set_context is not None and previous:
+            set_context(previous)

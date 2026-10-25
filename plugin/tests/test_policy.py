@@ -192,6 +192,9 @@ class StarterRulesTest(unittest.TestCase):
         ("close_app", {"name": "LSASS"}, "deny", "system-processes"),
         ("close_app", {"name": "notepad.exe"}, "ask", "close-apps"),
         ("close_app", {"name": "Windows Explorer"}, "deny", "system-processes"),
+        # M8 screen (D-021): every capture asks
+        ("screen_capture", {}, "ask", "screen-capture"),
+        ("screen_capture", {"display": "all"}, "ask", "screen-capture"),
         # M7 sandbox (D-019): the agent can't switch its container off; reading the setting is fine
         ("terminal", {"command": "hermes config set terminal.backend local"}, "deny", "no-sandbox-changes"),
         ("terminal", {"command": "hermes.exe config unset terminal.docker_volumes"}, "deny", "no-sandbox-changes"),

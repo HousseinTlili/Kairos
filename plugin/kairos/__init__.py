@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 from .audit import AuditStore
-from . import notifications
+from . import notifications, screen
 from .hooks import KairosHooks
 from .pctools import CLOSE_APP, LIST_RUNNING_APPS, OPEN_APP, PcTools, steering
 from .policy import PolicyFile
@@ -81,6 +81,28 @@ def register_notifications(ctx, home: Path) -> None:
         log.exception("kairos: couldn't register recent_notifications")
 
 
+def register_screen(ctx, home: Path) -> None:
+    """`screen_capture` and its steering (M8 §4, D-021). Windows only; every capture asks
+    (`screen-capture` rule); a failure here never costs the hooks."""
+    register_tool = getattr(ctx, "register_tool", None)
+    if register_tool is None:
+        return
+    try:
+        grab = None
+        if sys.platform == "win32":
+            from .winapps import capture_screen
+
+            grab = capture_screen
+        tool = screen.Screen(home / "screens", grab)
+        on_windows = lambda: sys.platform == "win32"  # noqa: E731
+        schema = screen.SCREEN_CAPTURE
+        register_tool(name=schema["name"], toolset="kairos", schema=schema, handler=tool.screen_capture, check_fn=on_windows)
+        if on_windows():
+            ctx.register_hook("pre_llm_call", screen.steering)
+    except Exception:  # noqa: BLE001
+        log.exception("kairos: couldn't register screen_capture")
+
+
 def register(ctx) -> KairosHooks:
     home = kairos_home()
     hooks = KairosHooks(PolicyFile(home / "policy.json"), AuditStore(home / "audit.db"))
@@ -89,4 +111,5 @@ def register(ctx) -> KairosHooks:
     ctx.register_hook("post_approval_response", hooks.post_approval_response)
     register_tools(ctx)
     register_notifications(ctx, home)
+    register_screen(ctx, home)
     return hooks
