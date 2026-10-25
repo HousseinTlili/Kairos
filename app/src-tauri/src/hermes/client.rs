@@ -438,6 +438,30 @@ mod tests {
     use super::*;
 
     #[test]
+    fn a_run_request_names_a_model_only_when_the_conversation_chose_one() {
+        let default = serde_json::to_value(CreateRunRequest {
+            input: "hi",
+            session_id: "kairos-s",
+            model: None,
+            provider: None,
+        })
+        .expect("json");
+        assert_eq!(
+            default,
+            serde_json::json!({"input": "hi", "session_id": "kairos-s"})
+        );
+        let chosen = serde_json::to_value(CreateRunRequest {
+            input: "hi",
+            session_id: "kairos-s",
+            model: Some("example/large"),
+            provider: Some("openrouter"),
+        })
+        .expect("json");
+        assert_eq!(chosen["model"], "example/large");
+        assert_eq!(chosen["provider"], "openrouter");
+    }
+
+    #[test]
     fn the_api_key_never_appears_in_debug_output() {
         let key = ApiKey::new("0123456789abcdef0123456789abcdef");
         let client = HermesClient::new(DEFAULT_BASE_URL, key.clone()).expect("client builds");
