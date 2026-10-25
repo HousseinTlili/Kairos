@@ -273,3 +273,32 @@ export function onSystemAlerts(
 ): Promise<UnlistenFn> {
   return listen<AlertEvaluation>("system-alerts", (event) => handler(event.payload));
 }
+
+// --- Starting with Windows (M3 §8) ------------------------------------------------------------
+
+export interface PresenceEvent {
+  /** Unix seconds. */
+  at: number;
+  kind: "startup" | "resume" | "unlock";
+  detail: string | null;
+}
+
+export interface StartupState {
+  kairos_at_login: boolean | null;
+  hermes_at_login: { scheduled_task: boolean; startup_entry: boolean } | null;
+  launched_at_login: boolean;
+  recent: PresenceEvent[];
+}
+
+export const startupState = () => call<StartupState>("startup_state");
+export const setKairosAtLogin = (enabled: boolean) =>
+  call<boolean>("set_kairos_at_login", { enabled });
+
+/** The tray menu's "System" item asks the app to show a view. */
+export function onNavigate(handler: (view: string) => void): Promise<UnlistenFn> {
+  return listen<string>("navigate", (event) => handler(event.payload));
+}
+
+export function onPresence(handler: (event: PresenceEvent) => void): Promise<UnlistenFn> {
+  return listen<PresenceEvent>("presence", (event) => handler(event.payload));
+}

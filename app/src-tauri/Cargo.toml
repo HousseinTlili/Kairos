@@ -15,7 +15,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Exact pins (M1 §3). Tauri and serde follow the template's ranges; Cargo.lock pins them.
@@ -30,6 +30,13 @@ sysinfo = "=0.39.6"
 starship-battery = "=0.12.0"
 # M3 §4: alert toasts.
 tauri-plugin-notification = "=2.7.0"
+# M3 §4: starting with Windows (D-013).
+tauri-plugin-autostart = "=2.7.0"
+tauri-plugin-single-instance = "=2.5.4"
+
+[target.'cfg(windows)'.dependencies]
+# M3 §4: the session's lock state, for unlock detection. Already in Cargo.lock through Tauri.
+windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_System_RemoteDesktop"] }
 
 [profile.release]
 codegen-units = 1

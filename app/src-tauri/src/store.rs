@@ -11,6 +11,7 @@ use rusqlite::{Connection, OptionalExtension, params};
 use serde::Serialize;
 
 use crate::hermes::events::RunEvent;
+use crate::presence::{PresenceEvent, PresenceKind};
 
 const SCHEMA_VERSION: i32 = 2;
 
@@ -333,6 +334,38 @@ impl TaskStore {
             .optional()?)
     }
 
+    pub fn add_presence(&self, event: &PresenceEvent) -> Result<(), StoreError> {
+        self.conn.execute(
+            "INSERT INTO presence_event (at, kind, detail) VALUES (?1, ?2, ?3)",
+            params![event.at, event.kind.as_str(), event.detail],
+        )?;
+        Ok(())
+    }
+
+    /// The latest presence events, newest first.
+    pub fn recent_presence(&self, limit: u32) -> Result<Vec<PresenceEvent>, StoreError> {
+        let mut statement = self.conn.prepare(
+            "SELECT at, kind, detail FROM presence_event ORDER BY at DESC, id DESC LIMIT ?1",
+        )?;
+        let rows = statement.query_map(params![limit], |row| {
+            let kind: String = row.get(1)?;
+            Ok((
+                row.get::<_, i64>(0)?,
+                kind,
+                row.get::<_, Option<String>>(2)?,
+            ))
+        })?;
+        let mut events = Vec::new();
+        for row in rows {
+            let (at, kind, detail) = row?;
+            // A kind from a newer Kairos is skipped rather than failing the list.
+            if let Some(kind) = PresenceKind::parse(&kind) {
+                events.push(PresenceEvent { at, kind, detail });
+            }
+        }
+        Ok(events)
+    }
+
     pub fn set_setting(&self, key: &str, value: &str) -> Result<(), StoreError> {
         self.conn.execute(
             "INSERT INTO setting (key, value) VALUES (?1, ?2)
@@ -519,6 +552,30 @@ mod tests {
             store.setting("alerts_enabled").expect("read").as_deref(),
             Some("false")
         );
+    }
+
+    #[test]
+    fn presence_events_come_back_newest_first_and_limited() {
+        let store = store();
+        for (at, kind, detail) in [
+            (10, PresenceKind::Startup, Some("autostart")),
+            (20, PresenceKind::Unlock, None),
+            (30, PresenceKind::Resume, Some("slept 2 h")),
+        ] {
+            store
+                .add_presence(&PresenceEvent {
+                    at,
+                    kind,
+                    detail: detail.map(str::to_string),
+                })
+                .expect("add");
+        }
+        let recent = store.recent_presence(2).expect("recent");
+        assert_eq!(
+            recent.iter().map(|e| e.kind).collect::<Vec<_>>(),
+            [PresenceKind::Resume, PresenceKind::Unlock]
+        );
+        assert_eq!(recent[0].detail.as_deref(), Some("slept 2 h"));
     }
 
     #[test]

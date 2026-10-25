@@ -18,6 +18,7 @@ use crate::hermes::errors::HermesError;
 use crate::hermes::events::{RunEvent, RunEventEnvelope};
 use crate::hermes::local::{self, LocalError};
 use crate::keyring::{self, KeyStoreError};
+use crate::presence::PresenceEvent;
 use crate::rules;
 use crate::store::{self, Conversation, StoreError, Task, TaskStatus, TaskStore};
 use crate::system::speedtest::{self, SpeedTestResult};
@@ -768,6 +769,87 @@ pub async fn set_alerts_enabled(
         .0
         .store(enabled, std::sync::atomic::Ordering::Relaxed);
     Ok(enabled)
+}
+
+// --- Starting with Windows (M3 Step 7) -------------------------------------------------------
+
+/// Set when Kairos was started by its login entry (`--autostart`), for Settings ▸ Startup.
+pub static LAUNCHED_AT_LOGIN: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+#[derive(Debug, Clone, Serialize)]
+pub struct StartupState {
+    /// Kairos's own login entry; `None` if it couldn't be read.
+    pub kairos_at_login: Option<bool>,
+    /// Hermes's login start; `None` off Windows or when Task Scheduler didn't answer.
+    pub hermes_at_login: Option<local::GatewayAutostart>,
+    pub launched_at_login: bool,
+    /// Newest first.
+    pub recent: Vec<PresenceEvent>,
+}
+
+#[tauri::command]
+pub async fn startup_state(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+) -> Result<StartupState, CommandError> {
+    use tauri_plugin_autostart::ManagerExt;
+    let hermes_at_login = tauri::async_runtime::spawn_blocking(local::gateway_autostart)
+        .await
+        .ok()
+        .flatten();
+    Ok(StartupState {
+        kairos_at_login: app.autolaunch().is_enabled().ok(),
+        hermes_at_login,
+        launched_at_login: LAUNCHED_AT_LOGIN.load(std::sync::atomic::Ordering::Relaxed),
+        recent: state.with_store(|store| store.recent_presence(8))?,
+    })
+}
+
+#[tauri::command]
+pub async fn set_kairos_at_login(
+    app: tauri::AppHandle,
+    enabled: bool,
+) -> Result<bool, CommandError> {
+    use tauri_plugin_autostart::ManagerExt;
+    let manager = app.autolaunch();
+    let outcome = if enabled {
+        manager.enable()
+    } else {
+        manager.disable()
+    };
+    outcome.map_err(|err| CommandError {
+        kind: "autostart",
+        message: format!("Windows didn't accept the change: {err}"),
+    })?;
+    manager.is_enabled().map_err(|err| CommandError {
+        kind: "autostart",
+        message: format!("couldn't read the login entry back: {err}"),
+    })
+}
+
+/// Records a presence event; failures are logged, never shown (it's a background record).
+pub fn record_presence(state: &AppState, event: &PresenceEvent) {
+    if let Err(err) = state.with_store(|store| store.add_presence(event)) {
+        eprintln!("kairos: couldn't record {:?}: {}", event.kind, err.message);
+    }
+}
+
+/// On the first launch of a release build, Kairos registers itself to start at login (D-013).
+/// Done once: if the user later switches it off, it stays off. Dev builds never do it, so the
+/// login entry never points at a debug build.
+pub fn first_launch_autostart(app: &tauri::AppHandle, state: &AppState) {
+    use tauri_plugin_autostart::ManagerExt;
+    const DONE: &str = "autostart_initialized";
+    if cfg!(debug_assertions) {
+        return;
+    }
+    let Ok(None) = state.with_store(|store| store.setting(DONE)) else {
+        return;
+    };
+    if app.autolaunch().enable().is_ok() {
+        let _ = state.with_store(|store| store.set_setting(DONE, "true"));
+    }
 }
 
 static SPEED_TEST_RUNNING: std::sync::atomic::AtomicBool =

@@ -1,5 +1,6 @@
 import { approvalWarning, useConnection } from "../connection/store";
 import { RulesPage } from "../rules/RulesPage";
+import { StartupSettings } from "../startup/StartupSettings";
 import { useSystem } from "../system/store";
 import { useShell, type SettingsTab } from "./store";
 
@@ -7,6 +8,7 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: "connection", label: "Connection" },
   { id: "rules", label: "Rules" },
   { id: "system", label: "System" },
+  { id: "startup", label: "Startup" },
 ];
 
 const MODE_TEXT: Record<string, string> = {
@@ -38,6 +40,8 @@ export function Settings() {
         <RulesPage />
       ) : settingsTab === "system" ? (
         <SystemSettings />
+      ) : settingsTab === "startup" ? (
+        <StartupSettings />
       ) : (
         <ConnectionSettings />
       )}

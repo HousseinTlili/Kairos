@@ -126,6 +126,58 @@ pub fn approval_mode(home: &Path) -> Option<String> {
     parse_mode(&String::from_utf8_lossy(&output.stdout))
 }
 
+/// Whether Hermes's own login start is installed (`hermes gateway install`, M3 §8): its Scheduled
+/// Task, or the Startup-folder entry Hermes falls back to. `None` off Windows or when Task
+/// Scheduler can't be asked. Names as in Hermes's `gateway_windows.py` for the default profile.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+pub struct GatewayAutostart {
+    pub scheduled_task: bool,
+    pub startup_entry: bool,
+}
+
+pub const GATEWAY_TASK: &str = "Hermes_Gateway";
+
+#[cfg(windows)]
+pub fn gateway_autostart() -> Option<GatewayAutostart> {
+    use std::os::windows::process::CommandExt;
+    let mut child = Command::new("schtasks")
+        .args(["/Query", "/TN", GATEWAY_TASK])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .creation_flags(0x0800_0000) // CREATE_NO_WINDOW
+        .spawn()
+        .ok()?;
+    let started = Instant::now();
+    let scheduled_task = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status.success(),
+            Ok(None) if started.elapsed() < CLI_TIMEOUT => {
+                std::thread::sleep(Duration::from_millis(50))
+            }
+            _ => {
+                let _ = child.kill();
+                return None;
+            }
+        }
+    };
+    let startup_entry = std::env::var_os("APPDATA").is_some_and(|appdata| {
+        PathBuf::from(appdata)
+            .join(r"Microsoft\Windows\Start Menu\Programs\Startup")
+            .join(format!("{GATEWAY_TASK}.vbs"))
+            .exists()
+    });
+    Some(GatewayAutostart {
+        scheduled_task,
+        startup_entry,
+    })
+}
+
+#[cfg(not(windows))]
+pub fn gateway_autostart() -> Option<GatewayAutostart> {
+    None
+}
+
 /// The CLI prints the value on its last line; anything that isn't a plain mode name is ignored.
 fn parse_mode(stdout: &str) -> Option<String> {
     let last = stdout.lines().map(str::trim).rfind(|l| !l.is_empty())?;

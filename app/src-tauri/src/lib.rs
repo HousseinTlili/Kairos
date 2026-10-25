@@ -3,18 +3,24 @@ mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
 mod keyring;
+mod presence;
 mod rules;
 mod store;
 mod system;
+mod tray;
 
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 use tauri_plugin_notification::NotificationExt;
 
+use presence::{PresenceEvent, PresenceKind};
 use system::alerts::{Alerts, Evaluation};
 use system::{AlertSwitch, SystemMonitor};
+
+/// The argument Kairos's login entry starts it with: start hidden in the tray.
+const AUTOSTART_ARG: &str = "--autostart";
 
 /// Sends new alerts to the page (banners) and to Windows (toasts), and cleared ones to the page.
 fn announce(app: &AppHandle, evaluation: &Evaluation) {
@@ -34,11 +40,50 @@ fn announce(app: &AppHandle, evaluation: &Evaluation) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let at_login = std::env::args().any(|arg| arg == AUTOSTART_ARG);
+    commands::LAUNCHED_AT_LOGIN.store(at_login, std::sync::atomic::Ordering::Relaxed);
+
     tauri::Builder::default()
-        .manage(commands::AppState::default())
+        // First, so a second launch hands over to this one before anything else starts.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            tray::show_main(app)
+        }))
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![AUTOSTART_ARG]),
+        ))
         .plugin(tauri_plugin_notification::init())
+        .manage(commands::AppState::default())
         .manage(Arc::new(SystemMonitor::default()))
-        .setup(|app| {
+        .on_window_event(|window, event| {
+            // Closing the window keeps Kairos in the tray; "Quit" in the tray menu ends it.
+            if let WindowEvent::CloseRequested { api, .. } = event
+                && window.label() == tray::MAIN_WINDOW
+            {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        })
+        .setup(move |app| {
+            tray::build(app.handle())?;
+            // The window starts hidden (tauri.conf.json); a login start stays in the tray.
+            if !at_login {
+                tray::show_main(app.handle());
+            }
+            commands::first_launch_autostart(app.handle(), &app.state::<commands::AppState>());
+
+            let startup = PresenceEvent {
+                at: presence::unix_now(),
+                kind: PresenceKind::Startup,
+                detail: at_login.then(|| "autostart".to_string()),
+            };
+            commands::record_presence(&app.state::<commands::AppState>(), &startup);
+            let handle = app.handle().clone();
+            presence::watch(move |event| {
+                commands::record_presence(&handle.state::<commands::AppState>(), &event);
+                let _ = handle.emit("presence", &event);
+            })?;
+
             let enabled = commands::stored_alerts_enabled(&app.state::<commands::AppState>());
             let switch = Arc::new(AlertSwitch(AtomicBool::new(enabled)));
             app.manage(Arc::clone(&switch));
@@ -74,7 +119,9 @@ pub fn run() {
             commands::set_system_page_visible,
             commands::run_speed_test,
             commands::alerts_enabled,
-            commands::set_alerts_enabled
+            commands::set_alerts_enabled,
+            commands::startup_state,
+            commands::set_kairos_at_login
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

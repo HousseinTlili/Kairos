@@ -9,12 +9,16 @@ import { AlertBanners } from "../features/system/AlertBanners";
 import { SystemPage } from "../features/system/SystemPage";
 import { useSystem } from "../features/system/store";
 import { useShell } from "../features/shell/store";
+import { useStartup } from "../features/startup/store";
+import { onNavigate } from "../lib/tauri";
 
 export default function App() {
   const connected = useConnection((state) => state.info?.status === "connected");
   const view = useShell((state) => state.view);
   const resume = useChat((state) => state.resume);
   const startSystem = useSystem((state) => state.start);
+  const startStartup = useStartup((state) => state.start);
+  const show = useShell((state) => state.show);
 
   useEffect(() => {
     // Listen before anything can be sent or resumed, so no run event is missed.
@@ -31,6 +35,19 @@ export default function App() {
       void stop.then((unlisten) => unlisten());
     };
   }, [startSystem]);
+
+  useEffect(() => {
+    const stops = [
+      startStartup(),
+      // The tray menu's "System" item.
+      onNavigate((target) => {
+        if (target === "system") show("system");
+      }),
+    ];
+    return () => {
+      for (const stop of stops) void stop.then((unlisten) => unlisten());
+    };
+  }, [startStartup, show]);
 
   useEffect(() => {
     // M1 §9 rule 6: once connected, settle or re-follow requests from before a restart.

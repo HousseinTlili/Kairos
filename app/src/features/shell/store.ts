@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export type View = "chat" | "system" | "settings";
-export type SettingsTab = "connection" | "rules" | "system";
+export type SettingsTab = "connection" | "rules" | "system" | "startup";
 
 interface ShellState {
   view: View;
