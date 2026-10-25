@@ -43,8 +43,8 @@ export function QuickSettings() {
         </button>
       </div>
       <p className="muted small">
-        For example Ctrl+Alt+Space, Ctrl+Shift+K or Super+J. Alt+Space is Windows&apos;s own
-        window-menu key.
+        For example Ctrl+Alt+K, Ctrl+Shift+K or Super+J. Alt+Space is Windows&apos;s own window-menu
+        key.
       </p>
       {error && <p className="bad-text">{error}</p>}
     </div>

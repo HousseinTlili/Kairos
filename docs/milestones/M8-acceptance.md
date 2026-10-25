@@ -30,9 +30,9 @@
 
 | Step | Check | Result |
 |---|---|---|
-| 2 | Over another app, **Ctrl+Alt+Space** opens the quick box; it has the focus | |
+| 2 | Over another app, **Ctrl+Alt+K** opens the quick box; it has the focus | |
 | 2 | Ask a question: the answer appears in the box, with the model menu, approval cards and cost line like the main window | |
-| 2 | **Esc** hides it; clicking elsewhere hides it; Ctrl+Alt+Space again shows it with the same conversation | |
+| 2 | **Esc** hides it; clicking elsewhere hides it; Ctrl+Alt+K again shows it with the same conversation | |
 | 2 | "Open in Kairos" shows that conversation in the main window (titled by its first request) | |
 | 2 | Settings ▸ Quick box: change the hotkey (e.g. Ctrl+Shift+K); the old one stops working, the new one works. Pick one Windows already uses (e.g. one taken by another app): the settings say it couldn't be registered | |
 | 3 | In the quick box, "what's on my screen?": an approval card (`screen-capture`); allow once; the box hides, comes back, and the answer describes your screen | |

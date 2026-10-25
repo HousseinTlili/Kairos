@@ -294,7 +294,7 @@ Kairos polling the run and calling `/v1/runs/{id}/stop` when the estimate passes
 ## D-021 — The quick box is a second window on a global shortcut; screenshots ask every time — Accepted
 
 For M8. A frameless always-on-top window opened by `tauri-plugin-global-shortcut` (default
-Ctrl+Alt+Space, changeable; Alt+Space is Windows's window menu). "What's on my screen?" is the
+Ctrl+Alt+K, changeable; Ctrl+Alt+Space was taken on the PC; Alt+Space is Windows's window menu). "What's on my screen?" is the
 Kairos plugin tool `screen_capture` (`ctypes`, no new dependency) behind the starter rule
 `screen-capture`, which asks before every capture; images stay in `%APPDATA%\kairos\screens`, the
 last 20 kept. Accepted on 2026-10-25 on the product owner's delegation, to confirm at testing.

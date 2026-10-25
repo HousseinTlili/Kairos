@@ -7,10 +7,11 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 pub const QUICK_WINDOW: &str = "quick";
 pub const HOTKEY_SETTING: &str = "quick_hotkey";
-/// Alt+Space is Windows's own window-menu key (and PowerToys Run's), so the default avoids it.
-pub const DEFAULT_HOTKEY: &str = "Ctrl+Alt+Space";
+/// Alt+Space is Windows's own window-menu key (and PowerToys Run's), and Ctrl+Alt+Space was already
+/// taken on the product owner's PC (Windows refused it at M8 testing), so the default is neither.
+pub const DEFAULT_HOTKEY: &str = "Ctrl+Alt+K";
 
-/// Checks a hotkey's text the way the plugin will read it ("Ctrl+Alt+Space"); a lone key without a
+/// Checks a hotkey's text the way the plugin will read it ("Ctrl+Alt+K"); a lone key without a
 /// modifier would steal that key from every app, so it is refused.
 pub fn parse_hotkey(text: &str) -> Result<Shortcut, String> {
     let text = text.trim();
