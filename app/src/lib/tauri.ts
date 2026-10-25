@@ -281,6 +281,8 @@ export interface PresenceEvent {
   at: number;
   kind: "startup" | "resume" | "unlock";
   detail: string | null;
+  /** Seconds away, when known (M5); absent on events read back from kairos.db. */
+  away_s?: number | null;
 }
 
 export interface StartupState {

@@ -831,6 +831,21 @@ pub async fn set_kairos_at_login(
     })
 }
 
+const LAST_SEEN: &str = "last_seen";
+
+/// When the PC was last seen in use (Unix seconds), for the time away at startup (M5 §2.1).
+pub fn last_seen(state: &AppState) -> Option<i64> {
+    state
+        .with_store(|store| store.setting(LAST_SEEN))
+        .ok()
+        .flatten()
+        .and_then(|value| value.parse().ok())
+}
+
+pub fn set_last_seen(state: &AppState, now: i64) {
+    let _ = state.with_store(|store| store.set_setting(LAST_SEEN, &now.to_string()));
+}
+
 /// Records a presence event; failures are logged, never shown (it's a background record).
 pub fn record_presence(state: &AppState, event: &PresenceEvent) {
     if let Err(err) = state.with_store(|store| store.add_presence(event)) {

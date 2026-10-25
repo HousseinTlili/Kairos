@@ -1,5 +1,6 @@
 //! When the user comes back to the PC (M3 §8, D-013): app start, resume from sleep, and unlock.
-//! M3 records them in `kairos.db` and tells the app; M5's welcome-back briefing builds on them.
+//! M3 records them in `kairos.db` and tells the app; M5's welcome-back briefing builds on them,
+//! using how long the user was away (`away_s`).
 //!
 //! No window messages: a thread ticks every 5 s. A long gap in wall-clock time between two ticks
 //! means the PC was asleep (the thread doesn't run while it sleeps), and on Windows the session's
@@ -45,8 +46,12 @@ pub struct PresenceEvent {
     /// Unix seconds.
     pub at: i64,
     pub kind: PresenceKind,
-    /// "autostart" for a login start; the gap for a resume ("slept 2 h 5 min").
+    /// "autostart" for a login start; the gap for a resume ("slept 2 h 5 min"); the time locked
+    /// for an unlock ("away 40 min").
     pub detail: Option<String>,
+    /// How long the user was away, in seconds, when known (M5 §2.1). Not stored in `kairos.db`.
+    #[serde(default)]
+    pub away_s: Option<i64>,
 }
 
 /// Spots sleep from the wall clock jumping between ticks.
@@ -65,23 +70,51 @@ impl ResumeDetector {
     }
 }
 
-/// Spots unlock from the lock state going from locked to unlocked.
+/// Spots unlock from the lock state going from locked to unlocked, and times the lock.
 #[derive(Debug, Default)]
 pub struct UnlockDetector {
     locked: Option<bool>,
+    /// When the lock was first seen (a tick after it happened, so up to 5 s late).
+    locked_since: Option<SystemTime>,
 }
 
 impl UnlockDetector {
-    /// `locked` is `None` when the state couldn't be read; that keeps the last known state.
-    pub fn feed(&mut self, locked: Option<bool>) -> bool {
-        let Some(locked) = locked else {
-            return false;
-        };
-        let unlocked = self.locked == Some(true) && !locked;
+    /// `locked` is `None` when the state couldn't be read; that keeps the last known state. On an
+    /// unlock, returns how long the session was locked (zero if the clock went backwards).
+    pub fn feed(&mut self, locked: Option<bool>, now: SystemTime) -> Option<Duration> {
+        let locked = locked?;
+        let was_locked = self.locked == Some(true);
         self.locked = Some(locked);
-        unlocked
+        match (was_locked, locked) {
+            (false, true) => {
+                self.locked_since = Some(now);
+                None
+            }
+            (true, false) => {
+                let since = self.locked_since.take().unwrap_or(now);
+                Some(now.duration_since(since).unwrap_or_default())
+            }
+            _ => None,
+        }
+    }
+
+    pub fn is_locked(&self) -> bool {
+        self.locked == Some(true)
     }
 }
+
+pub fn describe_away(away: Duration) -> String {
+    let minutes = away.as_secs() / 60;
+    match (minutes / 60, minutes % 60) {
+        (0, m) => format!("away {m} min"),
+        (h, 0) => format!("away {h} h"),
+        (h, m) => format!("away {h} h {m} min"),
+    }
+}
+
+/// How often the "PC is in use" heartbeat (`last_seen`) is written: startup measures time away
+/// from it.
+pub const HEARTBEAT_EVERY_TICKS: u32 = 12; // one minute
 
 pub fn describe_gap(gap: Duration) -> String {
     let minutes = gap.as_secs() / 60;
@@ -146,27 +179,39 @@ pub fn session_locked() -> Option<bool> {
     None
 }
 
-/// Ticks forever, calling `on_event` for each resume and unlock. Runs on its own thread.
-pub fn watch(mut on_event: impl FnMut(PresenceEvent) + Send + 'static) -> std::io::Result<()> {
+/// Ticks forever, calling `on_event` for each resume and unlock, and `on_heartbeat` once a minute
+/// while the session is unlocked. Runs on its own thread.
+pub fn watch(
+    mut on_event: impl FnMut(PresenceEvent) + Send + 'static,
+    mut on_heartbeat: impl FnMut(i64) + Send + 'static,
+) -> std::io::Result<()> {
     std::thread::Builder::new()
         .name("kairos-presence".into())
         .spawn(move || {
             let mut resume = ResumeDetector::default();
             let mut unlock = UnlockDetector::default();
+            let mut ticks: u32 = 0;
             loop {
-                if let Some(gap) = resume.tick(SystemTime::now()) {
+                let now = SystemTime::now();
+                if let Some(gap) = resume.tick(now) {
                     on_event(PresenceEvent {
                         at: unix_now(),
                         kind: PresenceKind::Resume,
                         detail: Some(describe_gap(gap)),
+                        away_s: Some(gap.as_secs() as i64),
                     });
                 }
-                if unlock.feed(session_locked()) {
+                if let Some(away) = unlock.feed(session_locked(), now) {
                     on_event(PresenceEvent {
                         at: unix_now(),
                         kind: PresenceKind::Unlock,
-                        detail: None,
+                        detail: Some(describe_away(away)),
+                        away_s: Some(away.as_secs() as i64),
                     });
+                }
+                ticks = ticks.wrapping_add(1);
+                if ticks.is_multiple_of(HEARTBEAT_EVERY_TICKS) && !unlock.is_locked() {
+                    on_heartbeat(unix_now());
                 }
                 std::thread::sleep(TICK);
             }
@@ -202,24 +247,60 @@ mod tests {
         assert_eq!(detector.tick(start - Duration::from_secs(3600)), None);
     }
 
-    #[test]
-    fn unlock_is_locked_then_unlocked_and_nothing_else() {
-        let mut detector = UnlockDetector::default();
-        assert!(!detector.feed(Some(false)), "already unlocked at start");
-        assert!(!detector.feed(Some(true)));
-        assert!(
-            !detector.feed(None),
-            "an unreadable state keeps the last one"
-        );
-        assert!(detector.feed(Some(false)));
-        assert!(!detector.feed(Some(false)));
+    fn at(secs: u64) -> SystemTime {
+        UNIX_EPOCH + Duration::from_secs(1_000_000 + secs)
     }
 
     #[test]
-    fn starting_while_locked_then_unlocking_counts() {
+    fn unlock_is_locked_then_unlocked_and_nothing_else() {
         let mut detector = UnlockDetector::default();
-        assert!(!detector.feed(Some(true)));
-        assert!(detector.feed(Some(false)));
+        assert_eq!(
+            detector.feed(Some(false), at(0)),
+            None,
+            "already unlocked at start"
+        );
+        assert_eq!(detector.feed(Some(true), at(5)), None);
+        assert_eq!(
+            detector.feed(None, at(10)),
+            None,
+            "an unreadable state keeps the last one"
+        );
+        assert!(detector.feed(Some(false), at(15)).is_some());
+        assert_eq!(detector.feed(Some(false), at(20)), None);
+    }
+
+    #[test]
+    fn an_unlock_reports_how_long_the_session_was_locked() {
+        let mut detector = UnlockDetector::default();
+        detector.feed(Some(false), at(0));
+        detector.feed(Some(true), at(100));
+        detector.feed(Some(true), at(105));
+        assert_eq!(
+            detector.feed(Some(false), at(100 + 40 * 60)),
+            Some(Duration::from_secs(40 * 60))
+        );
+        assert!(!detector.is_locked());
+    }
+
+    #[test]
+    fn starting_while_locked_then_unlocking_counts_from_the_first_tick() {
+        let mut detector = UnlockDetector::default();
+        assert_eq!(detector.feed(Some(true), at(0)), None);
+        assert!(detector.is_locked());
+        assert_eq!(
+            detector.feed(Some(false), at(30)),
+            Some(Duration::from_secs(30))
+        );
+    }
+
+    #[test]
+    fn time_away_reads_naturally() {
+        assert_eq!(describe_away(Duration::from_secs(40 * 60)), "away 40 min");
+        assert_eq!(describe_away(Duration::from_secs(2 * 3600)), "away 2 h");
+        assert_eq!(
+            describe_away(Duration::from_secs(3600 + 600)),
+            "away 1 h 10 min"
+        );
     }
 
     #[test]

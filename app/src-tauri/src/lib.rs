@@ -73,11 +73,15 @@ pub fn run() {
             }
             commands::first_launch_autostart(app.handle(), &app.state::<commands::AppState>());
 
+            let now = presence::unix_now();
             let startup = PresenceEvent {
-                at: presence::unix_now(),
+                at: now,
                 kind: PresenceKind::Startup,
                 detail: at_login.then(|| "autostart".to_string()),
+                away_s: commands::last_seen(&app.state::<commands::AppState>())
+                    .map(|seen| (now - seen).max(0)),
             };
+            commands::set_last_seen(&app.state::<commands::AppState>(), now);
             commands::record_presence(&app.state::<commands::AppState>(), &startup);
             let notification_switch =
                 commands::stored_notification_switch(&app.state::<commands::AppState>());
@@ -88,10 +92,14 @@ pub fn run() {
             commands::notifications_changed(app.handle());
 
             let handle = app.handle().clone();
-            presence::watch(move |event| {
-                commands::record_presence(&handle.state::<commands::AppState>(), &event);
-                let _ = handle.emit("presence", &event);
-            })?;
+            let heartbeat = app.handle().clone();
+            presence::watch(
+                move |event| {
+                    commands::record_presence(&handle.state::<commands::AppState>(), &event);
+                    let _ = handle.emit("presence", &event);
+                },
+                move |now| commands::set_last_seen(&heartbeat.state::<commands::AppState>(), now),
+            )?;
 
             let enabled = commands::stored_alerts_enabled(&app.state::<commands::AppState>());
             let switch = Arc::new(AlertSwitch(AtomicBool::new(enabled)));

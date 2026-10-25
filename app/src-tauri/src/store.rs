@@ -383,7 +383,12 @@ impl TaskStore {
             let (at, kind, detail) = row?;
             // A kind from a newer Kairos is skipped rather than failing the list.
             if let Some(kind) = PresenceKind::parse(&kind) {
-                events.push(PresenceEvent { at, kind, detail });
+                events.push(PresenceEvent {
+                    at,
+                    kind,
+                    detail,
+                    away_s: None,
+                });
             }
         }
         Ok(events)
@@ -590,6 +595,7 @@ mod tests {
                     at,
                     kind,
                     detail: detail.map(str::to_string),
+                    away_s: None,
                 })
                 .expect("add");
         }
