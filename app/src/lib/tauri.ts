@@ -491,3 +491,30 @@ export function onQuickShown(handler: () => void): Promise<UnlistenFn> {
 export function onOpenConversation(handler: (sessionId: string) => void): Promise<UnlistenFn> {
   return listen<string>("open-conversation", (event) => handler(event.payload));
 }
+
+// --- Scheduled jobs (M8 §5). Shapes mirror src-tauri/src/hermes/jobs.rs. ------------------------
+
+export interface Job {
+  id: string;
+  name: string;
+  prompt: string;
+  /** Hermes's own wording: "every monday 9am", "0 9 * * *". */
+  schedule_display: string;
+  enabled: boolean;
+  /** "scheduled" | "paused" | "completed" | "error" */
+  state: string;
+  next_run_at: string | null;
+  last_run_at: string | null;
+  /** "ok" | "error" | "delivery_failed" | … ; null before the first run. */
+  last_status: string | null;
+  last_error: string | null;
+}
+
+export type JobAction = "pause" | "resume" | "run";
+
+export const listJobs = () => call<Job[]>("list_jobs");
+export const createJob = (name: string, schedule: string, prompt: string) =>
+  call<Job>("create_job", { name, schedule, prompt });
+export const jobAction = (jobId: string, action: JobAction) =>
+  call<Job>("job_action", { jobId, action });
+export const deleteJob = (jobId: string) => call<null>("delete_job", { jobId });

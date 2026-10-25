@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type View = "chat" | "system" | "notifications" | "settings";
+export type View = "chat" | "system" | "notifications" | "jobs" | "settings";
 export type SettingsTab =
   | "connection"
   | "rules"

@@ -12,6 +12,7 @@ use serde_json::{Map, Value};
 
 use super::errors::{HermesError, error_from_response};
 use super::events::{RunEventEnvelope, Runtime, Usage, parse_run_event};
+use super::jobs::{Job, JobEnvelope, JobList, NewJob};
 use super::sse::{SseItem, SseParser};
 
 pub const DEFAULT_BASE_URL: &str = "http://127.0.0.1:8642";
@@ -198,6 +199,24 @@ pub struct SessionList {
     pub has_more: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum JobAction {
+    Pause,
+    Resume,
+    Run,
+}
+
+impl JobAction {
+    fn path(self) -> &'static str {
+        match self {
+            JobAction::Pause => "pause",
+            JobAction::Resume => "resume",
+            JobAction::Run => "run",
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct HermesClient {
     base_url: String,
@@ -278,6 +297,31 @@ impl HermesClient {
     /// `models::parse_catalog`.
     pub async fn model_options(&self) -> Result<serde_json::Value, HermesError> {
         self.get_json("/api/model/options").await
+    }
+
+    /// `GET /api/jobs?include_disabled=true`: paused jobs too, so they can be resumed.
+    pub async fn list_jobs(&self) -> Result<Vec<Job>, HermesError> {
+        let list: JobList = self.get_json("/api/jobs?include_disabled=true").await?;
+        Ok(list.jobs)
+    }
+
+    pub async fn create_job(&self, job: &NewJob<'_>) -> Result<Job, HermesError> {
+        let created: JobEnvelope = self.post_json("/api/jobs", job).await?;
+        Ok(created.job)
+    }
+
+    /// `POST /api/jobs/{id}/{action}` for `pause`, `resume` and `run`.
+    pub async fn job_action(&self, job_id: &str, action: JobAction) -> Result<Job, HermesError> {
+        let path = format!("/api/jobs/{}/{}", path_segment(job_id)?, action.path());
+        let changed: JobEnvelope = self.post_json(&path, &serde_json::json!({})).await?;
+        Ok(changed.job)
+    }
+
+    pub async fn delete_job(&self, job_id: &str) -> Result<(), HermesError> {
+        let url = self.url(&format!("/api/jobs/{}", path_segment(job_id)?));
+        let builder = self.authed(self.http.delete(url)).timeout(REQUEST_TIMEOUT);
+        let _: serde_json::Value = read_json(builder.send().await).await?;
+        Ok(())
     }
 
     pub async fn list_sessions(&self) -> Result<SessionList, HermesError> {
@@ -467,6 +511,144 @@ mod tests {
         let client = HermesClient::new(DEFAULT_BASE_URL, key.clone()).expect("client builds");
         assert!(!format!("{key:?}").contains("0123456789abcdef"));
         assert!(!format!("{client:?}").contains("0123456789abcdef"));
+    }
+
+    /// Answers one HTTP request with `body`, and hands back the request it received.
+    fn one_shot_server(body: &'static str) -> (String, std::thread::JoinHandle<String>) {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+        let base = format!("http://{}", listener.local_addr().expect("addr"));
+        let handle = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept");
+            let mut seen = Vec::new();
+            let mut buf = [0u8; 4096];
+            // Read the headers, then as much body as Content-Length says.
+            loop {
+                let n = stream.read(&mut buf).expect("read");
+                seen.extend_from_slice(&buf[..n]);
+                let text = String::from_utf8_lossy(&seen).to_string();
+                if let Some(end) = text.find("\r\n\r\n") {
+                    let length = text
+                        .lines()
+                        .find_map(|l| {
+                            l.to_ascii_lowercase()
+                                .strip_prefix("content-length:")
+                                .map(|v| v.trim().parse::<usize>().unwrap_or(0))
+                        })
+                        .unwrap_or(0);
+                    if seen.len() >= end + 4 + length {
+                        break;
+                    }
+                }
+                if n == 0 {
+                    break;
+                }
+            }
+            let reply = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(reply.as_bytes()).expect("write");
+            String::from_utf8_lossy(&seen).to_string()
+        });
+        (base, handle)
+    }
+
+    const JOB: &str = r#"{"job": {"id": "a1b2c3d4e5f6", "name": "Hello", "schedule_display": "every 2m", "enabled": true, "state": "scheduled"}}"#;
+
+    #[test]
+    fn job_requests_go_to_hermes_routes_with_the_key_in_the_header_only() {
+        let key = ApiKey::new("0123456789abcdef0123456789abcdef");
+        let cases: Vec<(&str, &'static str, &str)> = vec![
+            (
+                "list",
+                r#"{"jobs": []}"#,
+                "GET /api/jobs?include_disabled=true ",
+            ),
+            ("create", JOB, "POST /api/jobs "),
+            ("pause", JOB, "POST /api/jobs/a1b2c3d4e5f6/pause "),
+            ("resume", JOB, "POST /api/jobs/a1b2c3d4e5f6/resume "),
+            ("run", JOB, "POST /api/jobs/a1b2c3d4e5f6/run "),
+            (
+                "delete",
+                r#"{"ok": true}"#,
+                "DELETE /api/jobs/a1b2c3d4e5f6 ",
+            ),
+        ];
+        for (what, reply, first_line) in cases {
+            let (base, server) = one_shot_server(reply);
+            let client = HermesClient::new(base, key.clone()).expect("client");
+            tauri::async_runtime::block_on(async {
+                match what {
+                    "list" => assert!(client.list_jobs().await.expect("list").is_empty()),
+                    "create" => {
+                        let job = client
+                            .create_job(&NewJob::local("Hello", "every 2m", "say hello"))
+                            .await
+                            .expect("create");
+                        assert_eq!(job.id, "a1b2c3d4e5f6");
+                    }
+                    "pause" => drop(
+                        client
+                            .job_action("a1b2c3d4e5f6", JobAction::Pause)
+                            .await
+                            .expect("pause"),
+                    ),
+                    "resume" => drop(
+                        client
+                            .job_action("a1b2c3d4e5f6", JobAction::Resume)
+                            .await
+                            .expect("resume"),
+                    ),
+                    "run" => drop(
+                        client
+                            .job_action("a1b2c3d4e5f6", JobAction::Run)
+                            .await
+                            .expect("run"),
+                    ),
+                    _ => client.delete_job("a1b2c3d4e5f6").await.expect("delete"),
+                }
+            });
+            let request = server.join().expect("server");
+            assert!(request.starts_with(first_line), "{what}: {request}");
+            assert!(
+                request
+                    .to_ascii_lowercase()
+                    .contains("authorization: bearer 0123456789abcdef")
+            );
+            let body = request.split("\r\n\r\n").nth(1).unwrap_or_default();
+            assert!(
+                !body.contains("0123456789abcdef"),
+                "{what}: the key leaked into the body"
+            );
+            if what == "create" {
+                let sent: serde_json::Value = serde_json::from_str(body).expect("json body");
+                assert_eq!(sent["deliver"], "local");
+                assert_eq!(sent["schedule"], "every 2m");
+            }
+        }
+    }
+
+    #[test]
+    fn a_job_id_with_path_characters_never_reaches_hermes() {
+        let client = HermesClient::new(DEFAULT_BASE_URL, ApiKey::new("k")).expect("client");
+        let refused = tauri::async_runtime::block_on(client.delete_job("../sessions"));
+        assert!(matches!(refused, Err(HermesError::InvalidArgument(_))));
+    }
+
+    #[test]
+    fn job_actions_name_hermes_routes_and_read_from_the_frontend() {
+        for (action, word) in [
+            (JobAction::Pause, "pause"),
+            (JobAction::Resume, "resume"),
+            (JobAction::Run, "run"),
+        ] {
+            assert_eq!(action.path(), word);
+            let read: JobAction = serde_json::from_value(serde_json::json!(word)).expect("reads");
+            assert_eq!(read, action);
+        }
+        assert!(serde_json::from_value::<JobAction>(serde_json::json!("delete")).is_err());
     }
 
     #[test]

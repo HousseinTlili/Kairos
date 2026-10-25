@@ -16,10 +16,11 @@ use crate::briefing::rules::{self as briefing_rules, BriefingSettings, Reason};
 use crate::briefing::{self, BriefingClock, BriefingNotice};
 use crate::hermes::client::{
     ApiKey, ApprovalChoice, Capabilities, CreateRunRequest, CreateRunResponse, DEFAULT_BASE_URL,
-    Health, HermesClient, PendingControl, RunStatus,
+    Health, HermesClient, JobAction, PendingControl, RunStatus,
 };
 use crate::hermes::errors::HermesError;
 use crate::hermes::events::{RunEvent, RunEventEnvelope};
+use crate::hermes::jobs::{Job, NewJob};
 use crate::hermes::local::{self, LocalError};
 use crate::keyring::{self, KeyStoreError};
 use crate::models::{self, Catalog};
@@ -1523,6 +1524,56 @@ pub async fn run_speed_test(app: tauri::AppHandle) -> Result<SpeedTestResult, Co
         kind: "speed_test",
         message,
     })
+}
+
+// --- Scheduled jobs (M8 Step 4) -----------------------------------------------------------------
+
+#[tauri::command]
+pub async fn list_jobs(state: tauri::State<'_, AppState>) -> Result<Vec<Job>, CommandError> {
+    Ok(state.connected_client()?.list_jobs().await?)
+}
+
+/// A job made here goes straight to Hermes, not through the agent, so the `scheduled-jobs` rule
+/// doesn't ask: the user is the one scheduling it. Its runs still go through every rule.
+#[tauri::command]
+pub async fn create_job(
+    state: tauri::State<'_, AppState>,
+    name: String,
+    schedule: String,
+    prompt: String,
+) -> Result<Job, CommandError> {
+    let (name, schedule, prompt) = (name.trim(), schedule.trim(), prompt.trim());
+    if name.is_empty() || schedule.is_empty() || prompt.is_empty() {
+        return Err(CommandError {
+            kind: "invalid",
+            message: "A job needs a name, a schedule and what to do.".into(),
+        });
+    }
+    let client = state.connected_client()?;
+    Ok(client
+        .create_job(&NewJob::local(name, schedule, prompt))
+        .await?)
+}
+
+#[tauri::command]
+pub async fn job_action(
+    state: tauri::State<'_, AppState>,
+    job_id: String,
+    action: JobAction,
+) -> Result<Job, CommandError> {
+    Ok(state
+        .connected_client()?
+        .job_action(&job_id, action)
+        .await?)
+}
+
+/// The page asks the user before calling this.
+#[tauri::command]
+pub async fn delete_job(
+    state: tauri::State<'_, AppState>,
+    job_id: String,
+) -> Result<(), CommandError> {
+    Ok(state.connected_client()?.delete_job(&job_id).await?)
 }
 
 #[cfg(test)]

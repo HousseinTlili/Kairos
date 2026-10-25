@@ -1897,3 +1897,59 @@ pre {
   text-decoration: underline;
   padding: 0;
 }
+
+/* ---------------------------------------------------------------- Scheduled jobs (M8 Step 4) */
+
+.job-item {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.job-item .notif-body {
+  margin: 0;
+}
+
+.job-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.8125rem;
+}
+
+.job-status.ok {
+  color: var(--ok);
+}
+
+.job-status.warn {
+  color: var(--warn);
+}
+
+.job-status.bad {
+  color: var(--bad);
+}
+
+.job-status.muted {
+  color: var(--muted);
+}
+
+.job-form {
+  display: grid;
+  gap: 8px;
+}
+
+.job-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.job-form input {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--fg);
+}

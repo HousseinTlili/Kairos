@@ -328,6 +328,30 @@ export const NEWER_STARTER_RULES: { after: string; rules: RuleDoc[] }[] = [
       },
     ],
   },
+  {
+    after: "account-disconnect",
+    rules: [
+      {
+        id: "scheduled-jobs",
+        description:
+          "Scheduling unattended work, or changing or removing a scheduled job, is the user's call (M8 §5).",
+        tools: ["cronjob_manage"],
+        match: {
+          any_text: ["create", "update", "resume", "remove"],
+        },
+        action: "ask",
+      },
+      {
+        id: "scheduled-jobs-cli",
+        description: "Scheduling unattended work from the command line is the user's call (M8 §5).",
+        tools: ["terminal", "execute_code"],
+        match: {
+          commands: ["\\bhermes(\\.exe)?\\s+cron\\s+(add|create|edit|resume|remove|rm|delete)\\b"],
+        },
+        action: "ask",
+      },
+    ],
+  },
 ];
 
 /** The newer starter rules this document doesn't have yet (matched by id). */

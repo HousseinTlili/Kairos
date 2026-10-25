@@ -6,7 +6,15 @@ import { ClockMark } from "./ClockMark";
 import { useBriefing } from "../briefing/store";
 import { badgeText } from "../notifications/model";
 import { useNotifications } from "../notifications/store";
-import { BellIcon, ChevronIcon, GaugeIcon, PlusIcon, SettingsIcon, SunIcon } from "./icons";
+import {
+  BellIcon,
+  CalendarIcon,
+  ChevronIcon,
+  GaugeIcon,
+  PlusIcon,
+  SettingsIcon,
+  SunIcon,
+} from "./icons";
 import { useShell } from "./store";
 
 const DAY = 24 * 60 * 60;
@@ -120,6 +128,14 @@ export function Sidebar() {
             {badge}
           </span>
         )}
+      </button>
+
+      <button
+        className={`nav-item ${view === "jobs" ? "active" : ""}`}
+        onClick={() => show("jobs")}
+        aria-current={view === "jobs" ? "page" : undefined}
+      >
+        <CalendarIcon /> Scheduled
       </button>
 
       <button

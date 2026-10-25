@@ -5,6 +5,7 @@ import { ChatView } from "../features/chat/ChatView";
 import { startChatEvents, useChat } from "../features/chat/store";
 import { ConnectScreen } from "../features/connection/ConnectScreen";
 import { useConnection } from "../features/connection/store";
+import { JobsPage } from "../features/jobs/JobsPage";
 import { NotificationsPanel } from "../features/notifications/NotificationsPanel";
 import { useNotifications } from "../features/notifications/store";
 import { Settings } from "../features/shell/Settings";
@@ -79,6 +80,8 @@ export default function App() {
           <SystemPage />
         ) : view === "notifications" ? (
           <NotificationsPanel />
+        ) : view === "jobs" ? (
+          <JobsPage />
         ) : connected ? (
           <ChatView />
         ) : (

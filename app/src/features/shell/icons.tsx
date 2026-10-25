@@ -91,3 +91,10 @@ export const SunIcon = () => (
     <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
   </Icon>
 );
+
+export const CalendarIcon = () => (
+  <Icon>
+    <rect x="4" y="5" width="16" height="15" rx="2" />
+    <path d="M4 10h16M9 3v4M15 3v4M12 13v3l2 1" />
+  </Icon>
+);

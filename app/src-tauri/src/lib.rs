@@ -181,7 +181,11 @@ pub fn run() {
             commands::set_quick_hotkey,
             commands::hide_quick,
             commands::show_quick,
-            commands::open_in_main
+            commands::open_in_main,
+            commands::list_jobs,
+            commands::create_job,
+            commands::job_action,
+            commands::delete_job
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

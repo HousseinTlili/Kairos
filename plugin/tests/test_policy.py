@@ -192,6 +192,16 @@ class StarterRulesTest(unittest.TestCase):
         ("close_app", {"name": "LSASS"}, "deny", "system-processes"),
         ("close_app", {"name": "notepad.exe"}, "ask", "close-apps"),
         ("close_app", {"name": "Windows Explorer"}, "deny", "system-processes"),
+        # M8 scheduled jobs: the agent scheduling on its own asks; reading them doesn't
+        ("cronjob_manage", {"action": "create", "schedule": "every monday 9am", "prompt": "Summarise my week"}, "ask", "scheduled-jobs"),
+        ("cronjob_manage", {"action": "update", "job_id": "a1b2c3d4e5f6", "schedule": "30m"}, "ask", "scheduled-jobs"),
+        ("cronjob_manage", {"action": "resume", "job_id": "a1b2c3d4e5f6"}, "ask", "scheduled-jobs"),
+        ("cronjob_manage", {"action": "remove", "job_id": "a1b2c3d4e5f6"}, "ask", "scheduled-jobs"),
+        ("cronjob_manage", {"action": "list"}, "inherit", None),
+        ("cronjob_manage", {"action": "pause", "job_id": "a1b2c3d4e5f6"}, "inherit", None),
+        ("terminal", {"command": "hermes cron create '0 9 * * *' 'check backups'"}, "ask", "scheduled-jobs-cli"),
+        ("terminal", {"command": "hermes.exe cron edit a1b2c3d4e5f6 --schedule 5m"}, "ask", "scheduled-jobs-cli"),
+        ("terminal", {"command": "hermes cron list"}, "inherit", None),
         # M8 screen (D-021): every capture asks
         ("screen_capture", {}, "ask", "screen-capture"),
         ("screen_capture", {"display": "all"}, "ask", "screen-capture"),

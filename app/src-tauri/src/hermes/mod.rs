@@ -3,5 +3,6 @@
 pub mod client;
 pub mod errors;
 pub mod events;
+pub mod jobs;
 pub mod local;
 pub mod sse;
