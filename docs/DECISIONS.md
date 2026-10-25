@@ -201,7 +201,7 @@ after approval (CLAUDE.md).
 
 ---
 
-## D-013 — Kairos and Hermes start with Windows — Proposed
+## D-013 — Kairos and Hermes start with Windows — Accepted
 
 For the welcome-back briefing to be ready when the user logs in, both must already be running:
 Kairos as a tray app registered to start at login, Hermes through its own login auto-start
@@ -213,7 +213,7 @@ only on the first unlock of the day or after a configurable time away, never in 
 
 ---
 
-## D-014 — PC control through Kairos tools with rules, not raw terminal access — Proposed
+## D-014 — PC control through Kairos tools with rules, not raw terminal access — Accepted
 
 Opening and closing apps, and later window, volume, media and power control, are tools that the
 Kairos plugin registers in Hermes (`ctx.register_tool`), each with a narrow purpose and its own
@@ -223,6 +223,8 @@ PowerShell, so every PC action is visible in the timeline as what it is.
 
 Hermes's `computer_use` toolset (mouse and keyboard control) stays off until there is a use case
 that needs it and a rule set for it.
+
+D-013 and D-014 were accepted by the product owner on 2026-10-25 with the M3 spec.
 
 ---
 
@@ -241,6 +243,16 @@ migration. Accepted with the M2 spec (2026-10-24).
 Supersedes the YAML sketch in SECURITY.md §3. Both sides parse JSON with what they already have
 (Python's `json`, Rust's `serde_json`), so neither needs a new dependency, and the app's Rules page
 is the normal way to edit them. Accepted with the M2 spec (2026-10-24).
+
+---
+
+## D-017 — The speed test uses Cloudflare's public endpoints, only when asked — Accepted
+
+The System page's internet speed test measures latency, download and upload against
+`speed.cloudflare.com` (`/__down`, `/__up`), and only when the user presses "Run speed test".
+No account, key or new dependency (the app's HTTP client already exists). The PC's IP address
+reaches Cloudflare, as with any website visit; nothing else is sent. Accepted with the M3 spec
+(2026-10-25).
 
 ---
 

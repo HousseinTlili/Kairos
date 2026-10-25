@@ -7,8 +7,9 @@ for the current milestone, read its spec in `docs/milestones/`.
 ## Current milestone
 
 **M1 accepted** on 2026-10-24, **M2 accepted** on 2026-10-25 (`docs/milestones/M2-acceptance.md`).
-**M3** is next; its spec (`docs/milestones/M3.md`) is written before any M3 code. Each step ends with a check; run it and
-show its output before saying the step is done.
+**M3** is in progress; its spec is `docs/milestones/M3.md`. Each step ends with a check; run it and
+show its output before saying the step is done. Checks marked **(on the PC)** need Windows, Hermes
+or the product owner and are not done until the product owner has run them.
 
 ## Roles
 
