@@ -14,7 +14,7 @@ import { SystemPage } from "../features/system/SystemPage";
 import { useSystem } from "../features/system/store";
 import { useShell } from "../features/shell/store";
 import { useStartup } from "../features/startup/store";
-import { onNavigate } from "../lib/tauri";
+import { onNavigate, onOpenConversation } from "../lib/tauri";
 
 export default function App() {
   const connected = useConnection((state) => state.info?.status === "connected");
@@ -50,6 +50,11 @@ export default function App() {
       // The tray menu's "System" item.
       onNavigate((target) => {
         if (target === "system") show("system");
+      }),
+      // "Open in Kairos" from the quick box (M8).
+      onOpenConversation((sessionId) => {
+        show("chat");
+        void useChat.getState().openConversation(sessionId);
       }),
     ];
     return () => {

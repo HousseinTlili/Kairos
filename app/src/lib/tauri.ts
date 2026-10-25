@@ -475,3 +475,19 @@ export function onTaskUsage(handler: (usage: TaskUsage) => void): Promise<Unlist
 export function onCostCap(handler: (hit: CostCapHit) => void): Promise<UnlistenFn> {
   return listen<CostCapHit>("cost-cap", (event) => handler(event.payload));
 }
+
+// --- Quick box (M8 §3). -----------------------------------------------------------------------
+
+export const quickHotkey = () => call<string>("quick_hotkey");
+export const setQuickHotkey = (hotkey: string) => call<string>("set_quick_hotkey", { hotkey });
+export const hideQuick = () => call<void>("hide_quick");
+export const showQuick = () => call<void>("show_quick");
+export const openInMain = (sessionId: string) => call<void>("open_in_main", { sessionId });
+
+export function onQuickShown(handler: () => void): Promise<UnlistenFn> {
+  return listen<null>("quick-shown", () => handler());
+}
+
+export function onOpenConversation(handler: (sessionId: string) => void): Promise<UnlistenFn> {
+  return listen<string>("open-conversation", (event) => handler(event.payload));
+}

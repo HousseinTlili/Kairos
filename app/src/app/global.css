@@ -1848,3 +1848,52 @@ pre {
   background: var(--surface);
   color: var(--fg);
 }
+
+/* ---------------------------------------------------------------- Quick box (M8 Step 2) */
+
+.quick {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--brass);
+}
+
+.quick-input input {
+  width: 100%;
+  font: inherit;
+  font-size: 1.125rem;
+  padding: 14px 16px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  outline: none;
+}
+
+.quick-answer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 16px;
+}
+
+.quick-answer .user-message {
+  display: none;
+}
+
+.quick-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.quick-footer .link {
+  border: none;
+  background: none;
+  color: var(--brass);
+  text-decoration: underline;
+  padding: 0;
+}

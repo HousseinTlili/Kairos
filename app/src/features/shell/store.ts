@@ -9,6 +9,7 @@ export type SettingsTab =
   | "briefing"
   | "accounts"
   | "models"
+  | "quick"
   | "startup";
 
 interface ShellState {

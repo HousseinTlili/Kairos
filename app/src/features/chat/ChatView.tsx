@@ -76,7 +76,7 @@ function statusLine(turn: Turn): { text: string; tone: "muted" | "bad" } | null 
   }
 }
 
-function TurnView({ turn }: { turn: Turn }) {
+export function TurnView({ turn }: { turn: Turn }) {
   const answer = useChat((s) => s.answer);
   const status = statusLine(turn);
   const working = turn.status === "running" || turn.status === "sending";

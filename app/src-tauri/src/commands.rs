@@ -1445,6 +1445,61 @@ pub async fn terminal_backend() -> Result<Option<String>, CommandError> {
         })
 }
 
+// --- Quick box (M8 Step 2) ---------------------------------------------------------------------
+
+/// The quick box's hotkey as stored, or the default.
+pub fn stored_hotkey(state: &AppState) -> String {
+    state
+        .with_store(|store| store.setting(crate::quick::HOTKEY_SETTING))
+        .ok()
+        .flatten()
+        .filter(|h| !h.trim().is_empty())
+        .unwrap_or_else(|| crate::quick::DEFAULT_HOTKEY.to_string())
+}
+
+#[tauri::command]
+pub async fn quick_hotkey(state: tauri::State<'_, AppState>) -> Result<String, CommandError> {
+    Ok(stored_hotkey(&state))
+}
+
+/// Registers a new hotkey and keeps it only if Windows accepts it.
+#[tauri::command]
+pub async fn set_quick_hotkey(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    hotkey: String,
+) -> Result<String, CommandError> {
+    let old = stored_hotkey(&state);
+    crate::quick::register(&app, Some(&old), &hotkey).map_err(|message| CommandError {
+        kind: "hotkey",
+        message,
+    })?;
+    let hotkey = hotkey.trim().to_string();
+    state.with_store(|store| store.set_setting(crate::quick::HOTKEY_SETTING, &hotkey))?;
+    Ok(hotkey)
+}
+
+#[tauri::command]
+pub async fn hide_quick(app: tauri::AppHandle) -> Result<(), CommandError> {
+    crate::quick::hide(&app);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn show_quick(app: tauri::AppHandle) -> Result<(), CommandError> {
+    crate::quick::show(&app);
+    Ok(())
+}
+
+/// "Open in Kairos" from the quick box: the main window shows that conversation.
+#[tauri::command]
+pub async fn open_in_main(app: tauri::AppHandle, session_id: String) -> Result<(), CommandError> {
+    crate::quick::hide(&app);
+    crate::tray::show_main(&app);
+    let _ = app.emit_to(crate::tray::MAIN_WINDOW, "open-conversation", session_id);
+    Ok(())
+}
+
 static SPEED_TEST_RUNNING: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 

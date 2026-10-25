@@ -2,6 +2,7 @@ import { approvalWarning, useConnection } from "../connection/store";
 import { AccountsSettings } from "../accounts/AccountsSettings";
 import { BriefingSettings } from "../briefing/BriefingSettings";
 import { ModelsSettings } from "../models/ModelsSettings";
+import { QuickSettings } from "../quick/QuickSettings";
 import { NotificationSettings } from "../notifications/NotificationSettings";
 import { RulesPage } from "../rules/RulesPage";
 import { StartupSettings } from "../startup/StartupSettings";
@@ -16,6 +17,7 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: "briefing", label: "Briefing" },
   { id: "accounts", label: "Accounts" },
   { id: "models", label: "Models & sandbox" },
+  { id: "quick", label: "Quick box" },
   { id: "startup", label: "Startup" },
 ];
 
@@ -56,6 +58,8 @@ export function Settings() {
         <AccountsSettings />
       ) : settingsTab === "models" ? (
         <ModelsSettings />
+      ) : settingsTab === "quick" ? (
+        <QuickSettings />
       ) : settingsTab === "startup" ? (
         <StartupSettings />
       ) : (

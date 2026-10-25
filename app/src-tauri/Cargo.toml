@@ -33,6 +33,8 @@ tauri-plugin-notification = "=2.7.0"
 # M3 §4: starting with Windows (D-013).
 tauri-plugin-autostart = "=2.7.0"
 tauri-plugin-single-instance = "=2.5.4"
+# M8 §2 (D-021): the quick box's global hotkey.
+tauri-plugin-global-shortcut = "=2.4.1"
 
 [target.'cfg(windows)'.dependencies]
 # M3 §4: the session's lock state, for unlock detection. Already in Cargo.lock through Tauri.

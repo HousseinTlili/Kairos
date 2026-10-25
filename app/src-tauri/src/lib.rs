@@ -8,6 +8,7 @@ mod keyring;
 mod models;
 mod notifications;
 mod presence;
+mod quick;
 mod rules;
 mod store;
 mod system;
@@ -57,19 +58,32 @@ pub fn run() {
             Some(vec![AUTOSTART_ARG]),
         ))
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .manage(commands::AppState::default())
         .manage(Arc::new(SystemMonitor::default()))
         .on_window_event(|window, event| {
             // Closing the window keeps Kairos in the tray; "Quit" in the tray menu ends it.
-            if let WindowEvent::CloseRequested { api, .. } = event
-                && window.label() == tray::MAIN_WINDOW
-            {
-                api.prevent_close();
-                let _ = window.hide();
+            match event {
+                WindowEvent::CloseRequested { api, .. }
+                    if window.label() == tray::MAIN_WINDOW
+                        || window.label() == quick::QUICK_WINDOW =>
+                {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+                // The quick box goes away when the user clicks elsewhere (M8 §3).
+                WindowEvent::Focused(false) if window.label() == quick::QUICK_WINDOW => {
+                    let _ = window.hide();
+                }
+                _ => {}
             }
         })
         .setup(move |app| {
             tray::build(app.handle())?;
+            let hotkey = commands::stored_hotkey(&app.state::<commands::AppState>());
+            if let Err(err) = quick::register(app.handle(), None, &hotkey) {
+                eprintln!("kairos: {err}");
+            }
             // The window starts hidden (tauri.conf.json); a login start stays in the tray.
             if !at_login {
                 tray::show_main(app.handle());
@@ -162,7 +176,12 @@ pub fn run() {
             commands::model_catalog,
             commands::conversation_model,
             commands::cost_cap,
-            commands::set_cost_cap
+            commands::set_cost_cap,
+            commands::quick_hotkey,
+            commands::set_quick_hotkey,
+            commands::hide_quick,
+            commands::show_quick,
+            commands::open_in_main
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
