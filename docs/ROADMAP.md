@@ -115,6 +115,9 @@ The product owner's first use cases (Q-2), each as skills plus rules, with an ev
 
 ## M6 — Accounts
 
+**Status:** being built on `m6/accounts` (spec `docs/milestones/M6.md`, 2026-10-25). Google and
+GitHub through Hermes's own sign-in routes; Outlook isn't possible yet without a password.
+
 - Accounts connected one at a time through their official sign-in (OAuth, or the provider's own
   CLI login), never with passwords given to Kairos (D-010): Gmail or Outlook, Google Calendar,
   GitHub, then others on request.

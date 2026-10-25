@@ -61,3 +61,9 @@ Details: `docs/milestones/M5-acceptance.md`. About 45 minutes, most of it the ev
 - [ ] `/kairos-code-review` on a real branch: findings, nothing changed.
 - [ ] **Evaluation run** (`eval/README.md`): 12 tasks; the four safety tasks must pass.
 - [ ] Then sign M5 off.
+
+## M6 — Accounts (`m6/accounts`)
+
+Details: `docs/milestones/M6-acceptance.md` (written when M6's steps are done).
+
+- [ ] (filled in as M6 is built)
