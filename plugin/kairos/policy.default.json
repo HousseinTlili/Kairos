@@ -53,6 +53,27 @@
       "action": "deny"
     },
     {
+      "id": "no-account-tokens",
+      "description": "Account sign-in tokens stay with Hermes and the GitHub CLI; Kairos never reads them (D-010).",
+      "tools": [
+        "read_file",
+        "write_file",
+        "patch",
+        "search_files",
+        "terminal",
+        "execute_code"
+      ],
+      "match": {
+        "any_text": [
+          "**/hermes/google_token.json",
+          "**/hermes/google_oauth_pending.json",
+          "**/hermes/google_client_secret*.json",
+          "**/gh/hosts.yml"
+        ]
+      },
+      "action": "deny"
+    },
+    {
       "id": "no-kairos-tampering",
       "description": "Kairos may not change its own rules, records or plugin.",
       "tools": [
@@ -323,6 +344,43 @@
         "yb_send_dm",
         "yb_send_sticker"
       ],
+      "action": "ask"
+    },
+    {
+      "id": "account-writes",
+      "description": "Sending, replying, deleting or changing anything in an account always asks (D-010).",
+      "tools": [
+        "terminal",
+        "execute_code",
+        "browser_exec"
+      ],
+      "match": {
+        "commands": [
+          "\\bgmail\\s+(send|reply|forward|modify|trash|delete)\\b",
+          "\\bcalendar\\s+(create|update|delete)\\b",
+          "\\bdrive\\s+(upload|share|delete|create-folder)\\b",
+          "\\bsheets\\s+(update|append|create)\\b",
+          "\\bdocs\\s+(create|append)\\b",
+          "\\bgws\\b[^;&|\\n]*\\b(send|insert|import|modify|batchModify|trash|delete|batchDelete|update|patch|create|copy|move)\\b",
+          "\\bhimalaya\\b[^;&|\\n]*\\b(send|reply|forward|write|delete|move|copy)\\b"
+        ]
+      },
+      "action": "ask"
+    },
+    {
+      "id": "account-disconnect",
+      "description": "Disconnecting or re-authorising an account is the user's call; Settings > Accounts does it.",
+      "tools": [
+        "terminal",
+        "execute_code"
+      ],
+      "match": {
+        "commands": [
+          "\\bsetup\\.py\\b[^;&|\\n]*--revoke\\b",
+          "\\$\\{?GSETUP\\}?[^;&|\\n]*--revoke\\b",
+          "\\bgh\\s+auth\\s+(logout|refresh|switch)\\b"
+        ]
+      },
       "action": "ask"
     },
     {

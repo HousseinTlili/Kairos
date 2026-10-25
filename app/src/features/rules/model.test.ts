@@ -26,7 +26,7 @@ describe("the rules model", () => {
   it("reads the plugin's starter rules in order", () => {
     const doc = starter();
     expect(doc.rules[0].id).toBe("no-credentials");
-    expect(doc.rules).toHaveLength(24);
+    expect(doc.rules).toHaveLength(27);
   });
 
   it("saves the starter rules unchanged when nothing was edited", () => {
@@ -143,6 +143,9 @@ describe("rules added to the starter set later (M3)", () => {
       "kill-processes",
       "run-installers",
       "kairos-skills",
+      "no-account-tokens",
+      "account-writes",
+      "account-disconnect",
     ]);
     expect(addNewerRules(m2SignOff)).toEqual(starter());
   });
