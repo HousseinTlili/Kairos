@@ -97,6 +97,47 @@ Python 3.14.9.
 first launch; `pnpm tauri dev` never does, so the entry can't point at a debug build. To test
 criterion 3, run `pnpm -C app tauri build`, start the built Kairos once, then reboot.
 
+## Resume under Modern Standby
+
+This laptop sleeps with Modern Standby (S0 low power idle, network connected), not classic S3.
+Read from `app/src-tauri/src/presence.rs` (2026-10-25); not yet checked on the PC.
+
+**How the detector works.** A thread wakes every 5 s, compares the wall clock with its previous
+tick, and records `resume` when more than 60 s have passed. It doesn't ask Windows about power
+at all: it relies on the thread **not running** while the PC sleeps.
+
+**Under Modern Standby the PC never stops running**, so the result depends on whether Kairos is
+paused:
+
+- **Expected to work** when Windows suspends desktop apps during standby (its Desktop Activity
+  Moderator does this to apps that aren't exempt). Kairos's thread then stops, and the first tick
+  after waking sees the whole gap. When it does run, a resume event is recorded at the same 5 s
+  latency the unlock showed.
+- **Can miss a resume** if Kairos keeps getting CPU time during standby: on the charger, during
+  Windows's maintenance wake-ups, or because timers fire late but still under 60 s apart. Ticks
+  keep arriving less than 60 s apart and no gap is seen. A screen that only turns off (no sleep)
+  correctly isn't a resume either.
+- **Partly covered today:** when Windows asks for sign-in after sleep, waking also produces an
+  `unlock` event (proven on the PC). M5's welcome-back briefing listens for both, so a missed
+  `resume` costs the "slept N min" detail more than the briefing itself.
+
+**No definite bug was found**, so the code is unchanged. The logic has unit tests for gaps, slow
+ticks, a clock set backwards, and lock transitions; what can't be tested here is whether Windows
+pauses the thread.
+
+**If check B fails, the fallback is to ask Windows directly** instead of inferring from the
+clock. Both options use the Windows API crate already approved in M3 §4: one more feature flag
+(`Win32_System_Power`), no new dependency.
+
+1. `PowerRegisterSuspendResumeNotification` with a callback (no window needed) for
+   `PBT_APMRESUMEAUTOMATIC`, the documented resume signal.
+2. `PowerSettingRegisterNotification` for `GUID_CONSOLE_DISPLAY_STATE` (display off → on). On
+   Modern Standby that is the moment the user comes back, and it also fires when the screen only
+   turned off.
+
+Which of the two Windows sends on this laptop has to be recorded live before choosing. Keep the
+clock-gap detector as the cross-platform fallback.
+
 ## Final checklist (product owner, one sitting, about 30 minutes)
 
 The three checks left before sign-off. Do them in this order; write down what you see at each
