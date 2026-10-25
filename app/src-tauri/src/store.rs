@@ -297,6 +297,35 @@ impl TaskStore {
 
     /// Tasks that haven't reached a final status: candidates for reconnecting after a restart
     /// (M1 §9 rule 6).
+    /// Requests that ended since `since` (completed, and failed or cut short), and those waiting
+    /// for an approval now: the briefing's "while you were away" line (M5 §2.2).
+    #[allow(dead_code)] // M5: used once Step 5 wires up the briefing.
+    pub fn task_summary_since(&self, since: i64) -> Result<TaskSummary, StoreError> {
+        let count = |sql: &str, with_since: bool| -> Result<i64, StoreError> {
+            Ok(if with_since {
+                self.conn.query_row(sql, params![since], |row| row.get(0))?
+            } else {
+                self.conn.query_row(sql, [], |row| row.get(0))?
+            })
+        };
+        Ok(TaskSummary {
+            finished: count(
+                "SELECT COUNT(*) FROM task WHERE status = 'completed' AND finished_at >= ?1",
+                true,
+            )?,
+            failed: count(
+                "SELECT COUNT(*) FROM task
+                 WHERE status IN ('failed', 'incomplete', 'interrupted', 'lost')
+                   AND finished_at >= ?1",
+                true,
+            )?,
+            waiting: count(
+                "SELECT COUNT(*) FROM task WHERE status = 'waiting_for_approval'",
+                false,
+            )?,
+        })
+    }
+
     pub fn open_tasks(&self) -> Result<Vec<Task>, StoreError> {
         self.query_tasks(
             "SELECT id, session_id, run_id, goal, status, created_at, finished_at, outcome
@@ -402,6 +431,13 @@ impl TaskStore {
         )?;
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+pub struct TaskSummary {
+    pub finished: i64,
+    pub failed: i64,
+    pub waiting: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -634,6 +670,39 @@ mod tests {
             Some("false")
         );
         assert_eq!(store.unread_notifications().expect("notifications"), 0);
+    }
+
+    #[test]
+    fn the_task_summary_counts_what_ended_since_and_what_waits_now() {
+        let store = store();
+        store.create("old", "kairos-s", "before").expect("create");
+        store
+            .set_status("old", TaskStatus::Completed, Some("ok"))
+            .expect("done");
+        store
+            .conn
+            .execute("UPDATE task SET finished_at = 10 WHERE id = 'old'", [])
+            .expect("backdate");
+        store.create("a", "kairos-s", "a").expect("create");
+        store
+            .set_status("a", TaskStatus::Completed, Some("ok"))
+            .expect("done");
+        store.create("b", "kairos-s", "b").expect("create");
+        store
+            .set_status("b", TaskStatus::Failed, Some("boom"))
+            .expect("failed");
+        store.create("c", "kairos-s", "c").expect("create");
+        store
+            .set_status("c", TaskStatus::WaitingForApproval, None)
+            .expect("waiting");
+        assert_eq!(
+            store.task_summary_since(100).expect("summary"),
+            TaskSummary {
+                finished: 1,
+                failed: 1,
+                waiting: 1
+            }
+        );
     }
 
     #[test]

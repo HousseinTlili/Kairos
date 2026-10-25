@@ -1,5 +1,6 @@
 //! The welcome-back briefing (M5 §2): when to brief, the instant facts, and the settings.
 
+pub mod facts;
 pub mod rules;
 
 use rules::{BriefingSettings, format_hhmm, parse_hhmm};
