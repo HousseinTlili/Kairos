@@ -341,7 +341,6 @@ impl TaskStore {
 
 impl TaskStore {
     /// For the other tables' modules (`notifications/store.rs`); the schema stays here.
-    #[allow(dead_code)] // M4: used once Step 5 wires up the notification commands.
     pub(crate) fn conn(&self) -> &Connection {
         &self.conn
     }

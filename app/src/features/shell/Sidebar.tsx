@@ -3,7 +3,9 @@ import { useChat } from "../chat/store";
 import { useConnection } from "../connection/store";
 import type { Conversation, OtherConversation } from "../../lib/tauri";
 import { ClockMark } from "./ClockMark";
-import { ChevronIcon, GaugeIcon, PlusIcon, SettingsIcon } from "./icons";
+import { badgeText } from "../notifications/model";
+import { useNotifications } from "../notifications/store";
+import { BellIcon, ChevronIcon, GaugeIcon, PlusIcon, SettingsIcon } from "./icons";
 import { useShell } from "./store";
 
 const DAY = 24 * 60 * 60;
@@ -77,6 +79,7 @@ export function Sidebar() {
     ["sending", "running", "waiting_for_approval", "stopping"].includes(t.status),
   );
   const groups = groupByAge(conversations.kairos);
+  const badge = badgeText(useNotifications((s) => s.state?.unread ?? 0));
 
   return (
     <nav className="sidebar" aria-label="Conversations">
@@ -102,6 +105,19 @@ export function Sidebar() {
         aria-current={view === "system" ? "page" : undefined}
       >
         <GaugeIcon /> System
+      </button>
+
+      <button
+        className={`nav-item ${view === "notifications" ? "active" : ""}`}
+        onClick={() => show("notifications")}
+        aria-current={view === "notifications" ? "page" : undefined}
+      >
+        <BellIcon /> Notifications
+        {badge && (
+          <span className="nav-badge" aria-label={`${badge} unread`}>
+            {badge}
+          </span>
+        )}
       </button>
 
       <div className="sidebar-scroll">

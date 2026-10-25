@@ -3,6 +3,8 @@ import { ChatView } from "../features/chat/ChatView";
 import { startChatEvents, useChat } from "../features/chat/store";
 import { ConnectScreen } from "../features/connection/ConnectScreen";
 import { useConnection } from "../features/connection/store";
+import { NotificationsPanel } from "../features/notifications/NotificationsPanel";
+import { useNotifications } from "../features/notifications/store";
 import { Settings } from "../features/shell/Settings";
 import { Sidebar } from "../features/shell/Sidebar";
 import { AlertBanners } from "../features/system/AlertBanners";
@@ -18,6 +20,7 @@ export default function App() {
   const resume = useChat((state) => state.resume);
   const startSystem = useSystem((state) => state.start);
   const startStartup = useStartup((state) => state.start);
+  const startNotifications = useNotifications((state) => state.start);
   const show = useShell((state) => state.show);
 
   useEffect(() => {
@@ -39,6 +42,7 @@ export default function App() {
   useEffect(() => {
     const stops = [
       startStartup(),
+      startNotifications(),
       // The tray menu's "System" item.
       onNavigate((target) => {
         if (target === "system") show("system");
@@ -47,7 +51,7 @@ export default function App() {
     return () => {
       for (const stop of stops) void stop.then((unlisten) => unlisten());
     };
-  }, [startStartup, show]);
+  }, [startStartup, startNotifications, show]);
 
   useEffect(() => {
     // M1 §9 rule 6: once connected, settle or re-follow requests from before a restart.
@@ -63,6 +67,8 @@ export default function App() {
           <Settings />
         ) : view === "system" ? (
           <SystemPage />
+        ) : view === "notifications" ? (
+          <NotificationsPanel />
         ) : connected ? (
           <ChatView />
         ) : (

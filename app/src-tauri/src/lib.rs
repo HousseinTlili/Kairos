@@ -3,8 +3,6 @@ mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
 mod keyring;
-// M4: the commands that use it arrive in Step 5, which removes this allowance.
-#[allow(dead_code)]
 mod notifications;
 mod presence;
 mod rules;
@@ -124,7 +122,12 @@ pub fn run() {
             commands::alerts_enabled,
             commands::set_alerts_enabled,
             commands::startup_state,
-            commands::set_kairos_at_login
+            commands::set_kairos_at_login,
+            commands::notifications_state,
+            commands::set_notifications_enabled,
+            commands::list_notifications,
+            commands::mark_notifications_read,
+            commands::clear_notifications
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

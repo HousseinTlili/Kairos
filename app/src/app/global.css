@@ -1044,6 +1044,7 @@ pre {
 }
 
 .rules-toolbar .deny,
+.notif-toolbar .deny,
 .danger-link {
   color: var(--oxblood);
 }
@@ -1564,4 +1565,126 @@ pre {
   gap: 12px;
   padding: 5px 0;
   border-top: 1px solid var(--border);
+}
+
+/* ---------------------------------------------------------------- Notifications (M4 Step 5) */
+
+.nav-badge {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--brass);
+  color: var(--sidebar-bg);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.notifications {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 28px 40px;
+  overflow-y: auto;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.notif-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.notif-toolbar .spacer {
+  flex: 1;
+}
+
+.notif-apps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.8125rem;
+}
+
+.chip.active {
+  border-color: var(--brass);
+  background: var(--brass-soft);
+}
+
+.chip-count {
+  margin-left: 4px;
+  font-weight: 600;
+  color: var(--brass);
+}
+
+.switch-row.compact {
+  margin: 0;
+  font-size: 0.8125rem;
+  align-items: center;
+}
+
+.switch-row.compact input {
+  margin-top: 0;
+}
+
+.notif-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.notif-item {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  border-left: 3px solid transparent;
+}
+
+.notif-item.unread {
+  border-left-color: var(--brass);
+  background: color-mix(in srgb, var(--brass-soft) 45%, var(--surface));
+}
+
+.notif-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.75rem;
+}
+
+.notif-app {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.notif-title {
+  font-weight: 600;
+}
+
+.notif-body {
+  font-size: 0.875rem;
+  color: var(--muted);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.link-button {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--brass);
+  text-decoration: underline;
 }

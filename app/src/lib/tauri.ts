@@ -302,3 +302,48 @@ export function onNavigate(handler: (view: string) => void): Promise<UnlistenFn>
 export function onPresence(handler: (event: PresenceEvent) => void): Promise<UnlistenFn> {
   return listen<PresenceEvent>("presence", (event) => handler(event.payload));
 }
+
+// --- Notifications (M4 §6–§7). Shapes mirror src-tauri/src/notifications/. --------------------
+
+export interface StoredNotification {
+  id: number;
+  app_id: string;
+  app_name: string;
+  /** Unix seconds. */
+  created_at: number;
+  title: string;
+  body: string;
+  read_at: number | null;
+}
+
+export interface AppCount {
+  app_id: string;
+  app_name: string;
+  total: number;
+  unread: number;
+}
+
+export type NotificationAccess = "allowed" | "denied" | "unspecified" | "unavailable";
+export type CollectState = "off" | "waiting_for_windows" | "unavailable" | "on";
+
+export interface NotificationsState {
+  enabled: boolean;
+  access: NotificationAccess;
+  state: CollectState;
+  unread: number;
+  counts: AppCount[];
+}
+
+export const notificationsState = () => call<NotificationsState>("notifications_state");
+export const setNotificationsEnabled = (enabled: boolean) =>
+  call<NotificationsState>("set_notifications_enabled", { enabled });
+export const listNotifications = (appId: string | null, unreadOnly: boolean) =>
+  call<StoredNotification[]>("list_notifications", { appId, unreadOnly });
+export const markNotificationsRead = (id: number | null, appId: string | null) =>
+  call<number>("mark_notifications_read", { id, appId });
+export const clearNotifications = (appId: string | null) =>
+  call<number>("clear_notifications", { appId });
+
+export function onNotificationsChanged(handler: () => void): Promise<UnlistenFn> {
+  return listen<null>("notifications-changed", () => handler());
+}

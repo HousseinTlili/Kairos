@@ -18,7 +18,10 @@ use crate::hermes::errors::HermesError;
 use crate::hermes::events::{RunEvent, RunEventEnvelope};
 use crate::hermes::local::{self, LocalError};
 use crate::keyring::{self, KeyStoreError};
-use crate::presence::PresenceEvent;
+use crate::notifications::collect::{self as collect, Access, CollectState};
+use crate::notifications::store::{AppCount, StoredNotification};
+use crate::notifications::{self, ENABLED_SETTING, SINCE_SETTING};
+use crate::presence::{self, PresenceEvent};
 use crate::rules;
 use crate::store::{self, Conversation, StoreError, Task, TaskStatus, TaskStore};
 use crate::system::speedtest::{self, SpeedTestResult};
@@ -850,6 +853,102 @@ pub fn first_launch_autostart(app: &tauri::AppHandle, state: &AppState) {
     if app.autolaunch().enable().is_ok() {
         let _ = state.with_store(|store| store.set_setting(DONE, "true"));
     }
+}
+
+// --- Notifications (M4 Step 5) ----------------------------------------------------------------
+
+const NOTIFICATIONS_LIST_MAX: u32 = 500;
+
+#[derive(Debug, Clone, Serialize)]
+pub struct NotificationsState {
+    /// The Kairos switch (off by default).
+    pub enabled: bool,
+    pub access: Access,
+    pub state: CollectState,
+    pub unread: i64,
+    pub counts: Vec<AppCount>,
+}
+
+fn notifications_state_now(state: &AppState) -> Result<NotificationsState, CommandError> {
+    let access = notifications::access();
+    state.with_store(|store| {
+        let enabled = store.setting(ENABLED_SETTING)?.as_deref() == Some("true");
+        Ok(NotificationsState {
+            enabled,
+            access,
+            state: collect::collect_state(enabled, access),
+            unread: store.unread_notifications()?,
+            counts: store.notification_counts()?,
+        })
+    })
+}
+
+/// Tells the panel and the badge to re-read.
+fn notifications_changed(app: &tauri::AppHandle) {
+    let _ = app.emit("notifications-changed", ());
+}
+
+#[tauri::command]
+pub async fn notifications_state(
+    state: tauri::State<'_, AppState>,
+) -> Result<NotificationsState, CommandError> {
+    notifications_state_now(&state)
+}
+
+/// The Kairos switch. Turning it on starts the "collect from now" clock (M4 §5): what is already
+/// in Action Center arrived before permission and is left alone.
+#[tauri::command]
+pub async fn set_notifications_enabled(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    enabled: bool,
+) -> Result<NotificationsState, CommandError> {
+    state.with_store(|store| {
+        if enabled {
+            store.set_setting(SINCE_SETTING, &presence::unix_now().to_string())?;
+        }
+        store.set_setting(ENABLED_SETTING, if enabled { "true" } else { "false" })
+    })?;
+    notifications_changed(&app);
+    notifications_state_now(&state)
+}
+
+#[tauri::command]
+pub async fn list_notifications(
+    state: tauri::State<'_, AppState>,
+    app_id: Option<String>,
+    unread_only: bool,
+) -> Result<Vec<StoredNotification>, CommandError> {
+    state.with_store(|store| {
+        store.notifications(app_id.as_deref(), unread_only, NOTIFICATIONS_LIST_MAX)
+    })
+}
+
+/// Marks one notification (`id`), one app's (`app_id`), or all (neither) as read.
+#[tauri::command]
+pub async fn mark_notifications_read(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    id: Option<i64>,
+    app_id: Option<String>,
+) -> Result<usize, CommandError> {
+    let changed = state.with_store(|store| {
+        store.mark_notifications_read(id, app_id.as_deref(), presence::unix_now())
+    })?;
+    notifications_changed(&app);
+    Ok(changed)
+}
+
+/// Deletes one app's notifications, or all of them. The panel asks before calling this.
+#[tauri::command]
+pub async fn clear_notifications(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    app_id: Option<String>,
+) -> Result<usize, CommandError> {
+    let removed = state.with_store(|store| store.clear_notifications(app_id.as_deref()))?;
+    notifications_changed(&app);
+    Ok(removed)
 }
 
 static SPEED_TEST_RUNNING: std::sync::atomic::AtomicBool =

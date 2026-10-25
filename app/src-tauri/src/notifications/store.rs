@@ -1,6 +1,6 @@
 //! The `notification` table of `kairos.db` (M4 §6). Kept until the user clears it (D-011).
 
-use rusqlite::{OptionalExtension, params};
+use rusqlite::params;
 use serde::Serialize;
 
 use crate::store::{StoreError, TaskStore};
@@ -54,6 +54,7 @@ const COLUMNS: &str = "id, app_id, app_name, created_at, title, body, read_at";
 impl TaskStore {
     /// Stores a notification unless it is already there (the same app, Windows id and time:
     /// every 3 s poll sees it again while it stays in Action Center). True if it was new.
+    #[allow(dead_code)] // Called by the Windows listener (Step 4, waiting for approval).
     pub fn insert_notification(&self, n: &NewNotification) -> Result<bool, StoreError> {
         let changed = self.conn().execute(
             "INSERT OR IGNORE INTO notification
@@ -150,6 +151,7 @@ impl TaskStore {
 
     /// The newest notifications created at or after `since`, at most `limit`, for
     /// `notifications.json` (D-018).
+    #[allow(dead_code)] // Used by the notifications.json writer (Step 6).
     pub fn notifications_since(
         &self,
         since: i64,
@@ -163,7 +165,9 @@ impl TaskStore {
         Ok(rows.collect::<Result<Vec<_>, _>>()?)
     }
 
+    #[cfg(test)]
     pub fn notification(&self, id: i64) -> Result<Option<StoredNotification>, StoreError> {
+        use rusqlite::OptionalExtension;
         Ok(self
             .conn()
             .query_row(

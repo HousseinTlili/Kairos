@@ -1,4 +1,5 @@
 import { approvalWarning, useConnection } from "../connection/store";
+import { NotificationSettings } from "../notifications/NotificationSettings";
 import { RulesPage } from "../rules/RulesPage";
 import { StartupSettings } from "../startup/StartupSettings";
 import { useSystem } from "../system/store";
@@ -8,6 +9,7 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: "connection", label: "Connection" },
   { id: "rules", label: "Rules" },
   { id: "system", label: "System" },
+  { id: "notifications", label: "Notifications" },
   { id: "startup", label: "Startup" },
 ];
 
@@ -40,6 +42,8 @@ export function Settings() {
         <RulesPage />
       ) : settingsTab === "system" ? (
         <SystemSettings />
+      ) : settingsTab === "notifications" ? (
+        <NotificationSettings />
       ) : settingsTab === "startup" ? (
         <StartupSettings />
       ) : (

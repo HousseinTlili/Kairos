@@ -77,3 +77,10 @@ export const GaugeIcon = () => (
     <circle cx="12" cy="15" r="1" />
   </Icon>
 );
+
+export const BellIcon = () => (
+  <Icon>
+    <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
+    <path d="M10 20a2 2 0 0 0 4 0" />
+  </Icon>
+);
