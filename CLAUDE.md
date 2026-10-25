@@ -16,6 +16,9 @@ when it is tested (a Denied verdict means the listener can't work unpackaged).
 **M5 onwards** are built the same way, one branch per milestone stacked on the previous one
 (`m5/briefing`, …). **`docs/TESTING.md`** is the product owner's list of everything still to
 verify on the PC; add every new **(on the PC)** check to it.
+**M9** (voice, `m9/voice`): local Whisper via `whisper-rs`; the build needs CMake and libclang,
+which the repo's `.cargo/config.toml` points at (VS Build Tools 2022, `C:\Program Files\LLVM`).
+It also sets whisper.cpp's Release flags: without them MSVC builds it unoptimised (~15x slower).
 
 ## Roles
 

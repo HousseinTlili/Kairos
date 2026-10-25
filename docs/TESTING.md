@@ -117,8 +117,13 @@ new dependency).
 Spec: `docs/milestones/M9.md`. D-022 and `whisper-rs` approved 2026-10-25. The build needs CMake and
 libclang (`.cargo/config.toml` points at VS Build Tools' CMake and `C:\Program Files\LLVM`).
 
-- [ ] Settings ▸ Voice ▸ Download Small (190 MB); it shows Ready.
+Details: `docs/milestones/M9-acceptance.md`. About 15 minutes. The Small model is already
+downloaded (the agent's real-download check).
+
+- [ ] Settings ▸ Voice: Small shows Ready.
 - [ ] Mic button: an English, a French and an Arabic sentence each appear correctly and are sent.
 - [ ] Hold Ctrl+Alt+J over another app, speak, release: the quick box answers.
+- [ ] Esc cancels a recording; silence sends nothing.
 - [ ] Speaker button reads an answer aloud; Esc stops it; "Read it to me" on the briefing.
+- [ ] Offline (Wi-Fi off), transcription still works.
 - [ ] Then sign M9 off.
