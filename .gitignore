@@ -1,2 +1,4 @@
 __pycache__/
 *.pyc
+# Local test builds (CARGO_TARGET_DIR=target/test-build while the dev app runs)
+/target/
