@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import {
+  accountsState,
   briefNow,
   briefingSettings,
   latestBriefing,
@@ -13,7 +14,13 @@ import {
 import { useChat } from "../chat/store";
 import { useConnection } from "../connection/store";
 import { useShell } from "../shell/store";
-import { isFresh, mayStartSummary, summaryRequest } from "./model";
+import {
+  NO_ACCOUNTS,
+  isFresh,
+  mayStartSummary,
+  summaryRequest,
+  type ConnectedAccounts,
+} from "./model";
 
 const HOUR_MS = 60 * 60 * 1000;
 const BUSY = ["sending", "running", "waiting_for_approval", "stopping"];
@@ -92,10 +99,19 @@ export const useBriefing = create<BriefingStore>((set, get) => ({
     const { briefing, projects } = get();
     if (!briefing || chatBusy()) return;
     set({ summaryStarted: true });
+    // Connected accounts (M6) widen the summary; if they can't be read, it goes without them.
+    let accounts: ConnectedAccounts = NO_ACCOUNTS;
+    try {
+      const states = await accountsState();
+      const on = (kind: string) => states.some((a) => a.kind === kind && a.status === "connected");
+      accounts = { google: on("google"), github: on("github") };
+    } catch {
+      accounts = NO_ACCOUNTS;
+    }
     const chat = useChat.getState();
     chat.newConversation();
     useShell.getState().show("chat");
-    await chat.send(summaryRequest(briefing, projects));
+    await chat.send(summaryRequest(briefing, projects, accounts));
   },
 
   loadSettings: async () => {

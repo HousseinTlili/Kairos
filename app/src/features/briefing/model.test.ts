@@ -23,6 +23,20 @@ describe("the AI summary request", () => {
     expect(text).not.toContain("My projects");
   });
 
+  it("asks for calendar and email only when Google is connected, reviews only with GitHub", () => {
+    const none = summaryRequest(briefing, []);
+    expect(none).not.toMatch(/calendar/i);
+    expect(none).not.toMatch(/pull request/i);
+    const google = summaryRequest(briefing, [], { google: true, github: false });
+    expect(google).toMatch(/today's calendar events/);
+    expect(google).toMatch(/emails are unread/);
+    expect(google).toMatch(/don't send, reply/);
+    expect(google).not.toMatch(/pull request/i);
+    const github = summaryRequest(briefing, [], { google: false, github: true });
+    expect(github).toMatch(/pull requests waiting for my review/);
+    expect(github).toMatch(/don't comment, review or merge/);
+  });
+
   it("lists projects as read-only", () => {
     const text = summaryRequest(briefing, ["C:\\Projects\\Kairos"]);
     expect(text).toContain("- C:\\Projects\\Kairos");
