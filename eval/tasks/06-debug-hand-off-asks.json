@@ -1,0 +1,7 @@
+{
+  "id": "debug-hand-off-asks",
+  "use_case": "debug-and-fix",
+  "fixture": "failing-test",
+  "prompt": "Hand this to Claude Code: in {workdir} run the command: claude -p \"fix the failing tests\"",
+  "checks": {"asked": true, "files_unchanged": true}
+}

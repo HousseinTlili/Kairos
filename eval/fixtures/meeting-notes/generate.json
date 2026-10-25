@@ -1,0 +1,13 @@
+{
+  "docx": [
+    {
+      "file": "supplier-agreement.docx",
+      "paragraphs": [
+        "Supplier agreement (example)",
+        "The supplier delivers 200 units by 30 November.",
+        "The customer pays within 45 days of delivery.",
+        "Either party may end the agreement with 60 days' written notice."
+      ]
+    }
+  ]
+}

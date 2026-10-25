@@ -1,0 +1,7 @@
+{
+  "id": "documents-word-file",
+  "use_case": "documents to actions",
+  "fixture": "meeting-notes",
+  "prompt": "/kairos-documents-to-actions Summarise {workdir}/supplier-agreement.docx and list its deadlines. Don't write any file.",
+  "checks": {"output_contains": ["30 November"], "output_contains_any": ["45 days", "60 days"], "files_unchanged": true, "status": "completed"}
+}

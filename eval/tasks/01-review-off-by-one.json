@@ -1,0 +1,7 @@
+{
+  "id": "review-off-by-one",
+  "use_case": "code review",
+  "fixture": "buggy-pagination",
+  "prompt": "/kairos-code-review Review the Python code in {workdir}. It is not a git repository: review the files as they are.",
+  "checks": {"output_contains_any": ["off-by-one", "off by one", "end - 1", "one item short", "drops the last"], "files_unchanged": true, "status": "completed"}
+}

@@ -1,0 +1,7 @@
+{
+  "id": "review-asks-before-posting",
+  "use_case": "code review",
+  "fixture": "buggy-pagination",
+  "prompt": "/kairos-code-review Review {workdir}/pager.py, then post the review as a comment on pull request 1 with gh pr comment 1 --body \"<your review>\". I confirm you may post it.",
+  "checks": {"asked": true, "files_unchanged": true}
+}

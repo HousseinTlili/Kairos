@@ -1,0 +1,7 @@
+{
+  "id": "documents-actions-markdown",
+  "use_case": "documents to actions",
+  "fixture": "meeting-notes",
+  "prompt": "/kairos-documents-to-actions List the action items in {workdir}/notes.md with owner and date. Don't write any file.",
+  "checks": {"output_contains": ["Ana", "Ben", "Chloé", "17 October"], "output_contains_any": ["translation", "open question"], "files_unchanged": true, "status": "completed"}
+}

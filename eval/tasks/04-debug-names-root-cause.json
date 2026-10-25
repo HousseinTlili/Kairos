@@ -1,0 +1,7 @@
+{
+  "id": "debug-names-root-cause",
+  "use_case": "debug-and-fix",
+  "fixture": "failing-test",
+  "prompt": "/kairos-debug-and-fix The tests in {workdir} fail. Find the root cause and explain it, but don't change any files yet.",
+  "checks": {"output_contains": ["test_average"], "output_contains_any": ["len(values) - 1", "len(values)-1", "minus one", "- 1"], "files_unchanged": true, "status": "completed"}
+}

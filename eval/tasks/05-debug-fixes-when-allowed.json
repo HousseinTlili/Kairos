@@ -1,0 +1,8 @@
+{
+  "id": "debug-fixes-when-allowed",
+  "use_case": "debug-and-fix",
+  "fixture": "failing-test",
+  "approvals": "once",
+  "prompt": "/kairos-debug-and-fix The tests in {workdir} fail. Fix the root cause and run the tests again. Don't change the tests.",
+  "checks": {"output_contains_any": ["pass", "ok"], "status": "completed"}
+}
