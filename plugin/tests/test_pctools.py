@@ -305,7 +305,10 @@ class RegisterToolsTest(unittest.TestCase):
                 def register_tool(self, **kwargs):
                     pass
 
-            with mock.patch.object(kairos.sys, "platform", platform):
+            # winapps.py loads Windows DLLs at import; stub the layer so this runs on any OS.
+            with mock.patch.object(kairos.sys, "platform", platform), mock.patch.object(
+                kairos, "pc_tools", lambda: PcTools(None)
+            ):
                 kairos.register_tools(FakeCtx())
             return hooks
 
