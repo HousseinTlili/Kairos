@@ -524,6 +524,7 @@ mod tests {
         let completed = RunEvent::RunCompleted {
             output: String::new(),
             usage: Default::default(),
+            runtime: None,
             completed: true,
             partial: false,
             interrupted: false,
@@ -532,6 +533,7 @@ mod tests {
         let partial = RunEvent::RunCompleted {
             output: String::new(),
             usage: Default::default(),
+            runtime: None,
             completed: true,
             partial: true,
             interrupted: false,

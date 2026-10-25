@@ -28,6 +28,20 @@ pub struct Usage {
     pub output_tokens: u64,
     #[serde(default)]
     pub total_tokens: u64,
+    /// Prompt-cache reads and writes (M7): cached input is cheaper than full-price input.
+    #[serde(default)]
+    pub cache_read_tokens: u64,
+    #[serde(default)]
+    pub cache_write_tokens: u64,
+}
+
+/// The provider and model that actually served a run, after any fallback (M7, D-020).
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct Runtime {
+    #[serde(default)]
+    pub provider: String,
+    #[serde(default)]
+    pub model: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -95,6 +109,8 @@ pub enum RunEvent {
         output: String,
         #[serde(default)]
         usage: Usage,
+        #[serde(default)]
+        runtime: Option<Runtime>,
         #[serde(default)]
         completed: bool,
         #[serde(default)]

@@ -5,6 +5,14 @@ export interface Usage {
   input_tokens: number;
   output_tokens: number;
   total_tokens: number;
+  cache_read_tokens?: number;
+  cache_write_tokens?: number;
+}
+
+/** The provider and model that actually served a run, after any fallback (M7). */
+export interface Runtime {
+  provider: string;
+  model: string;
 }
 
 export type RunEvent =
@@ -32,6 +40,7 @@ export type RunEvent =
       event: "run.completed";
       output: string;
       usage: Usage;
+      runtime: Runtime | null;
       completed: boolean;
       partial: boolean;
       interrupted: boolean;

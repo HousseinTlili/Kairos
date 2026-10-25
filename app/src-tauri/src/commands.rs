@@ -1394,6 +1394,7 @@ mod tests {
         let completed = RunEvent::RunCompleted {
             output: "Kairos OK".into(),
             usage: Default::default(),
+            runtime: None,
             completed: true,
             partial: false,
             interrupted: false,

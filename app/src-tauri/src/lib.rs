@@ -5,6 +5,9 @@ mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
 mod keyring;
+// M7: wired up in Steps 4 and 5, which remove this allowance.
+#[allow(dead_code)]
+mod models;
 mod notifications;
 mod presence;
 mod rules;
