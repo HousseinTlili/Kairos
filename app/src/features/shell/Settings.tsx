@@ -6,6 +6,7 @@ import { QuickSettings } from "../quick/QuickSettings";
 import { NotificationSettings } from "../notifications/NotificationSettings";
 import { RulesPage } from "../rules/RulesPage";
 import { StartupSettings } from "../startup/StartupSettings";
+import { VoiceSettings } from "../voice/VoiceSettings";
 import { useSystem } from "../system/store";
 import { useShell, type SettingsTab } from "./store";
 
@@ -18,6 +19,7 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: "accounts", label: "Accounts" },
   { id: "models", label: "Models & sandbox" },
   { id: "quick", label: "Quick box" },
+  { id: "voice", label: "Voice" },
   { id: "startup", label: "Startup" },
 ];
 
@@ -60,6 +62,8 @@ export function Settings() {
         <ModelsSettings />
       ) : settingsTab === "quick" ? (
         <QuickSettings />
+      ) : settingsTab === "voice" ? (
+        <VoiceSettings />
       ) : settingsTab === "startup" ? (
         <StartupSettings />
       ) : (

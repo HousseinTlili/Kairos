@@ -1953,3 +1953,120 @@ pre {
   background: var(--surface);
   color: var(--fg);
 }
+
+/* --- Voice (M9) --------------------------------------------------------------------------------- */
+
+:root {
+  --mic-ring: rgba(122, 46, 58, 0.28);
+}
+
+.ok-text {
+  color: var(--ok);
+}
+
+/* The mic sits beside Send, quieter than it until it is listening. */
+.composer-button.mic {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  transition: box-shadow 80ms linear;
+}
+
+.composer-button.mic:hover:not(:disabled) {
+  color: var(--fg);
+  border-color: var(--muted);
+}
+
+.composer-button.mic.listening {
+  background: var(--oxblood);
+  border-color: var(--oxblood);
+  color: #fff;
+}
+
+.composer-button.mic.transcribing {
+  opacity: 0.6;
+  animation: kairos-pulse 1s ease-in-out infinite;
+}
+
+@keyframes kairos-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.voice-status {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+}
+
+.voice-heard {
+  margin: 6px 0 0;
+  font-style: italic;
+}
+
+.speak-button {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.speak-button:hover,
+.speak-button.active {
+  color: var(--fg);
+  background: var(--code-bg);
+}
+
+.voice-models {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+}
+
+.voice-models li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.voice-model-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voice-test {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* The quick box's mic sits at the right end of its input. */
+.quick-input {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.quick-input input {
+  border-bottom: none;
+}
+
+.quick-input .composer-button.mic {
+  margin-right: 12px;
+  flex: none;
+}
+
+.quick .voice-status {
+  padding: 0 16px;
+}

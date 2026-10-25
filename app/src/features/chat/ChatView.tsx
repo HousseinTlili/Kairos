@@ -22,6 +22,9 @@ import {
 } from "./turn";
 import { ModelPicker } from "../models/ModelPicker";
 import { costLabel, tokens } from "../models/model";
+import { useVoiceInChat } from "../voice/hooks";
+import { useVoice } from "../voice/store";
+import { MicButton, SpeakButton, VoiceStatus } from "../voice/VoiceControls";
 
 const SUGGESTIONS = [
   "What can you help me with?",
@@ -127,6 +130,9 @@ export function TurnView({ turn }: { turn: Turn }) {
             (≈ ${turn.costCap.cost.toFixed(4)} so far).
           </p>
         )}
+        {turn.taskId && turn.text && !working && isFinished(turn.status) && (
+          <SpeakButton id={turn.taskId} text={turn.text} />
+        )}
         {turn.usage && (
           <p className="turn-usage">
             {tokens(turn.usage.input)} in · {tokens(turn.usage.output)} out
@@ -186,6 +192,8 @@ export function ChatView() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const active = turns.find((turn) => !isFinished(turn.status));
+  const stopSpeaking = useVoice((s) => s.stopSpeaking);
+  useVoiceInChat(turns);
   const title =
     conversations.kairos.find((c) => c.session_id === sessionId)?.title ??
     turns[0]?.input ??
@@ -214,8 +222,18 @@ export function ChatView() {
   function submit(event?: FormEvent) {
     event?.preventDefault();
     if (active || !draft.trim()) return;
+    stopSpeaking();
     void send(draft);
     setDraft("");
+  }
+
+  function sendSpoken(text: string) {
+    if (active) {
+      setDraft(text);
+      return;
+    }
+    stopSpeaking();
+    void send(text);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -292,17 +310,21 @@ export function ChatView() {
               <StopIcon />
             </button>
           ) : (
-            <button
-              type="submit"
-              className="composer-button"
-              disabled={!draft.trim()}
-              aria-label="Send"
-              title="Send (Enter)"
-            >
-              <SendIcon />
-            </button>
+            <>
+              <MicButton onText={sendSpoken} />
+              <button
+                type="submit"
+                className="composer-button"
+                disabled={!draft.trim()}
+                aria-label="Send"
+                title="Send (Enter)"
+              >
+                <SendIcon />
+              </button>
+            </>
           )}
         </form>
+        <VoiceStatus />
         <p className="composer-hint">Enter to send, Shift+Enter for a new line</p>
       </div>
     </section>

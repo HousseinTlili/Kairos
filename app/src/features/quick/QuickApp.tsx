@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { hideQuick, onQuickShown, onRunEvent, openInMain, showQuick } from "../../lib/tauri";
+import {
+  hideQuick,
+  onPushToTalk,
+  onQuickShown,
+  onRunEvent,
+  openInMain,
+  showQuick,
+} from "../../lib/tauri";
 import { TurnView } from "../chat/ChatView";
 import { startChatEvents, useChat } from "../chat/store";
 import { useConnection } from "../connection/store";
+import { useVoiceInChat } from "../voice/hooks";
+import { useVoice } from "../voice/store";
+import { MicButton, VoiceStatus } from "../voice/VoiceControls";
 import { hidesForCapture, quickSessionKey } from "./model";
 
 function rememberedSession(): string | null {
@@ -32,11 +42,31 @@ export function QuickApp() {
     ["sending", "running", "waiting_for_approval", "stopping"].includes(t.status),
   );
   const last = turns[turns.length - 1];
+  useVoiceInChat(turns);
+
+  // The latest values for the push-to-talk listener, which is set up once.
+  const sendRef = useRef<(text: string) => void>(() => {});
+  useEffect(() => {
+    sendRef.current = (text: string) => {
+      if (busy || !connected) {
+        setDraft(text);
+        return;
+      }
+      useVoice.getState().stopSpeaking();
+      void send(text);
+    };
+  });
 
   useEffect(() => {
     const stops = [
       startChatEvents(),
       onQuickShown(() => inputRef.current?.focus()),
+      // Push-to-talk (M9 §3): held, listen; let go, send what was said.
+      onPushToTalk((held) => {
+        const voice = useVoice.getState();
+        if (held) void voice.startListening();
+        else void voice.finishListening().then((text) => text && sendRef.current(text));
+      }),
       // Out of the picture while the screen is captured (M8 §4).
       onRunEvent(({ envelope }) => {
         const event = envelope.event;
@@ -62,12 +92,16 @@ export function QuickApp() {
   function submit(event?: FormEvent) {
     event?.preventDefault();
     if (!draft.trim() || busy || !connected) return;
+    useVoice.getState().stopSpeaking();
     void send(draft);
     setDraft("");
   }
 
   function onKeyDown(event: KeyboardEvent) {
-    if (event.key === "Escape") void hideQuick();
+    if (event.key !== "Escape") return;
+    // Esc first cancels a recording or stops reading (useVoiceInChat); only then hides the box.
+    const { phase, speaking } = useVoice.getState();
+    if (phase === "idle" && !speaking) void hideQuick();
   }
 
   return (
@@ -82,7 +116,9 @@ export function QuickApp() {
           disabled={!connected}
           aria-label="Ask Kairos"
         />
+        <MicButton onText={(text) => sendRef.current(text)} disabled={!connected} />
       </form>
+      <VoiceStatus />
       <div className="quick-answer">
         {last ? (
           <TurnView turn={last} />

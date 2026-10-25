@@ -518,3 +518,71 @@ export const createJob = (name: string, schedule: string, prompt: string) =>
 export const jobAction = (jobId: string, action: JobAction) =>
   call<Job>("job_action", { jobId, action });
 export const deleteJob = (jobId: string) => call<null>("delete_job", { jobId });
+
+// --- Voice (M9, D-022). Shapes mirror src-tauri/src/voice and the voice commands. ---------------
+
+export type VoiceModelId = "small" | "base";
+
+export interface VoiceModelInfo {
+  id: VoiceModelId;
+  label: string;
+  size_bytes: number;
+  ready: boolean;
+}
+
+export interface VoiceSettings {
+  models: VoiceModelInfo[];
+  model: VoiceModelId;
+  /** "en" | "fr" | "ar"; null = detect per recording. */
+  language: string | null;
+  read_aloud: boolean;
+  ptt_hotkey: string;
+  downloading: boolean;
+}
+
+export type VoiceModelProgress =
+  | { phase: "downloading"; id: VoiceModelId; received: number; total: number }
+  | { phase: "done"; id: VoiceModelId }
+  | { phase: "failed"; id: VoiceModelId; message: string };
+
+export interface Transcript {
+  text: string;
+  language: string | null;
+  elapsed_ms: number;
+}
+
+export const voiceState = () => call<VoiceSettings>("voice_state");
+export const saveVoiceSettings = (
+  model: VoiceModelId,
+  language: string | null,
+  readAloud: boolean,
+) => call<VoiceSettings>("save_voice_settings", { model, language, readAloud });
+export const downloadVoiceModel = (id: VoiceModelId) => call<null>("download_voice_model", { id });
+export const deleteVoiceModel = (id: VoiceModelId) =>
+  call<VoiceSettings>("delete_voice_model", { id });
+export const pttHotkey = () => call<string>("ptt_hotkey");
+export const setPttHotkey = (hotkey: string) => call<string>("set_ptt_hotkey", { hotkey });
+
+/** The raw 16 kHz mono 16-bit samples go as the request body, not as JSON (M9 §3). */
+export async function transcribe(pcm: Int16Array, language: string | null): Promise<Transcript> {
+  try {
+    return await invoke<Transcript>(
+      "transcribe",
+      new Uint8Array(pcm.buffer, pcm.byteOffset, pcm.byteLength),
+      {
+        headers: language ? { language } : {},
+      },
+    );
+  } catch (err) {
+    throw asCommandError(err);
+  }
+}
+
+export function onVoiceModel(handler: (progress: VoiceModelProgress) => void): Promise<UnlistenFn> {
+  return listen<VoiceModelProgress>("voice-model", (event) => handler(event.payload));
+}
+
+/** Push-to-talk key held (true) or let go (false), sent to the quick box. */
+export function onPushToTalk(handler: (held: boolean) => void): Promise<UnlistenFn> {
+  return listen<boolean>("push-to-talk", (event) => handler(event.payload));
+}
