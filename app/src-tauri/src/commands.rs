@@ -883,8 +883,25 @@ fn notifications_state_now(state: &AppState) -> Result<NotificationsState, Comma
     })
 }
 
-/// Tells the panel and the badge to re-read.
-fn notifications_changed(app: &tauri::AppHandle) {
+/// Brings `notifications.json` in line with the store (D-018) and tells the panel and the badge to
+/// re-read. A failed file write is logged, never shown: the store is still right.
+pub fn notifications_changed(app: &tauri::AppHandle) {
+    let state = app.state::<AppState>();
+    let synced = state.with_store(|store| {
+        let enabled = store.setting(ENABLED_SETTING)?.as_deref() == Some("true");
+        notifications::export::sync(
+            store,
+            &notifications::export::default_path()?,
+            enabled,
+            presence::unix_now(),
+        )
+    });
+    if let Err(err) = synced {
+        eprintln!(
+            "kairos: couldn't update notifications.json: {}",
+            err.message
+        );
+    }
     let _ = app.emit("notifications-changed", ());
 }
 

@@ -4,6 +4,7 @@
 // The collector's poll side is used by the Windows listener (Step 4, waiting for approval).
 #[allow(dead_code)]
 pub mod collect;
+pub mod export;
 pub mod store;
 
 use collect::Access;

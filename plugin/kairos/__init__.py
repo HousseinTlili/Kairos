@@ -4,7 +4,8 @@ Installed by `scripts/install-plugin.ps1` as `%LOCALAPPDATA%\\hermes\\plugins\\k
 `hermes plugins enable kairos`. Reads `%APPDATA%\\kairos\\policy.json`, writes
 `%APPDATA%\\kairos\\audit.db` (D-015, D-016). `KAIROS_HOME` overrides the folder.
 
-From M3 it also registers the PC control tools (`pctools.py`, D-014) in its own `kairos` toolset.
+From M3 it also registers the PC control tools (`pctools.py`, D-014) in its own `kairos` toolset,
+and from M4 `recent_notifications` (`notifications.py`, D-018).
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ import sys
 from pathlib import Path
 
 from .audit import AuditStore
+from . import notifications
 from .hooks import KairosHooks
 from .pctools import CLOSE_APP, LIST_RUNNING_APPS, OPEN_APP, PcTools, steering
 from .policy import PolicyFile
@@ -60,6 +62,25 @@ def register_tools(ctx) -> None:
         log.exception("kairos: couldn't register the PC control tools")
 
 
+def register_notifications(ctx, home: Path) -> None:
+    """`recent_notifications` and its steering (M4 §8, D-018). Windows only, like the
+    notifications themselves; a failure here never costs the hooks."""
+    register_tool = getattr(ctx, "register_tool", None)
+    if register_tool is None:
+        return
+    try:
+        reader = notifications.Notifications(home / notifications.FILE_NAME)
+        on_windows = lambda: sys.platform == "win32"  # noqa: E731
+        schema = notifications.RECENT_NOTIFICATIONS
+        register_tool(
+            name=schema["name"], toolset="kairos", schema=schema, handler=reader.recent_notifications, check_fn=on_windows
+        )
+        if on_windows():
+            ctx.register_hook("pre_llm_call", notifications.steering)
+    except Exception:  # noqa: BLE001
+        log.exception("kairos: couldn't register recent_notifications")
+
+
 def register(ctx) -> KairosHooks:
     home = kairos_home()
     hooks = KairosHooks(PolicyFile(home / "policy.json"), AuditStore(home / "audit.db"))
@@ -67,4 +88,5 @@ def register(ctx) -> KairosHooks:
     ctx.register_hook("post_tool_call", hooks.post_tool_call)
     ctx.register_hook("post_approval_response", hooks.post_approval_response)
     register_tools(ctx)
+    register_notifications(ctx, home)
     return hooks

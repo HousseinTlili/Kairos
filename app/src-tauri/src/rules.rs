@@ -158,13 +158,18 @@ fn run_validator(runtime: &PluginRuntime, text: &str) -> Result<String, String> 
 }
 
 /// Writes `text` so the plugin never reads a half-written file: a temporary file in the same
-/// folder, flushed to disk, then renamed over the old one (a replace on Windows).
+/// folder, flushed to disk, then renamed over the old one (a replace on Windows). Also used for
+/// `notifications.json` (M4, D-018), the other file the app writes and the plugin reads.
 pub fn write_atomically(path: &Path, text: &str) -> Result<(), StoreError> {
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
     let dir = path
         .parent()
-        .ok_or_else(|| StoreError::new("the rules path has no folder"))?;
+        .ok_or_else(|| StoreError::new(format!("{} has no folder", path.display())))?;
     std::fs::create_dir_all(dir).map_err(|err| StoreError::new(err.to_string()))?;
-    let temp = dir.join(format!(".policy.json.{}.tmp", std::process::id()));
+    let temp = dir.join(format!(".{name}.{}.tmp", std::process::id()));
     let result = (|| -> std::io::Result<()> {
         let mut file = std::fs::File::create(&temp)?;
         file.write_all(text.as_bytes())?;
@@ -174,7 +179,7 @@ pub fn write_atomically(path: &Path, text: &str) -> Result<(), StoreError> {
     })();
     if let Err(err) = result {
         let _ = std::fs::remove_file(&temp);
-        return Err(StoreError::new(format!("couldn't save the rules: {err}")));
+        return Err(StoreError::new(format!("couldn't save {name}: {err}")));
     }
     Ok(())
 }

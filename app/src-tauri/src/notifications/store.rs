@@ -151,7 +151,6 @@ impl TaskStore {
 
     /// The newest notifications created at or after `since`, at most `limit`, for
     /// `notifications.json` (D-018).
-    #[allow(dead_code)] // Used by the notifications.json writer (Step 6).
     pub fn notifications_since(
         &self,
         since: i64,
