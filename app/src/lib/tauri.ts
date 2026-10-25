@@ -589,3 +589,19 @@ export function onVoiceModel(handler: (progress: VoiceModelProgress) => void): P
 export function onPushToTalk(handler: (held: boolean) => void): Promise<UnlistenFn> {
   return listen<boolean>("push-to-talk", (event) => handler(event.payload));
 }
+
+// --- Persona (M10, D-023). Shapes mirror src-tauri/src/persona.rs. ------------------------------
+
+export type PersonaKind = "kairos" | "hermes_default" | "custom";
+
+export interface PersonaState {
+  /** What Hermes's SOUL.md holds now; empty when there is none. */
+  text: string;
+  kind: PersonaKind;
+  kairos_text: string;
+  has_backup: boolean;
+}
+
+export const personaState = () => call<PersonaState>("persona_state");
+export const savePersona = (text: string) => call<PersonaState>("save_persona", { text });
+export const restorePersona = () => call<PersonaState>("restore_persona");

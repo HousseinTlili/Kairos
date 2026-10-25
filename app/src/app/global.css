@@ -2070,3 +2070,30 @@ pre {
 .quick .voice-status {
   padding: 0 16px;
 }
+
+/* --- Persona (M10) ------------------------------------------------------------------------------ */
+
+.persona-kind {
+  margin: 8px 0 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.persona-editor {
+  width: 100%;
+  min-height: 320px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+  resize: vertical;
+}
+
+.persona-editor:focus {
+  outline: none;
+  border-color: var(--muted);
+}
