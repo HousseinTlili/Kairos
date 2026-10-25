@@ -20,7 +20,7 @@ use crate::hermes::local::{self, LocalError};
 use crate::keyring::{self, KeyStoreError};
 use crate::notifications::collect::{self as collect, Access, CollectState};
 use crate::notifications::store::{AppCount, StoredNotification};
-use crate::notifications::{self, ENABLED_SETTING, SINCE_SETTING};
+use crate::notifications::{self, ENABLED_SETTING, NotificationSwitch, SINCE_SETTING};
 use crate::presence::{self, PresenceEvent};
 use crate::rules;
 use crate::store::{self, Conversation, StoreError, Task, TaskStatus, TaskStore};
@@ -918,16 +918,70 @@ pub async fn notifications_state(
 pub async fn set_notifications_enabled(
     app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
+    switch: tauri::State<'_, std::sync::Arc<NotificationSwitch>>,
     enabled: bool,
 ) -> Result<NotificationsState, CommandError> {
-    state.with_store(|store| {
+    let now = presence::unix_now();
+    let since = state.with_store(|store| {
         if enabled {
-            store.set_setting(SINCE_SETTING, &presence::unix_now().to_string())?;
+            store.set_setting(SINCE_SETTING, &now.to_string())?;
         }
-        store.set_setting(ENABLED_SETTING, if enabled { "true" } else { "false" })
+        store.set_setting(ENABLED_SETTING, if enabled { "true" } else { "false" })?;
+        Ok(store
+            .setting(SINCE_SETTING)?
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(now))
     })?;
+    // Off takes effect at once: the poller checks this before every read.
+    switch.set(enabled, since);
+    #[cfg(windows)]
+    if enabled && notifications::access() == Access::Unspecified {
+        // Windows hasn't been asked yet; it may show its prompt now.
+        let handle = app.clone();
+        let _ = tauri::async_runtime::spawn_blocking(move || {
+            notifications::windows::request_access(&handle)
+        })
+        .await;
+    }
     notifications_changed(&app);
     notifications_state_now(&state)
+}
+
+/// The switch as stored, for the poller at startup.
+pub fn stored_notification_switch(state: &AppState) -> NotificationSwitch {
+    state
+        .with_store(|store| {
+            let enabled = store.setting(ENABLED_SETTING)?.as_deref() == Some("true");
+            let since = store
+                .setting(SINCE_SETTING)?
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0);
+            Ok(NotificationSwitch::new(enabled, since))
+        })
+        .unwrap_or_default()
+}
+
+/// Stores what a poll found; tells the panel only if something was new.
+#[cfg(windows)]
+pub fn store_notifications(
+    app: &tauri::AppHandle,
+    fresh: &[notifications::store::NewNotification],
+) {
+    let state = app.state::<AppState>();
+    let added = state.with_store(|store| {
+        let mut added = 0;
+        for n in fresh {
+            if store.insert_notification(n)? {
+                added += 1;
+            }
+        }
+        Ok(added)
+    });
+    match added {
+        Ok(0) => {}
+        Ok(_) => notifications_changed(app),
+        Err(err) => eprintln!("kairos: couldn't store notifications: {}", err.message),
+    }
 }
 
 #[tauri::command]

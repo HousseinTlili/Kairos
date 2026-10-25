@@ -54,7 +54,7 @@ const COLUMNS: &str = "id, app_id, app_name, created_at, title, body, read_at";
 impl TaskStore {
     /// Stores a notification unless it is already there (the same app, Windows id and time:
     /// every 3 s poll sees it again while it stays in Action Center). True if it was new.
-    #[allow(dead_code)] // Called by the Windows listener (Step 4, waiting for approval).
+    #[cfg_attr(not(windows), allow(dead_code))] // Called by the Windows poller.
     pub fn insert_notification(&self, n: &NewNotification) -> Result<bool, StoreError> {
         let changed = self.conn().execute(
             "INSERT OR IGNORE INTO notification

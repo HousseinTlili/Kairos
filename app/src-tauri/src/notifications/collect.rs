@@ -97,6 +97,10 @@ impl Collector {
         }
     }
 
+    pub fn since(&self) -> i64 {
+        self.since
+    }
+
     /// The notifications in this poll that are new, collectable and not Kairos's own.
     pub fn poll(&mut self, observed: &[Observed]) -> Vec<NewNotification> {
         let current: HashSet<Key> = observed.iter().map(key).collect();

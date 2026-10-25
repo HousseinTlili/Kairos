@@ -37,6 +37,15 @@ tauri-plugin-single-instance = "=2.5.4"
 [target.'cfg(windows)'.dependencies]
 # M3 §4: the session's lock state, for unlock detection. Already in Cargo.lock through Tauri.
 windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_System_RemoteDesktop"] }
+# M4 §4: reading Windows notifications (UserNotificationListener, D-011). Already in Cargo.lock
+# through Tauri and sysinfo.
+windows = { version = "=0.62.2", features = [
+  "ApplicationModel",
+  "Foundation",
+  "Foundation_Collections",
+  "UI_Notifications",
+  "UI_Notifications_Management",
+] }
 
 [profile.release]
 codegen-units = 1

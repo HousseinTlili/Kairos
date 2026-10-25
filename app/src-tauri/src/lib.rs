@@ -79,6 +79,14 @@ pub fn run() {
                 detail: at_login.then(|| "autostart".to_string()),
             };
             commands::record_presence(&app.state::<commands::AppState>(), &startup);
+            let notification_switch =
+                commands::stored_notification_switch(&app.state::<commands::AppState>());
+            app.manage(Arc::new(notification_switch));
+            #[cfg(windows)]
+            notifications::poller::start(app.handle().clone())?;
+            // The file follows the store from the start (deleted if reading was switched off).
+            commands::notifications_changed(app.handle());
+
             let handle = app.handle().clone();
             presence::watch(move |event| {
                 commands::record_presence(&handle.state::<commands::AppState>(), &event);
