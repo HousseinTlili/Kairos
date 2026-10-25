@@ -45,6 +45,17 @@ interface BriefingStore {
 
 const messageOf = (err: unknown) => (err as CommandError)?.message ?? String(err);
 
+/** Connected accounts (M6) widen the summary; if they can't be read, it goes without them. */
+async function connectedAccounts(): Promise<ConnectedAccounts> {
+  try {
+    const states = await accountsState();
+    const on = (kind: string) => states.some((a) => a.kind === kind && a.status === "connected");
+    return { google: on("google"), github: on("github") };
+  } catch {
+    return NO_ACCOUNTS;
+  }
+}
+
 function chatBusy(): boolean {
   return useChat.getState().turns.some((t) => BUSY.includes(t.status));
 }
@@ -99,15 +110,7 @@ export const useBriefing = create<BriefingStore>((set, get) => ({
     const { briefing, projects } = get();
     if (!briefing || chatBusy()) return;
     set({ summaryStarted: true });
-    // Connected accounts (M6) widen the summary; if they can't be read, it goes without them.
-    let accounts: ConnectedAccounts = NO_ACCOUNTS;
-    try {
-      const states = await accountsState();
-      const on = (kind: string) => states.some((a) => a.kind === kind && a.status === "connected");
-      accounts = { google: on("google"), github: on("github") };
-    } catch {
-      accounts = NO_ACCOUNTS;
-    }
+    const accounts = await connectedAccounts();
     const chat = useChat.getState();
     chat.newConversation();
     useShell.getState().show("chat");
