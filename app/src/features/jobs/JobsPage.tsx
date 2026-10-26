@@ -42,7 +42,12 @@ export function JobsPage() {
 
       <NewJobForm />
 
-      {loaded && jobs.length === 0 && !error && <p className="muted">No scheduled jobs.</p>}
+      {loaded && jobs.length === 0 && !error && (
+        <p className="muted">
+          Nothing is scheduled yet. A job runs a request on its own at the times you set, for
+          example a summary of your notifications every morning.
+        </p>
+      )}
       <ul className="notif-list">
         {jobs.map((job) => (
           <JobRow key={job.id} job={job} />

@@ -260,6 +260,11 @@ code {
 /* ---------------------------------------------------------------- Sidebar */
 
 .sidebar {
+  /* The sidebar is dark in both themes, so it keeps the dark theme's accents. */
+  --gilt: #d2ad62;
+  --lume: #8fe3c3;
+  --garnet: #e8737b;
+  --on-gilt: #1a1408;
   display: flex;
   flex-direction: column;
   background: var(--sidebar-bg);
@@ -1892,9 +1897,10 @@ code {
   border-left: 3px solid transparent;
 }
 
+/* Unread is a state, so lume (BRAND.md: lume = live, gilt = offer). */
 .notif-item.unread {
-  border-left-color: var(--brass);
-  background: color-mix(in srgb, var(--brass-soft) 45%, var(--surface));
+  border-left-color: var(--lume);
+  background: color-mix(in srgb, var(--lume-soft) 40%, var(--surface));
 }
 
 .notif-meta {
