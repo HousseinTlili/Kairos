@@ -9,7 +9,7 @@ pub const fn colorref(r: u8, g: u8, b: u8) -> u32 {
 }
 
 /// Charcoal, as the sidebar (`--sidebar-bg` in global.css).
-pub const CAPTION: u32 = colorref(0x15, 0x14, 0x13);
+pub const CAPTION: u32 = colorref(0x0c, 0x0b, 0x0a);
 /// Vellum.
 pub const TEXT: u32 = colorref(0xec, 0xe4, 0xd3);
 /// Gold leaf, darkened so the edge is a line, not a frame.

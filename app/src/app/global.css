@@ -30,10 +30,11 @@
 :root {
   color-scheme: dark;
 
-  --charcoal: #1c1b1a;
-  --hearth: #24221f;
-  --ember: #2d2a26;
-  --iron: #3d3933;
+  /* Near black, as the product owner asked (2026-10-26); still warm, so it reads as charcoal. */
+  --charcoal: #121110;
+  --hearth: #1b1917;
+  --ember: #24211d;
+  --iron: #35312b;
   --gold: #c9a043;
   --gold-soft: rgba(201, 160, 67, 0.14);
   --gules: #e5847f;
@@ -72,15 +73,21 @@
   --bad: var(--gules);
   --warn: #e3b866;
   --warn-bg: rgba(227, 184, 102, 0.12);
-  --code-bg: #161514;
+  --code-bg: #0c0b0a;
   --user-bubble: var(--ember);
   --on-gilt: #1d1406;
 
-  --sidebar-bg: #151413;
+  --sidebar-bg: #0c0b0a;
   --sidebar-fg: var(--vellum);
   --sidebar-muted: var(--ash);
-  --sidebar-hover: #221f1c;
-  --sidebar-active: #2d2a26;
+  --sidebar-hover: #191715;
+  --sidebar-active: #23201c;
+
+  /*
+   * The room's pattern: a manuscript diaper, gold lozenges with a quatrefoil in each, very faint
+   * (BRAND.md, Ornament 4). Only the room shows it; panels and the composer are solid.
+   */
+  --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cpath d='M0 28L28 0L56 28L28 56Z' fill='none' stroke='%23c9a043' stroke-opacity='0.075' stroke-width='0.8'/%3E%3Cg fill='%23c9a043' fill-opacity='0.09'%3E%3Ccircle cx='28' cy='25.2' r='2'/%3E%3Ccircle cx='30.8' cy='28' r='2'/%3E%3Ccircle cx='28' cy='30.8' r='2'/%3E%3Ccircle cx='25.2' cy='28' r='2'/%3E%3Ccircle cx='0' cy='28' r='1'/%3E%3Ccircle cx='56' cy='28' r='1'/%3E%3Ccircle cx='28' cy='0' r='1'/%3E%3Ccircle cx='28' cy='56' r='1'/%3E%3C/g%3E%3C/svg%3E");
 
   --font-ui: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-ui-display:
@@ -123,12 +130,13 @@
     --warn-bg: #f6e8c8;
     --code-bg: #e5dcc8;
     --on-gilt: #fffaf0;
+    --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cpath d='M0 28L28 0L56 28L28 56Z' fill='none' stroke='%2386661d' stroke-opacity='0.12' stroke-width='0.8'/%3E%3Cg fill='%2386661d' fill-opacity='0.12'%3E%3Ccircle cx='28' cy='25.2' r='2'/%3E%3Ccircle cx='30.8' cy='28' r='2'/%3E%3Ccircle cx='28' cy='30.8' r='2'/%3E%3Ccircle cx='25.2' cy='28' r='2'/%3E%3Ccircle cx='0' cy='28' r='1'/%3E%3Ccircle cx='56' cy='28' r='1'/%3E%3Ccircle cx='28' cy='0' r='1'/%3E%3Ccircle cx='28' cy='56' r='1'/%3E%3C/g%3E%3C/svg%3E");
     /* The sidebar stays charcoal panelling in both themes, so its text stays vellum. */
-    --sidebar-bg: #1c1b1a;
+    --sidebar-bg: #121110;
     --sidebar-fg: #ece4d3;
     --sidebar-muted: #a89f8e;
-    --sidebar-hover: #2a2724;
-    --sidebar-active: #34302b;
+    --sidebar-hover: #201d1a;
+    --sidebar-active: #2a2622;
   }
 }
 
@@ -356,6 +364,7 @@ code {
 .main {
   min-width: 0;
   height: 100vh;
+  background: var(--bg) var(--pattern) repeat;
   display: flex;
   flex-direction: column;
 }
@@ -1127,11 +1136,12 @@ code {
   color: var(--bad);
 }
 
+/* The text on top, a toolbar under it: the model on the left, mic and send on the right. */
 .composer {
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  padding: 8px 8px 8px 14px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 10px 8px 16px;
   border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--surface);
@@ -1141,8 +1151,22 @@ code {
   border-color: color-mix(in srgb, var(--gilt) 60%, var(--border));
 }
 
+.composer-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-left: -6px;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .composer textarea {
-  flex: 1;
+  width: 100%;
   border: none;
   outline: none;
   resize: none;
@@ -2176,23 +2200,36 @@ code {
 /* ---------------------------------------------------------------- Models (M7 Step 4) */
 
 .model-picker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 760px;
-  margin: 0 auto 6px;
-  width: 100%;
+  min-width: 0;
 }
 
+/* A quiet chip: it reads as part of the box until the pointer is on it. */
 .model-picker select {
   font: inherit;
   font-size: 0.8125rem;
-  max-width: 100%;
-  padding: 3px 6px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
+  max-width: 340px;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--muted);
+  text-overflow: ellipsis;
+}
+
+.model-picker select:hover:not(:disabled),
+.model-picker select:focus {
+  border-color: var(--border);
   color: var(--fg);
+}
+
+/* For screen readers only. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* ---------------------------------------------------------------- Cost (M7 Step 5) */

@@ -14,10 +14,10 @@ still easy to run. Supersedes the "watch movement" brand of 2026-10-26.
 
 | Name | Dark (default) | Light ("vellum") | Role |
 |---|---|---|---|
-| Charcoal | `#1C1B1A` | `#EDE5D4` | The main colour: the room |
-| Hearth | `#24221F` | `#F7F1E4` | Surfaces: panels, the composer |
-| Ember | `#2D2A26` | `#E5DCC8` | Raised and hovered |
-| Iron | `#3D3933` | `#CDBFA3` | Lines and edges |
+| Charcoal | `#121110` (near black, 2026-10-26) | `#EDE5D4` | The main colour: the room, with the diaper pattern |
+| Hearth | `#1B1917` | `#F7F1E4` | Surfaces: panels, the composer (solid, no pattern) |
+| Ember | `#24211D` | `#E5DCC8` | Raised and hovered |
+| Iron | `#35312B` | `#CDBFA3` | Lines and edges |
 | Gold leaf | `#C9A043` | `#86661D` | Offers: the main button, the selected item, ornaments, the seal's ring |
 | Gules | `#C4474C` (text `#E5847F`) | `#9C2C30` | Refused, blocked, failed, delete; the seal's wax |
 | Vert | `#7DB394` | `#2E7A55` | Live now: listening, working, connected, unread |
@@ -47,9 +47,12 @@ vert never means "click me".
 2. **Illuminated initials**: the first letter of the greeting and the briefing, in gold
    blackletter, three lines tall.
 3. **The fleuron ❧** marks suggestions and the starts of sections in Kairos's briefing.
+4. **The diaper**: the room's background is a manuscript diaper, a lattice of fine gold lozenges
+   with a quatrefoil in each (a 56 px SVG tile in `global.css`, `--pattern`), at about 8 %
+   opacity. Only the room shows it; panels, the composer and the sidebar are solid.
 
 No borders of knotwork, no parchment textures, no fake torn edges: the charter is suggested by
-type and colour, not costume.
+type, colour and one quiet pattern, not costume.
 
 ## Words (a light touch, chosen 2026-10-26)
 
@@ -61,7 +64,8 @@ Kairos's own lines are courtly; the app's names stay plain.
 
 ## Layout
 
-Unchanged from the first brand pass: sidebar, a 760 px conversation column, Settings as a grouped
+The sidebar folds to a rail (Ctrl+B); a 760 px conversation column whose message box holds the
+model menu on its toolbar, beside the mic and send; Settings as a grouped
 section list beside its content, nothing wider than the window, Windows controls told the theme.
 Panels only for things you act on (an approval, a rule, an account); radii 10 px for panels, 6 px
 for controls, 4 px for chips.

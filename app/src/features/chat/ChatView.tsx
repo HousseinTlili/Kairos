@@ -307,7 +307,6 @@ export function ChatView() {
             {notice}
           </p>
         )}
-        <ModelPicker disabled={Boolean(active)} />
         <form className="composer" onSubmit={submit}>
           <textarea
             ref={inputRef}
@@ -318,31 +317,37 @@ export function ChatView() {
             rows={1}
             aria-label="Message"
           />
-          {active ? (
-            <button
-              type="button"
-              className="composer-button stop"
-              onClick={() => active.taskId && void stop(active.taskId)}
-              disabled={!active.taskId || active.status === "stopping"}
-              aria-label="Stop"
-              title="Stop"
-            >
-              <StopIcon />
-            </button>
-          ) : (
-            <>
-              <MicButton onText={sendSpoken} />
-              <button
-                type="submit"
-                className="composer-button"
-                disabled={!draft.trim()}
-                aria-label="Send"
-                title="Send (Enter)"
-              >
-                <SendIcon />
-              </button>
-            </>
-          )}
+          {/* The model sits in the box it applies to, on the toolbar under the text. */}
+          <div className="composer-tools">
+            <ModelPicker disabled={Boolean(active)} />
+            <span className="composer-actions">
+              {active ? (
+                <button
+                  type="button"
+                  className="composer-button stop"
+                  onClick={() => active.taskId && void stop(active.taskId)}
+                  disabled={!active.taskId || active.status === "stopping"}
+                  aria-label="Stop"
+                  title="Stop"
+                >
+                  <StopIcon />
+                </button>
+              ) : (
+                <>
+                  <MicButton onText={sendSpoken} />
+                  <button
+                    type="submit"
+                    className="composer-button"
+                    disabled={!draft.trim()}
+                    aria-label="Send"
+                    title="Send (Enter)"
+                  >
+                    <SendIcon />
+                  </button>
+                </>
+              )}
+            </span>
+          </div>
         </form>
         <VoiceStatus />
         <p className="composer-hint">Enter to send, Shift+Enter for a new line</p>

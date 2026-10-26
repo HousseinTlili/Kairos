@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { choiceKey, parseChoiceKey, priceLabel } from "./model";
 import { useModels } from "./store";
 
-/** The model menu above the message box (M7 §4). */
+/** The model menu on the message box's toolbar (M7 §4). */
 export function ModelPicker({ disabled }: { disabled: boolean }) {
   const { catalog, choice, loadCatalog, choose } = useModels();
 
@@ -17,7 +17,7 @@ export function ModelPicker({ disabled }: { disabled: boolean }) {
 
   return (
     <label className="model-picker">
-      <span className="muted small">Model</span>
+      <span className="sr-only">Model</span>
       <select
         value={choiceKey(choice)}
         disabled={disabled || !catalog}
