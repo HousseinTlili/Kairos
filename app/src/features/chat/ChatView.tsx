@@ -9,6 +9,7 @@ import {
 import { useConnection } from "../connection/store";
 import { LockIcon, SendIcon, StopIcon, TerminalIcon } from "../shell/icons";
 import { useShell } from "../shell/store";
+import { BriefingCard } from "../briefing/BriefingCard";
 import { ApprovalCard } from "./ApprovalCard";
 import { MarkdownView } from "./MarkdownView";
 import { useChat } from "./store";
@@ -17,6 +18,7 @@ import {
   conversationCost,
   decisionText,
   isFinished,
+  plainEnding,
   toolLabel,
   type Turn,
 } from "./turn";
@@ -75,9 +77,15 @@ function statusLine(turn: Turn): { text: string; tone: "muted" | "bad" } | null 
     case "incomplete":
       return { text: "Stopped before finishing: Hermes ran out of steps.", tone: "muted" };
     case "cancelled":
-      return { text: "Stopped", tone: "muted" };
+      // An ending Hermes gave as a code is already shown in words in the answer's place.
+      return turn.text && plainEnding(turn.text) !== turn.text
+        ? null
+        : { text: "Stopped", tone: "muted" };
     case "failed":
-      return { text: `Failed: ${turn.error ?? "Hermes reported a failure."}`, tone: "bad" };
+      return {
+        text: `Failed: ${turn.error ? plainEnding(turn.error) : "Hermes reported a failure."}`,
+        tone: "bad",
+      };
     case "interrupted":
       return { text: "Interrupted: Hermes shut down during this request.", tone: "bad" };
     case "unknown":
@@ -88,7 +96,7 @@ function statusLine(turn: Turn): { text: string; tone: "muted" | "bad" } | null 
     case "lost":
       return { text: `${turn.error ?? "Hermes no longer knows this request."}`, tone: "bad" };
     case "error":
-      return { text: turn.error ?? "Something went wrong.", tone: "bad" };
+      return { text: turn.error ? plainEnding(turn.error) : "Something went wrong.", tone: "bad" };
   }
 }
 
@@ -131,7 +139,9 @@ export function TurnView({ turn }: { turn: Turn }) {
             )}
           </ul>
         )}
-        {turn.text ? (
+        {turn.text && plainEnding(turn.text) !== turn.text ? (
+          <p className="turn-status muted">{plainEnding(turn.text)}</p>
+        ) : turn.text ? (
           <MarkdownView text={turn.text} />
         ) : (
           working && <span className="thinking" aria-label="Kairos is working" />
@@ -143,9 +153,11 @@ export function TurnView({ turn }: { turn: Turn }) {
             (≈ ${turn.costCap.cost.toFixed(4)} so far).
           </p>
         )}
-        {turn.taskId && turn.text && !working && isFinished(turn.status) && (
-          <SpeakButton id={turn.taskId} text={turn.text} />
-        )}
+        {turn.taskId &&
+          turn.text &&
+          plainEnding(turn.text) === turn.text &&
+          !working &&
+          isFinished(turn.status) && <SpeakButton id={turn.taskId} text={turn.text} />}
         {turn.usage && <p className="turn-usage">{usageLine(turn.usage)}</p>}
       </div>
     </article>
@@ -279,6 +291,8 @@ export function ChatView() {
 
       <div className="chat-scroll" ref={scrollRef}>
         <div className="chat-column">
+          {/* Kairos speaks first when you come back: the briefing opens the conversation. */}
+          <BriefingCard />
           {turns.length === 0 ? (
             <EmptyState onPick={(text) => void send(text)} />
           ) : (

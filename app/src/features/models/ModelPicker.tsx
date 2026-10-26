@@ -32,7 +32,7 @@ export function ModelPicker({ disabled }: { disabled: boolean }) {
               return (
                 <option key={m.id} value={choiceKey({ provider: provider.slug, model: m.id })}>
                   {m.id}
-                  {price ? ` · ${price}` : ""}
+                  {price ? `, ${price}` : ""}
                 </option>
               );
             })}

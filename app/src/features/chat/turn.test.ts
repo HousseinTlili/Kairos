@@ -10,6 +10,7 @@ import {
   liveApproval,
   markAnswered,
   newTurn,
+  plainEnding,
   readApproval,
   toolLabel,
   toolRowFromAudit,
@@ -399,5 +400,22 @@ describe("conversation cost (M7)", () => {
       cost: 0.0021,
       model: "example/large",
     });
+  });
+});
+
+describe("endings Hermes reports as codes", () => {
+  it("are told in words", () => {
+    expect(plainEnding("interrupted_by_user")).toBe("You stopped this request.");
+    expect(plainEnding("interrupted_during_api_call")).toBe(
+      "Stopped before the model had answered.",
+    );
+    expect(plainEnding("some_new_reason")).toBe("Hermes ended this request: some new reason.");
+  });
+
+  it("leave real answers alone", () => {
+    expect(plainEnding("Done, Master.")).toBe("Done, Master.");
+    expect(plainEnding("snake_case appears in this sentence")).toBe(
+      "snake_case appears in this sentence",
+    );
   });
 });

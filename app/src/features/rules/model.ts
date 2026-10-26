@@ -144,7 +144,7 @@ export function summarizeRule(rule: RuleDoc): string {
     const more = patterns.length > 2 ? ` and ${patterns.length - 2} more` : "";
     return [`${kind === "any_text" ? "text" : kind}: ${shown}${more}`];
   });
-  return parts.length ? `${tools} · ${parts.join("; ")}` : `${tools} · every call`;
+  return parts.length ? `${tools}, when ${parts.join("; ")}` : `${tools}, every call`;
 }
 
 /**

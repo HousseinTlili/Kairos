@@ -102,10 +102,10 @@ describe("the rules model", () => {
   it("summarises a rule in one line", () => {
     const [noCredentials] = starter().rules;
     expect(summarizeRule(noCredentials)).toMatch(
-      /^read_file, .* · text: \*\*\/\.ssh\/\*\*, \*\*\/hermes\/\.env and 10 more$/,
+      /^read_file, .*, when text: \*\*\/\.ssh\/\*\*, \*\*\/hermes\/\.env and 10 more$/,
     );
     const closeApps = starter().rules.find((r) => r.id === "close-apps")!;
-    expect(summarizeRule(closeApps)).toBe("close_app · every call");
+    expect(summarizeRule(closeApps)).toBe("close_app, every call");
   });
 });
 

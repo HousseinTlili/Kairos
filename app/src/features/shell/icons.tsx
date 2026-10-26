@@ -112,3 +112,10 @@ export const SpeakerIcon = () => (
     <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" />
   </Icon>
 );
+
+export const SidebarIcon = () => (
+  <Icon>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M9 4v16" />
+  </Icon>
+);

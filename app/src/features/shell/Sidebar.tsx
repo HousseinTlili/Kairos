@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useChat } from "../chat/store";
 import { useConnection } from "../connection/store";
 import type { Conversation, OtherConversation } from "../../lib/tauri";
@@ -13,6 +13,7 @@ import {
   GaugeIcon,
   PlusIcon,
   SettingsIcon,
+  SidebarIcon,
   SunIcon,
 } from "./icons";
 import { useShell } from "./store";
@@ -81,7 +82,7 @@ function OtherList({ items }: { items: OtherConversation[] }) {
 
 export function Sidebar() {
   const { conversations, sessionId, turns, newConversation, openConversation } = useChat();
-  const { view, peekId, show } = useShell();
+  const { view, peekId, show, sidebarCollapsed, toggleSidebar } = useShell();
   const info = useConnection((s) => s.info);
   const connected = info?.status === "connected";
   const busy = turns.some((t) =>
@@ -93,8 +94,22 @@ export function Sidebar() {
 
   const presence = usePresence();
 
+  // Ctrl+B folds the sidebar to its rail and back, as in most editors.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "b") {
+        event.preventDefault();
+        toggleSidebar();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggleSidebar]);
+
+  const fold = sidebarCollapsed ? "Expand the sidebar (Ctrl+B)" : "Collapse the sidebar (Ctrl+B)";
+
   return (
-    <nav className="sidebar" aria-label="Conversations">
+    <nav className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`} aria-label="Conversations">
       <div className={`brand ${presence.state}`}>
         <SealMark size={40} state={presence.state} level={presence.level} />
         <span className="brand-words">
@@ -103,6 +118,15 @@ export function Sidebar() {
             {PRESENCE_WORDS[presence.state] || "At your service"}
           </span>
         </span>
+        <button
+          className="icon-button fold-button"
+          onClick={toggleSidebar}
+          aria-label={fold}
+          aria-expanded={!sidebarCollapsed}
+          title={fold}
+        >
+          <SidebarIcon />
+        </button>
       </div>
 
       <button
@@ -112,24 +136,27 @@ export function Sidebar() {
           show("chat");
         }}
         disabled={!connected || (busy && sessionId === null)}
+        title="New conversation"
       >
-        <PlusIcon /> New conversation
+        <PlusIcon /> <span className="label">New conversation</span>
       </button>
 
       <button
         className={`nav-item ${view === "system" ? "active" : ""}`}
         onClick={() => show("system")}
         aria-current={view === "system" ? "page" : undefined}
+        title="System"
       >
-        <GaugeIcon /> System
+        <GaugeIcon /> <span className="label">System</span>
       </button>
 
       <button
         className={`nav-item ${view === "notifications" ? "active" : ""}`}
         onClick={() => show("notifications")}
         aria-current={view === "notifications" ? "page" : undefined}
+        title="Notifications"
       >
-        <BellIcon /> Notifications
+        <BellIcon /> <span className="label">Notifications</span>
         {badge && (
           <span className="nav-badge" aria-label={`${badge} unread`}>
             {badge}
@@ -141,8 +168,9 @@ export function Sidebar() {
         className={`nav-item ${view === "jobs" ? "active" : ""}`}
         onClick={() => show("jobs")}
         aria-current={view === "jobs" ? "page" : undefined}
+        title="Scheduled"
       >
-        <CalendarIcon /> Scheduled
+        <CalendarIcon /> <span className="label">Scheduled</span>
       </button>
 
       <button
@@ -153,7 +181,7 @@ export function Sidebar() {
         }}
         title="Show the latest welcome-back briefing"
       >
-        <SunIcon /> Briefing
+        <SunIcon /> <span className="label">Briefing</span>
       </button>
 
       <div className="sidebar-scroll">
@@ -193,7 +221,9 @@ export function Sidebar() {
           title="Connection details"
         >
           <span className="dot" aria-hidden="true" />
-          {connected ? `Hermes ${info?.version ?? ""}` : "Not connected"}
+          <span className="label">
+            {connected ? `Hermes ${info?.version ?? ""}` : "Not connected"}
+          </span>
         </button>
         <button
           className={`icon-button ${view === "settings" ? "active" : ""}`}

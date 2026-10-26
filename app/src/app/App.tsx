@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { BriefingCard } from "../features/briefing/BriefingCard";
 import { useBriefing } from "../features/briefing/store";
 import { ChatView } from "../features/chat/ChatView";
 import { startChatEvents, useChat } from "../features/chat/store";
@@ -20,6 +19,7 @@ import { onNavigate, onOpenConversation } from "../lib/tauri";
 export default function App() {
   const connected = useConnection((state) => state.info?.status === "connected");
   const view = useShell((state) => state.view);
+  const sidebarCollapsed = useShell((state) => state.sidebarCollapsed);
   const resume = useChat((state) => state.resume);
   const startSystem = useSystem((state) => state.start);
   const startStartup = useStartup((state) => state.start);
@@ -69,11 +69,10 @@ export default function App() {
   }, [connected, resume]);
 
   return (
-    <div className="shell">
+    <div className={`shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
       <Sidebar />
       <main className="main">
         {view !== "settings" && <AlertBanners />}
-        {view === "chat" && <BriefingCard />}
         {view === "settings" ? (
           <Settings />
         ) : view === "system" ? (

@@ -42,8 +42,9 @@ sha2 = "=0.10.9"
 
 [target.'cfg(windows)'.dependencies]
 # M3 §4: the session's lock state, for unlock detection. M9 Step 8 (D-025): LibraryLoader, to load
-# the downloaded sherpa-onnx voice library at run time. Already in Cargo.lock through Tauri.
-windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_System_RemoteDesktop", "Win32_System_LibraryLoader"] }
+# the downloaded sherpa-onnx voice library at run time. Graphics_Dwm: the title bar's colours
+# (docs/design/BRAND.md). Already in Cargo.lock through Tauri.
+windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_System_RemoteDesktop", "Win32_System_LibraryLoader", "Win32_Graphics_Dwm"] }
 # M4 §4: reading Windows notifications (UserNotificationListener, D-011). Already in Cargo.lock
 # through Tauri and sysinfo.
 windows = { version = "=0.62.2", features = [

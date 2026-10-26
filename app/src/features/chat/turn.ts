@@ -168,6 +168,24 @@ export function turnFromTask(task: StoredTask): Turn {
   };
 }
 
+// Hermes reports some endings as bare codes in the answer or the error ("interrupted_by_user").
+const ENDINGS: Record<string, string> = {
+  interrupted_by_user: "You stopped this request.",
+  interrupted_during_api_call: "Stopped before the model had answered.",
+  interrupted_during_tool_call: "Stopped while a tool was running.",
+  max_iterations_reached: "Hermes stopped after too many steps without finishing.",
+  context_length_exceeded: "The conversation got too long for the model. Start a new one.",
+};
+
+/** A snake_case code from Hermes in words; anything else unchanged. */
+export function plainEnding(text: string): string {
+  const code = text.trim();
+  if (!/^[a-z]+(_[a-z]+)+$/.test(code)) return text;
+  if (ENDINGS[code]) return ENDINGS[code];
+  const words = code.replace(/_/g, " ");
+  return `Hermes ended this request: ${words}.`;
+}
+
 export function isFinished(status: TurnStatus): boolean {
   return !["sending", "running", "waiting_for_approval", "stopping", "unknown"].includes(status);
 }

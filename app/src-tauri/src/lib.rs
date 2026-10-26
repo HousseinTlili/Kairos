@@ -13,6 +13,7 @@ mod quick;
 mod rules;
 mod store;
 mod system;
+mod titlebar;
 mod tray;
 mod voice;
 
@@ -82,6 +83,9 @@ pub fn run() {
         })
         .setup(move |app| {
             tray::build(app.handle())?;
+            if let Some(main) = app.get_webview_window(tray::MAIN_WINDOW) {
+                titlebar::paint(&main);
+            }
             let hotkey = commands::stored_hotkey(&app.state::<commands::AppState>());
             if let Err(err) = quick::register(app.handle(), None, &hotkey) {
                 eprintln!("kairos: {err}");

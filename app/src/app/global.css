@@ -283,8 +283,74 @@ code {
 
 .shell {
   display: grid;
-  grid-template-columns: 264px 1fr;
+  grid-template-columns: 264px minmax(0, 1fr);
   height: 100vh;
+  transition: grid-template-columns 160ms ease;
+}
+
+/* Folded to a rail (Ctrl+B): the seal, the icons, their tooltips; the conversations hide. */
+.shell.sidebar-collapsed {
+  grid-template-columns: 64px minmax(0, 1fr);
+}
+
+.brand .fold-button {
+  margin-left: auto;
+  align-self: flex-start;
+  opacity: 0.7;
+}
+
+.brand .fold-button:hover {
+  opacity: 1;
+}
+
+.sidebar.collapsed {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.sidebar.collapsed .brand {
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0 16px;
+}
+
+.sidebar.collapsed .brand .fold-button {
+  margin-left: 0;
+  align-self: center;
+}
+
+.sidebar.collapsed .brand-words,
+.sidebar.collapsed .label,
+.sidebar.collapsed .sidebar-scroll > * {
+  display: none;
+}
+
+.sidebar.collapsed .nav-badge {
+  position: absolute;
+  top: 5px;
+  right: 14px;
+  min-width: 0;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  font-size: 0;
+}
+
+.sidebar.collapsed .new-conversation,
+.sidebar.collapsed .nav-item,
+.sidebar.collapsed .status-pill {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* The unread count becomes a gold dot on the bell. */
+.sidebar.collapsed .nav-item {
+  position: relative;
+}
+
+.sidebar.collapsed .sidebar-footer {
+  flex-direction: column;
 }
 
 .main {
@@ -2007,9 +2073,7 @@ code {
 
 /* Sits in the conversation's column: it is Kairos speaking first. */
 .briefing-card {
-  width: calc(100% - 56px);
-  max-width: 704px;
-  margin: 20px auto 0;
+  margin: 0;
   padding: 16px 20px;
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
