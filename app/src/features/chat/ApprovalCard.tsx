@@ -2,18 +2,19 @@ import type { ApprovalChoice } from "../../lib/tauri";
 import { ShieldIcon } from "../shell/icons";
 import type { ApprovalRow } from "./turn";
 
+// Kairos asks its Master's leave (docs/design/BRAND.md, Words); the answer keeps the same verb.
 const CHOICE_LABEL: Record<ApprovalChoice, string> = {
-  once: "Allow once",
-  session: "Allow for this conversation",
-  always: "Always allow",
-  deny: "Deny",
+  once: "Grant once",
+  session: "Grant for this conversation",
+  always: "Always grant",
+  deny: "Refuse",
 };
 
 const ANSWERED_LABEL: Record<ApprovalChoice, string> = {
-  once: "Allowed once",
-  session: "Allowed for this conversation",
-  always: "Always allowed",
-  deny: "Denied",
+  once: "Granted once",
+  session: "Granted for this conversation",
+  always: "Always granted",
+  deny: "Refused",
 };
 
 interface Props {
@@ -46,8 +47,8 @@ export function ApprovalCard({ row, onAnswer }: Props) {
         <ShieldIcon />
         <h3 id={`approval-${row.promptId}`}>
           {row.source === "kairos"
-            ? "One of your Kairos rules wants your OK first"
-            : "Hermes flagged this command and wants your OK"}
+            ? "Kairos asks your leave"
+            : "Hermes asks your leave for this command"}
         </h3>
       </div>
       <p className="approval-why">

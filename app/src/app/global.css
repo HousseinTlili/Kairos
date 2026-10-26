@@ -1,58 +1,98 @@
 /*
- * Kairos design tokens (docs/design/BRAND.md): a fine watch movement. Midnight blued steel for the
- * room, gilt for what Kairos offers, lume for what is live right now, garnet for what was stopped.
- * Dark is the default; the light theme is a silver dial.
+ * Kairos design tokens (docs/design/BRAND.md): the illuminated charter. Charcoal for the room, gold
+ * leaf for what Kairos offers, gules (crimson) for what is refused, vert for what is live, vellum
+ * text. Dark is the default; the light theme is the vellum page itself.
  */
+@font-face {
+  font-family: "EB Garamond";
+  src: url("../assets/fonts/eb-garamond-latin.woff2") format("woff2");
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "EB Garamond";
+  src: url("../assets/fonts/eb-garamond-italic-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "UnifrakturCook";
+  src: url("../assets/fonts/unifraktur-cook-700-latin.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   color-scheme: dark;
 
-  --midnight: #0e1626;
-  --dial: #142036;
-  --dial-raised: #1a2843;
-  --bezel: #24334f;
-  --gilt: #d2ad62;
-  --gilt-soft: rgba(210, 173, 98, 0.14);
-  --lume: #8fe3c3;
-  --lume-soft: rgba(143, 227, 195, 0.14);
-  --garnet: #e8737b;
-  --garnet-soft: rgba(232, 115, 123, 0.14);
-  --enamel: #e8ecf3;
-  --slate: #8e9bb3;
+  --charcoal: #1c1b1a;
+  --hearth: #24221f;
+  --ember: #2d2a26;
+  --iron: #3d3933;
+  --gold: #c9a043;
+  --gold-soft: rgba(201, 160, 67, 0.14);
+  --gules: #e5847f;
+  --gules-deep: #a8343a;
+  --gules-soft: rgba(196, 71, 76, 0.16);
+  --vert: #7db394;
+  --vert-soft: rgba(125, 179, 148, 0.15);
+  --vellum: #ece4d3;
+  --ash: #a89f8e;
 
-  /* The names the rest of this file uses. */
-  --bg: var(--midnight);
-  --surface: var(--dial);
-  --raised: var(--dial-raised);
-  --fg: var(--enamel);
-  --muted: var(--slate);
-  --border: var(--bezel);
-  --brass: var(--gilt);
-  --brass-soft: var(--gilt-soft);
-  --oxblood: var(--garnet);
-  --oxblood-soft: var(--garnet-soft);
-  --ok: var(--lume);
-  --bad: var(--garnet);
-  --warn: #f0c46c;
-  --warn-bg: rgba(240, 196, 108, 0.12);
-  --code-bg: #0b1220;
-  --user-bubble: var(--dial-raised);
-  --on-gilt: #1a1408;
+  /* Role names the rest of this file uses (the first brand pass named them after a watch). */
+  --midnight: var(--charcoal);
+  --dial: var(--hearth);
+  --dial-raised: var(--ember);
+  --bezel: var(--iron);
+  --gilt: var(--gold);
+  --gilt-soft: var(--gold-soft);
+  --lume: var(--vert);
+  --lume-soft: var(--vert-soft);
+  --garnet: var(--gules);
+  --garnet-soft: var(--gules-soft);
+  --enamel: var(--vellum);
+  --slate: var(--ash);
 
-  --sidebar-bg: #0b1321;
-  --sidebar-fg: var(--enamel);
-  --sidebar-muted: var(--slate);
-  --sidebar-hover: #142036;
-  --sidebar-active: #1a2843;
+  --bg: var(--charcoal);
+  --surface: var(--hearth);
+  --raised: var(--ember);
+  --fg: var(--vellum);
+  --muted: var(--ash);
+  --border: var(--iron);
+  --brass: var(--gold);
+  --brass-soft: var(--gold-soft);
+  --oxblood: var(--gules);
+  --oxblood-soft: var(--gules-soft);
+  --ok: var(--vert);
+  --bad: var(--gules);
+  --warn: #e3b866;
+  --warn-bg: rgba(227, 184, 102, 0.12);
+  --code-bg: #161514;
+  --user-bubble: var(--ember);
+  --on-gilt: #1d1406;
+
+  --sidebar-bg: #151413;
+  --sidebar-fg: var(--vellum);
+  --sidebar-muted: var(--ash);
+  --sidebar-hover: #221f1c;
+  --sidebar-active: #2d2a26;
 
   --font-ui: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-ui-display:
     "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
-  /* Kairos's own voice: the greeting, the briefing, its lines. Never for controls. */
-  --font-display: "Sitka Display", "Sitka Heading", "Sitka Text", Georgia, serif;
+  /* Kairos's own voice: its answers, the greeting, the briefing, page titles. */
+  --font-display: "EB Garamond", "Sitka Text", Georgia, serif;
+  /* The name and the illuminated initials only. */
+  --font-blackletter: "UnifrakturCook", "EB Garamond", serif;
   --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
 
-  --radius-panel: 14px;
-  --radius-control: 8px;
+  --radius-panel: 10px;
+  --radius-control: 6px;
   --radius-chip: 4px;
 
   font-family: var(--font-ui);
@@ -67,28 +107,28 @@
 @media (prefers-color-scheme: light) {
   :root {
     color-scheme: light;
-    --midnight: #eef0f3;
-    --dial: #ffffff;
-    --dial-raised: #f6f7f9;
-    --bezel: #d5dae2;
-    --gilt: #946f2a;
-    --gilt-soft: rgba(148, 111, 42, 0.12);
-    --lume: #1e8c68;
-    --lume-soft: rgba(30, 140, 104, 0.12);
-    --garnet: #b23a44;
-    --garnet-soft: rgba(178, 58, 68, 0.1);
-    --enamel: #18202e;
-    --slate: #5c677a;
+    --charcoal: #ede5d4;
+    --hearth: #f7f1e4;
+    --ember: #e5dcc8;
+    --iron: #cdbfa3;
+    --gold: #86661d;
+    --gold-soft: rgba(134, 102, 29, 0.12);
+    --gules: #9c2c30;
+    --gules-soft: rgba(156, 44, 48, 0.1);
+    --vert: #2e7a55;
+    --vert-soft: rgba(46, 122, 85, 0.12);
+    --vellum: #2a2420;
+    --ash: #6b5f50;
     --warn: #8a5a00;
-    --warn-bg: #fbf1dc;
-    --code-bg: #eef0f3;
-    --on-gilt: #ffffff;
-    /* The sidebar stays a midnight dial in both themes: it is the watch's case. */
-    --sidebar-bg: #121b2c;
-    --sidebar-fg: #e8ecf3;
-    --sidebar-muted: #8e9bb3;
-    --sidebar-hover: #1a2640;
-    --sidebar-active: #22314f;
+    --warn-bg: #f6e8c8;
+    --code-bg: #e5dcc8;
+    --on-gilt: #fffaf0;
+    /* The sidebar stays charcoal panelling in both themes, so its text stays vellum. */
+    --sidebar-bg: #1c1b1a;
+    --sidebar-fg: #ece4d3;
+    --sidebar-muted: #a89f8e;
+    --sidebar-hover: #2a2724;
+    --sidebar-active: #34302b;
   }
 }
 
@@ -102,7 +142,13 @@ body {
   overflow: hidden;
 }
 
-h1,
+h1 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
 h2,
 h3 {
   font-family: var(--font-ui-display);
@@ -261,10 +307,10 @@ code {
 
 .sidebar {
   /* The sidebar is dark in both themes, so it keeps the dark theme's accents. */
-  --gilt: #d2ad62;
-  --lume: #8fe3c3;
-  --garnet: #e8737b;
-  --on-gilt: #1a1408;
+  --gilt: #c9a043;
+  --lume: #7db394;
+  --garnet: #e5847f;
+  --on-gilt: #1d1406;
   display: flex;
   flex-direction: column;
   background: var(--sidebar-bg);
@@ -286,15 +332,17 @@ code {
 }
 
 .wordmark {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  letter-spacing: 0.01em;
-  color: var(--sidebar-fg);
+  font-family: var(--font-blackletter);
+  font-weight: 700;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: #e2c47a;
 }
 
 .brand-state {
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.9375rem;
   color: var(--sidebar-muted);
 }
 
@@ -304,87 +352,73 @@ code {
   color: var(--lume);
 }
 
-/* The Dial (docs/design/BRAND.md): gilt case and hands; lume only for what is live. */
-.clock-mark {
+/* The seal (docs/design/BRAND.md, Ornament 1): crimson wax, gold ring, a blackletter K. */
+.seal-mark {
   overflow: visible;
   flex: none;
 }
-.clock-mark .clock-case {
+.seal-mark .seal-wax {
+  fill: #9c2e33;
+  stroke: #7a2227;
+  stroke-width: 0.6;
+}
+.seal-mark .seal-inner {
   fill: none;
   stroke: var(--gilt);
-  stroke-width: 1.6;
+  stroke-width: 1;
+  opacity: 0.85;
 }
-.clock-mark .clock-face {
-  fill: color-mix(in srgb, var(--gilt) 12%, transparent);
+.seal-mark .seal-letter {
+  font-family: var(--font-blackletter);
+  font-weight: 700;
+  font-size: 15px;
+  fill: #ecd28f;
 }
-.clock-mark .clock-crown,
-.clock-mark .clock-pin {
-  fill: var(--gilt);
-}
-.clock-mark .clock-tick {
-  stroke: var(--gilt);
-  stroke-width: 1.2;
-  stroke-linecap: round;
-}
-.clock-mark .clock-hand {
-  stroke: var(--sidebar-fg);
-  stroke-linecap: round;
-}
-.clock-mark .clock-hand.hour {
-  stroke-width: 1.8;
-}
-.clock-mark .clock-hand.minute {
-  stroke-width: 1.2;
-}
-.clock-mark .clock-hand.second {
-  stroke: var(--lume);
-  stroke-width: 0.8;
-  opacity: 0;
-  transform-origin: 16px 17px;
-}
-.clock-mark .clock-ring {
+.seal-mark .seal-ring {
   fill: none;
   stroke: var(--lume);
   stroke-width: 1.4;
   opacity: 0;
-  transform-origin: 16px 17px;
+  transform-origin: 16px 16px;
   transition: opacity 90ms linear;
 }
 
-/* Listening: the ring follows the voice (its opacity is set from the level). */
-.clock-mark.listening .clock-ring {
+/* Listening: a vert ring follows the voice (its opacity is set from the level). */
+.seal-mark.listening .seal-ring {
   opacity: 0.6;
 }
 
-/* Working: a lume second hand sweeps, as on a running watch. */
-.clock-mark.working .clock-hand.second {
-  opacity: 1;
-  animation: dial-sweep 6s linear infinite;
+/* At work: a gold ring of dashes turns slowly around the seal. */
+.seal-mark.working .seal-ring {
+  stroke: var(--gilt);
+  stroke-dasharray: 3 4;
+  opacity: 0.9;
+  animation: seal-turn 8s linear infinite;
 }
 
-/* Speaking: the ring breathes. */
-.clock-mark.speaking .clock-ring {
-  opacity: 0.8;
-  animation: dial-breathe 1.6s ease-in-out infinite;
+/* Speaking: the vert ring breathes. */
+.seal-mark.speaking .seal-ring {
+  opacity: 0.85;
+  animation: seal-breathe 1.6s ease-in-out infinite;
 }
 
-@keyframes dial-sweep {
+@keyframes seal-turn {
   to {
     transform: rotate(360deg);
   }
 }
 
-@keyframes dial-breathe {
+@keyframes seal-breathe {
   50% {
-    transform: scale(0.9);
+    transform: scale(0.92);
     opacity: 0.35;
   }
 }
 
-/* Without motion the states still show: the hand and ring stay, still. */
+/* Without motion the states still show: the rings stay, still. */
 @media (prefers-reduced-motion: reduce) {
-  .clock-mark.working .clock-hand.second,
-  .clock-mark.speaking .clock-ring {
+  .seal-mark.working .seal-ring,
+  .seal-mark.speaking .seal-ring {
     opacity: 1;
   }
 }
@@ -726,12 +760,12 @@ code {
 
 /* Approvals: the one place oxblood is loud. */
 
+/* A request for leave: the crimson of the seal, the heading in Kairos's voice. */
 .approval-card {
-  border: 1px solid color-mix(in srgb, var(--oxblood) 45%, var(--border));
-  border-left: 4px solid var(--oxblood);
-  border-radius: 10px;
-  background: var(--surface);
-  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--gules-deep) 70%, var(--border));
+  border-radius: var(--radius-panel);
+  background: color-mix(in srgb, var(--gules-soft) 35%, var(--surface));
+  padding: 14px 18px;
 }
 
 .approval-head {
@@ -743,8 +777,10 @@ code {
 
 .approval-head h3 {
   margin: 0;
-  font-size: 0.9375rem;
-  color: var(--fg);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.1875rem;
+  color: var(--gilt);
 }
 
 .approval-why {
@@ -803,9 +839,17 @@ code {
 
 /* Markdown answers */
 
+/* Kairos's answers are set like a page of a book; what you write stays in the UI face. */
 .markdown {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
   line-height: 1.6;
   overflow-wrap: anywhere;
+}
+
+.markdown code,
+.markdown pre {
+  font-size: 0.8125rem;
 }
 
 .markdown > :first-child {
@@ -905,19 +949,42 @@ code {
 }
 
 .greeting {
-  margin: 0 0 6px;
-  font-family: var(--font-display);
-  font-weight: 400;
+  margin: 0 0 4px;
   font-size: 2.75rem;
   line-height: 1.1;
-  letter-spacing: -0.01em;
+}
+
+/* An illuminated initial: the first letter in gold blackletter, standing above the line. */
+.illuminated {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+.illuminated .initial {
+  font-family: var(--font-blackletter);
+  font-weight: 700;
+  color: var(--gilt);
+  font-size: 1.35em;
+  /* line-height 0: the tall initial stands above the line without pushing the next one down. */
+  line-height: 0;
+  margin-right: 0.03em;
+}
+
+.empty-state .kairos-says {
+  margin-top: 10px;
+}
+
+.illuminated.small {
+  margin: 0;
+  font-size: 1.375rem;
 }
 
 /* Kairos's own lines are set in its voice, the serif (BRAND.md, Type). */
 .kairos-says {
   margin: 0 0 32px;
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-style: italic;
+  font-size: 1.375rem;
   color: var(--muted);
 }
 
@@ -931,7 +998,7 @@ code {
 
 .suggestion {
   text-align: left;
-  padding: 11px 4px 11px 18px;
+  padding: 11px 4px 11px 28px;
   border: none;
   border-bottom: 1px solid var(--border);
   border-radius: 0;
@@ -939,14 +1006,16 @@ code {
   position: relative;
 }
 
+/* The fleuron (BRAND.md, Ornament 3): ash at rest, gold under the pointer. */
 .suggestion::before {
-  content: "";
+  content: "❧";
   position: absolute;
-  left: 4px;
+  left: 0;
   top: 50%;
-  width: 6px;
-  height: 1.5px;
-  background: var(--border);
+  transform: translateY(-52%);
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  color: var(--muted);
 }
 
 .suggestion:hover:not(:disabled) {
@@ -955,7 +1024,7 @@ code {
 }
 
 .suggestion:hover:not(:disabled)::before {
-  background: var(--gilt);
+  color: var(--gilt);
 }
 
 .peek {
@@ -1947,12 +2016,6 @@ code {
   background: var(--surface);
 }
 
-.briefing-card h2 {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 1.25rem;
-}
-
 .briefing-card header {
   display: flex;
   align-items: baseline;
@@ -2310,10 +2373,6 @@ code {
   gap: 4px;
   padding-left: 14px;
   border-bottom: 1px solid var(--border);
-}
-
-.quick-input .clock-mark .clock-hand:not(.second) {
-  stroke: var(--fg);
 }
 
 .quick-input input {

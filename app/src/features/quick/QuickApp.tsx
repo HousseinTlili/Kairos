@@ -13,7 +13,7 @@ import { useConnection } from "../connection/store";
 import { useVoiceInChat } from "../voice/hooks";
 import { useVoice } from "../voice/store";
 import { MicButton, VoiceStatus } from "../voice/VoiceControls";
-import { ClockMark, useDialState } from "../shell/ClockMark";
+import { SealMark, usePresence } from "../shell/SealMark";
 import { hidesForCapture, quickSessionKey } from "./model";
 
 function rememberedSession(): string | null {
@@ -44,7 +44,7 @@ export function QuickApp() {
   );
   const last = turns[turns.length - 1];
   useVoiceInChat(turns);
-  const dial = useDialState();
+  const presence = usePresence();
 
   // The latest values for the push-to-talk listener, which is set up once.
   const sendRef = useRef<(text: string) => void>(() => {});
@@ -109,7 +109,7 @@ export function QuickApp() {
   return (
     <div className="quick" onKeyDown={onKeyDown}>
       <form className="quick-input" onSubmit={submit}>
-        <ClockMark size={30} state={dial.state} level={dial.level} />
+        <SealMark size={30} state={presence.state} level={presence.level} />
         <input
           ref={inputRef}
           autoFocus

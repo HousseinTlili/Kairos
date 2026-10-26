@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useChat } from "../chat/store";
 import { useConnection } from "../connection/store";
 import type { Conversation, OtherConversation } from "../../lib/tauri";
-import { ClockMark, DIAL_WORDS, useDialState } from "./ClockMark";
+import { PRESENCE_WORDS, SealMark, usePresence } from "./SealMark";
 import { useBriefing } from "../briefing/store";
 import { badgeText } from "../notifications/model";
 import { useNotifications } from "../notifications/store";
@@ -91,16 +91,16 @@ export function Sidebar() {
   const badge = badgeText(useNotifications((s) => s.state?.unread ?? 0));
   const reopenBriefing = useBriefing((s) => s.reopen);
 
-  const dial = useDialState();
+  const presence = usePresence();
 
   return (
     <nav className="sidebar" aria-label="Conversations">
-      <div className={`brand ${dial.state}`}>
-        <ClockMark size={34} state={dial.state} level={dial.level} />
+      <div className={`brand ${presence.state}`}>
+        <SealMark size={40} state={presence.state} level={presence.level} />
         <span className="brand-words">
           <span className="wordmark">Kairos</span>
           <span className="brand-state" aria-live="polite">
-            {DIAL_WORDS[dial.state] || "At your service"}
+            {PRESENCE_WORDS[presence.state] || "At your service"}
           </span>
         </span>
       </div>

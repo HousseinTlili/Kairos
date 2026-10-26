@@ -36,10 +36,22 @@ const SUGGESTIONS = [
 
 function greeting(now: Date): string {
   const hour = now.getHours();
-  if (hour < 5) return "Working late";
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour < 5) return "You keep late hours, Master";
+  if (hour < 12) return "Good morning, Master";
+  if (hour < 18) return "Good afternoon, Master";
+  return "Good evening, Master";
+}
+
+/** Kairos's line with an illuminated initial (BRAND.md, Ornament 2). */
+export function Illuminated({ text, className }: { text: string; className?: string }) {
+  return (
+    <h1 className={`illuminated ${className ?? ""}`} aria-label={text}>
+      <span className="initial" aria-hidden="true">
+        {text.slice(0, 1)}
+      </span>
+      <span aria-hidden="true">{text.slice(1)}</span>
+    </h1>
+  );
 }
 
 function statusLine(turn: Turn): { text: string; tone: "muted" | "bad" } | null {
@@ -143,8 +155,8 @@ export function TurnView({ turn }: { turn: Turn }) {
 function EmptyState({ onPick }: { onPick: (text: string) => void }) {
   return (
     <div className="empty-state">
-      <h1 className="greeting">{greeting(new Date())}.</h1>
-      <p className="kairos-says">What shall we do, Master?</p>
+      <Illuminated className="greeting" text={`${greeting(new Date())}.`} />
+      <p className="kairos-says">What is your will?</p>
       <div className="suggestions">
         {SUGGESTIONS.map((text) => (
           <button key={text} className="suggestion" onClick={() => onPick(text)}>

@@ -17,7 +17,12 @@ export function BriefingCard() {
   return (
     <section className="briefing-card" aria-label="Welcome back">
       <header>
-        <h2>Welcome back</h2>
+        <h2 className="illuminated small" aria-label="Welcome back, Master">
+          <span className="initial" aria-hidden="true">
+            W
+          </span>
+          <span aria-hidden="true">elcome back, Master</span>
+        </h2>
         <span className="muted small">
           {new Date(briefing.at * 1000).toLocaleTimeString([], {
             hour: "2-digit",
