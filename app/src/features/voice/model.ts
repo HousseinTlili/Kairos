@@ -1,4 +1,5 @@
 // Voice's small rules (M9 §3). Pure, for the tests.
+import type { Speaker } from "../../lib/tauri";
 
 export const TARGET_RATE = 16_000;
 /** A recording stops by itself after a minute. */
@@ -153,3 +154,45 @@ export function missingVoices(voices: VoiceLike[]): string[] {
 export function megabytes(bytes: number): string {
   return `${Math.round(bytes / 1_000_000)} MB`;
 }
+
+/**
+ * An answer cut into pieces the natural voice reads one by one, so the first is heard while the
+ * rest are still being made: sentences, very short ones joined to the next, long ones cut at a
+ * comma or a space.
+ */
+export function splitSentences(text: string, min = 24, max = 240): string[] {
+  const sentences = text
+    .replace(/\s+/g, " ")
+    .split(/(?<=[.!?…:;])\s+(?=\S)/u)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const joined: string[] = [];
+  for (const sentence of sentences) {
+    const last = joined[joined.length - 1];
+    if (last !== undefined && last.length < min) joined[joined.length - 1] = `${last} ${sentence}`;
+    else joined.push(sentence);
+  }
+  return joined.flatMap((piece) => cut(piece, max));
+}
+
+function cut(piece: string, max: number): string[] {
+  if (piece.length <= max) return [piece];
+  const window = piece.slice(0, max);
+  const at = Math.max(window.lastIndexOf(", "), window.lastIndexOf(" "));
+  const split = at > max / 3 ? at + 1 : max;
+  return [piece.slice(0, split).trim(), ...cut(piece.slice(split).trim(), max)];
+}
+
+export const SPEAKERS: { id: Speaker; label: string }[] = [
+  { id: "george", label: "George (British)" },
+  { id: "lewis", label: "Lewis (British)" },
+  { id: "emma", label: "Emma (British)" },
+  { id: "isabella", label: "Isabella (British)" },
+  { id: "adam", label: "Adam (American)" },
+  { id: "michael", label: "Michael (American)" },
+  { id: "bella", label: "Bella (American)" },
+  { id: "nicole", label: "Nicole (American)" },
+  { id: "sarah", label: "Sarah (American)" },
+  { id: "sky", label: "Sky (American)" },
+  { id: "heart", label: "Heart (American)" },
+];

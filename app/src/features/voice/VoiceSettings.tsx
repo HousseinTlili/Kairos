@@ -11,6 +11,7 @@ import {
 import { hotkeyLabel } from "../quick/model";
 import { LANGUAGE_NAMES, megabytes, missingVoices } from "./model";
 import { MicButton, VoiceStatus } from "./VoiceControls";
+import { NaturalVoice } from "./NaturalVoice";
 import { useVoice } from "./store";
 
 function useWindowsVoices(): SpeechSynthesisVoice[] {
@@ -218,12 +219,15 @@ export function VoiceSettings() {
           Any answer can also be read with the speaker button under it. Esc or a new request stops
           it. Code is skipped.
         </p>
-        <div className="voice-test">
-          <button onClick={() => speak("test", "Hello, I'm Kairos. This is how I sound.")}>
-            Test the voice
-          </button>
-        </div>
-        {missing.length > 0 && (
+        <NaturalVoice settings={settings} />
+        {settings.engine === "windows" && (
+          <div className="voice-test">
+            <button onClick={() => speak("test", "Hello, I'm Kairos. This is how I sound.")}>
+              Test the Windows voice
+            </button>
+          </div>
+        )}
+        {settings.engine === "windows" && missing.length > 0 && (
           <p className="muted small">
             No Windows voice for {missing.map((code) => LANGUAGE_NAMES[code]).join(" or ")} yet, so
             those answers are read with an English voice. Add one in Windows Settings ▸ Time &amp;

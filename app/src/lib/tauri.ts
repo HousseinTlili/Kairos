@@ -540,7 +540,32 @@ export interface VoiceSettings {
   answer_spoken: boolean;
   ptt_hotkey: string;
   downloading: boolean;
+  /** The natural voice (Kokoro, M9 Step 8). */
+  natural_installed: boolean;
+  natural_installing: boolean;
+  natural_size_bytes: number;
+  /** What answers are read with now. */
+  engine: "natural" | "windows";
+  speaker: Speaker;
 }
+
+export type Speaker =
+  | "heart"
+  | "bella"
+  | "nicole"
+  | "sarah"
+  | "sky"
+  | "adam"
+  | "michael"
+  | "emma"
+  | "isabella"
+  | "george"
+  | "lewis";
+
+export type VoiceInstallProgress =
+  | { phase: "downloading"; received: number; total: number }
+  | { phase: "done" }
+  | { phase: "failed"; message: string };
 
 export type VoiceModelProgress =
   | { phase: "downloading"; id: VoiceModelId; received: number; total: number }
@@ -605,3 +630,24 @@ export interface PersonaState {
 export const personaState = () => call<PersonaState>("persona_state");
 export const savePersona = (text: string) => call<PersonaState>("save_persona", { text });
 export const restorePersona = () => call<PersonaState>("restore_persona");
+
+export const saveSpeechSettings = (natural: boolean, speaker: Speaker) =>
+  call<VoiceSettings>("save_speech_settings", { natural, speaker });
+export const installNaturalVoice = () => call<null>("install_natural_voice");
+export const removeNaturalVoice = () => call<VoiceSettings>("remove_natural_voice");
+export const warmNaturalVoice = () => call<null>("warm_natural_voice");
+
+/** One sentence in the natural voice, as WAV bytes. */
+export async function speakNatural(text: string): Promise<ArrayBuffer> {
+  try {
+    return await invoke<ArrayBuffer>("speak_natural", { text });
+  } catch (err) {
+    throw asCommandError(err);
+  }
+}
+
+export function onVoiceInstall(
+  handler: (progress: VoiceInstallProgress) => void,
+): Promise<UnlistenFn> {
+  return listen<VoiceInstallProgress>("voice-install", (event) => handler(event.payload));
+}

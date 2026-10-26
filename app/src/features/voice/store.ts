@@ -1,12 +1,14 @@
 import { create } from "zustand";
 import {
   saveVoiceSettings,
+  speakNatural,
   transcribe,
   voiceState,
+  warmNaturalVoice,
   type CommandError,
   type VoiceSettings,
 } from "../../lib/tauri";
-import { guessLanguage, pickVoice, speechText, toPcm16 } from "./model";
+import { guessLanguage, pickVoice, speechText, splitSentences, toPcm16 } from "./model";
 import { Recorder, micError } from "./recorder";
 
 export type VoicePhase = "idle" | "listening" | "transcribing";
@@ -36,6 +38,64 @@ interface VoiceState {
 }
 
 let recorder: Recorder | null = null;
+
+// Each answer read aloud is one "run"; stopping or a newer answer moves the counter on, and the
+// older run's pieces are dropped.
+let speechRun = 0;
+let playing: { audio: HTMLAudioElement; finish: () => void } | null = null;
+
+function stopAudio() {
+  const current = playing;
+  playing = null;
+  if (current) {
+    current.audio.pause();
+    current.finish();
+  }
+}
+
+/** Plays one WAV and resolves when it ends or is stopped. */
+function play(wav: ArrayBuffer): Promise<void> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(new Blob([wav], { type: "audio/wav" }));
+    const audio = new Audio(url);
+    const finish = () => {
+      URL.revokeObjectURL(url);
+      if (playing?.audio === audio) playing = null;
+      resolve();
+    };
+    playing = { audio, finish };
+    audio.onended = finish;
+    audio.onerror = finish;
+    void audio.play().catch(finish);
+  });
+}
+
+/** The natural voice, a sentence at a time; the next is made while the current one plays. */
+async function speakNaturally(text: string, run: number): Promise<void> {
+  const pieces = splitSentences(text);
+  let next = pieces.length > 0 ? speakNatural(pieces[0]) : null;
+  for (let i = 0; i < pieces.length && next; i++) {
+    const wav = await next;
+    if (run !== speechRun) return;
+    next = i + 1 < pieces.length ? speakNatural(pieces[i + 1]) : null;
+    await play(wav);
+    if (run !== speechRun) return;
+  }
+}
+
+function speakWithWindows(text: string, done: () => void) {
+  if (typeof speechSynthesis === "undefined") return done();
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  const voice = pickVoice(speechSynthesis.getVoices(), guessLanguage(text));
+  if (voice) {
+    utterance.voice = voice;
+    utterance.lang = voice.lang;
+  }
+  utterance.onend = done;
+  utterance.onerror = done;
+  speechSynthesis.speak(utterance);
+}
 // When the minute is up, whoever started the recording finishes it.
 let onLimit: (() => void) | null = null;
 
@@ -101,6 +161,8 @@ export const useVoice = create<VoiceState>((set, get) => ({
     if (get().phase !== "idle") return;
     get().stopSpeaking();
     set({ phase: "listening", level: 0, error: null });
+    // The natural voice takes seconds to load; it does so while the user speaks.
+    if (get().settings?.engine === "natural") void warmNaturalVoice().catch(() => {});
     recorder = new Recorder();
     try {
       await recorder.start(
@@ -145,26 +207,29 @@ export const useVoice = create<VoiceState>((set, get) => ({
   },
 
   speak(key, markdown) {
-    if (typeof speechSynthesis === "undefined") return;
-    speechSynthesis.cancel();
+    get().stopSpeaking();
     const text = speechText(markdown);
     if (!text) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    const language = guessLanguage(text);
-    const voice = pickVoice(speechSynthesis.getVoices(), language);
-    if (voice) {
-      utterance.voice = voice;
-      utterance.lang = voice.lang;
-    }
-    utterance.onend = () => {
-      if (get().speaking === key) set({ speaking: null });
+    const run = ++speechRun;
+    const done = () => {
+      if (run === speechRun) set({ speaking: null });
     };
-    utterance.onerror = utterance.onend;
     set({ speaking: key });
-    speechSynthesis.speak(utterance);
+    if (get().settings?.engine === "natural") {
+      void speakNaturally(text, run).then(done, (err: unknown) => {
+        if (run !== speechRun) return;
+        // Once, then the Windows voice reads it, so the answer is never silent (D-025).
+        set({ error: `The natural voice failed (${message(err)}); using the Windows voice.` });
+        speakWithWindows(text, done);
+      });
+    } else {
+      speakWithWindows(text, done);
+    }
   },
 
   stopSpeaking() {
+    speechRun++;
+    stopAudio();
     if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
     set({ speaking: null });
   },

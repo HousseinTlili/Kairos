@@ -9,6 +9,7 @@ import {
   pickVoice,
   resample,
   speechText,
+  splitSentences,
   toPcm16,
 } from "./model";
 
@@ -94,5 +95,26 @@ describe("reading answers aloud", () => {
         { name: "c", lang: "ar-SA" },
       ]),
     ).toEqual([]);
+  });
+});
+
+describe("the natural voice's pieces", () => {
+  it("reads sentence by sentence, joining very short ones to the next", () => {
+    expect(splitSentences("Done, Master. I opened Notepad. Anything else? Yes.")).toEqual([
+      "Done, Master. I opened Notepad.",
+      "Anything else? Yes.",
+    ]);
+  });
+
+  it("cuts a long sentence at a comma or a space", () => {
+    const long = `${"word ".repeat(80)}end.`;
+    const pieces = splitSentences(long, 24, 120);
+    expect(pieces.length).toBeGreaterThan(2);
+    expect(pieces.every((p) => p.length <= 120)).toBe(true);
+    expect(pieces.join(" ")).toBe(long);
+  });
+
+  it("gives nothing for nothing", () => {
+    expect(splitSentences("   ")).toEqual([]);
   });
 });

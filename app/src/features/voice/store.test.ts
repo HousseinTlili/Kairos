@@ -4,6 +4,8 @@ const tauri = vi.hoisted(() => ({
   transcribe: vi.fn(),
   voiceState: vi.fn(),
   saveVoiceSettings: vi.fn(),
+  speakNatural: vi.fn(),
+  warmNaturalVoice: vi.fn(),
 }));
 vi.mock("../../lib/tauri", () => tauri);
 
@@ -24,6 +26,21 @@ vi.mock("./recorder", () => ({
 import { useVoice, wasSpoken } from "./store";
 
 const recording = { samples: new Float32Array(16_000), seconds: 1 };
+
+const naturalSettings = {
+  models: [],
+  model: "small" as const,
+  language: null,
+  read_aloud: false,
+  answer_spoken: true,
+  ptt_hotkey: "Ctrl+Alt+J",
+  downloading: false,
+  natural_installed: true,
+  natural_installing: false,
+  natural_size_bytes: 0,
+  engine: "natural" as const,
+  speaker: "george" as const,
+};
 
 describe("the voice states", () => {
   beforeEach(() => {
@@ -63,6 +80,11 @@ describe("the voice states", () => {
         answer_spoken: true,
         ptt_hotkey: "Ctrl+Alt+J",
         downloading: false,
+        natural_installed: false,
+        natural_installing: false,
+        natural_size_bytes: 0,
+        engine: "windows",
+        speaker: "george",
       },
     });
     tauri.transcribe.mockResolvedValue({ text: "Bonjour", language: "fr", elapsed_ms: 1 });
@@ -102,6 +124,22 @@ describe("the voice states", () => {
     expect(tauri.transcribe).not.toHaveBeenCalled();
     expect(useVoice.getState().phase).toBe("idle");
     expect(await useVoice.getState().finishListening()).toBeNull();
+  });
+
+  it("warms the natural voice while the user speaks", async () => {
+    useVoice.setState({ settings: naturalSettings });
+    tauri.warmNaturalVoice.mockResolvedValue(null);
+    await useVoice.getState().startListening();
+    expect(tauri.warmNaturalVoice).toHaveBeenCalled();
+  });
+
+  it("reads with the natural voice, and says so once when it fails", async () => {
+    useVoice.setState({ settings: naturalSettings });
+    tauri.speakNatural.mockRejectedValue({ kind: "voice", message: "engine missing" });
+    useVoice.getState().speak("t1", "Good evening, Master. All is well.");
+    expect(tauri.speakNatural).toHaveBeenCalledWith("Good evening, Master. All is well.");
+    await vi.waitFor(() => expect(useVoice.getState().error).toMatch(/natural voice failed/));
+    expect(useVoice.getState().speaking).toBeNull();
   });
 
   it("ignores a second start while already listening", async () => {

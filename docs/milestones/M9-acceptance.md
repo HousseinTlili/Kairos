@@ -48,3 +48,24 @@ other apps. The Small model is already downloaded.
 | 13 | Turn Wi-Fi off and repeat step 2 | Still transcribes: nothing goes online | |
 
 Write down anything that looked wrong, including how long step 2 took.
+
+## Step 8 — Kokoro, the natural voice (2026-10-26, checks run by the agent)
+
+| Check | Result |
+|---|---|
+| Downloads (`the_natural_voice_installs`, ignored test, Kairos's own code) | sherpa-onnx 1.13.8 (24.8 MB) and Kokoro en v0.19 (320 MB) fetched from GitHub, SHA-256 matched, unpacked with Windows's `tar.exe` into `%APPDATA%\kairos\voices`, archives removed: 95 s |
+| Engine kept loaded (`george_speaks_a_sentence_quickly`) | Cold: 7.9 s for the first sentence (loading), then 0.8 s. Files cached: 1.8 s, then 0.3 s |
+| Inside the dev app (`speak_natural` through WebView2's debugging port) | WAV returned as an `ArrayBuffer`: 4.5 s for the first sentence (with loading), 1.1 s for the next |
+| Settings ▸ Voice ▸ Test the voice, in the dev app | George started **1.1 s** after the click (engine already loaded) and played 4.9 s; no error |
+| Rust tests, clippy, fmt | 182 passed; clean |
+| TS tests, lint, tsc | 127 passed; clean |
+
+**Product owner, on the PC:**
+
+| # | Do | Look for | Result |
+|---|---|---|---|
+| 14 | Settings ▸ Voice: the natural voice is already downloaded (the agent's check); Natural voice and George are selected | Test the voice: George, smooth | |
+| 15 | Ask something by voice | The answer is read by George; the first words come within about 2 s of the answer appearing | |
+| 16 | A long answer | Read sentence after sentence without long gaps; Esc stops it | |
+| 17 | Switch to Windows voice, then back | Each is used; nothing else changes | |
+| 18 | Remove the natural voice (asks first), then ask by voice | The Windows voice reads it; Download is offered again | |

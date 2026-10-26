@@ -126,6 +126,8 @@ downloaded (the agent's real-download check).
 - [ ] Esc cancels a recording; silence sends nothing.
 - [ ] Speaker button reads an answer aloud; Esc stops it; "Read it to me" on the briefing.
 - [ ] Offline (Wi-Fi off), transcription still works.
+- [ ] Natural voice (Kokoro, George): answers sound human; Esc stops; removing it falls back to
+      the Windows voice (M9 Step 8, rows 14–18 of the acceptance file).
 - [ ] Then sign M9 off.
 
 ## M10 — Persona (`m10/persona`)
