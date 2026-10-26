@@ -160,7 +160,7 @@ function NewJobForm() {
         />
       </label>
       <p className="muted small">
-        In Hermes&apos;s words or cron, for example: {SCHEDULE_EXAMPLES.join(" · ")}
+        In Hermes&apos;s words or cron, for example: {SCHEDULE_EXAMPLES.join(", ")}
       </p>
       <label>
         <span>What to do</span>

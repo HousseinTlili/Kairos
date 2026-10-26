@@ -11,18 +11,39 @@ import { PersonaSettings } from "../persona/PersonaSettings";
 import { useSystem } from "../system/store";
 import { useShell, type SettingsTab } from "./store";
 
-const TABS: { id: SettingsTab; label: string }[] = [
-  { id: "connection", label: "Connection" },
-  { id: "rules", label: "Rules" },
-  { id: "system", label: "System" },
-  { id: "notifications", label: "Notifications" },
-  { id: "briefing", label: "Briefing" },
-  { id: "accounts", label: "Accounts" },
-  { id: "models", label: "Models & sandbox" },
-  { id: "quick", label: "Quick box" },
-  { id: "voice", label: "Voice" },
-  { id: "persona", label: "Persona" },
-  { id: "startup", label: "Startup" },
+// Four groups instead of one row of tabs, which no longer fit the window (docs/design/BRAND.md).
+const GROUPS: { label: string; tabs: { id: SettingsTab; label: string }[] }[] = [
+  {
+    label: "Kairos",
+    tabs: [
+      { id: "persona", label: "Persona" },
+      { id: "voice", label: "Voice" },
+      { id: "quick", label: "Quick box" },
+      { id: "briefing", label: "Briefing" },
+    ],
+  },
+  {
+    label: "Safety",
+    tabs: [
+      { id: "rules", label: "Rules" },
+      { id: "connection", label: "Hermes connection" },
+    ],
+  },
+  {
+    label: "This PC",
+    tabs: [
+      { id: "system", label: "Alerts" },
+      { id: "notifications", label: "Notifications" },
+      { id: "startup", label: "Startup" },
+    ],
+  },
+  {
+    label: "Accounts and models",
+    tabs: [
+      { id: "accounts", label: "Accounts" },
+      { id: "models", label: "Models and sandbox" },
+    ],
+  },
 ];
 
 const MODE_TEXT: Record<string, string> = {
@@ -36,43 +57,49 @@ export function Settings() {
   const { settingsTab, showSettings } = useShell();
   return (
     <section className="settings" aria-labelledby="settings-title">
-      <h1 id="settings-title">Settings</h1>
-      <div className="tabs" role="tablist">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            role="tab"
-            aria-selected={settingsTab === tab.id}
-            className={settingsTab === tab.id ? "tab active" : "tab"}
-            onClick={() => showSettings(tab.id)}
-          >
-            {tab.label}
-          </button>
+      <nav className="settings-nav" aria-labelledby="settings-title">
+        <h1 id="settings-title">Settings</h1>
+        {GROUPS.map((group) => (
+          <div key={group.label} className="settings-group">
+            <p className="settings-group-label">{group.label}</p>
+            {group.tabs.map((tab) => (
+              <button
+                key={tab.id}
+                className={settingsTab === tab.id ? "settings-link active" : "settings-link"}
+                aria-current={settingsTab === tab.id ? "page" : undefined}
+                onClick={() => showSettings(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         ))}
+      </nav>
+      <div className="settings-pane">
+        {settingsTab === "rules" ? (
+          <RulesPage />
+        ) : settingsTab === "system" ? (
+          <SystemSettings />
+        ) : settingsTab === "notifications" ? (
+          <NotificationSettings />
+        ) : settingsTab === "briefing" ? (
+          <BriefingSettings />
+        ) : settingsTab === "accounts" ? (
+          <AccountsSettings />
+        ) : settingsTab === "models" ? (
+          <ModelsSettings />
+        ) : settingsTab === "quick" ? (
+          <QuickSettings />
+        ) : settingsTab === "voice" ? (
+          <VoiceSettings />
+        ) : settingsTab === "persona" ? (
+          <PersonaSettings />
+        ) : settingsTab === "startup" ? (
+          <StartupSettings />
+        ) : (
+          <ConnectionSettings />
+        )}
       </div>
-      {settingsTab === "rules" ? (
-        <RulesPage />
-      ) : settingsTab === "system" ? (
-        <SystemSettings />
-      ) : settingsTab === "notifications" ? (
-        <NotificationSettings />
-      ) : settingsTab === "briefing" ? (
-        <BriefingSettings />
-      ) : settingsTab === "accounts" ? (
-        <AccountsSettings />
-      ) : settingsTab === "models" ? (
-        <ModelsSettings />
-      ) : settingsTab === "quick" ? (
-        <QuickSettings />
-      ) : settingsTab === "voice" ? (
-        <VoiceSettings />
-      ) : settingsTab === "persona" ? (
-        <PersonaSettings />
-      ) : settingsTab === "startup" ? (
-        <StartupSettings />
-      ) : (
-        <ConnectionSettings />
-      )}
     </section>
   );
 }

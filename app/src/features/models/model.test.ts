@@ -16,6 +16,7 @@ import {
   DEFAULT_CHOICE,
   choiceKey,
   costLabel,
+  usageLine,
   isOffered,
   parseChoiceKey,
   priceLabel,
@@ -72,5 +73,22 @@ describe("cost and tokens under an answer", () => {
     expect(tokens(1234)).toBe("1.2k");
     expect(tokens(45_000)).toBe("45k");
     expect(tokens(null)).toBe("—");
+  });
+});
+
+describe("the line under an answer", () => {
+  it("reads as plain words", () => {
+    expect(
+      usageLine({
+        input: 13_000,
+        output: 190,
+        cost: 0,
+        provider: "nous",
+        model: "upstage/solar-mini4:free",
+      }),
+    ).toBe("13k tokens in, 190 out, free, upstage/solar-mini4:free");
+    expect(usageLine({ input: 900, output: 40, cost: null, provider: null, model: null })).toBe(
+      "900 tokens in, 40 out",
+    );
   });
 });

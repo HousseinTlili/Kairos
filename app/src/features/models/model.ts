@@ -51,6 +51,24 @@ export function costLabel(cost: number | null, served: string | null): string {
   return `≈ $${cost < 0.01 ? cost.toPrecision(2) : cost.toFixed(2)}`;
 }
 
+/**
+ * The line under an answer: "13k tokens in, 190 out, free, upstage/solar-mini4:free". Plain
+ * words joined with commas (docs/design/BRAND.md: no "A · B · C" strings).
+ */
+export function usageLine(usage: {
+  input: number;
+  output: number;
+  cost: number | null;
+  provider: string | null;
+  model: string | null;
+}): string {
+  const parts = [`${tokens(usage.input)} tokens in`, `${tokens(usage.output)} out`];
+  const cost = costLabel(usage.cost, usage.provider);
+  if (cost) parts.push(cost);
+  if (usage.model) parts.push(usage.model);
+  return parts.join(", ");
+}
+
 /** "1.2k" for token counts. */
 export function tokens(n: number | null): string {
   if (n == null) return "—";

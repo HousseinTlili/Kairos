@@ -73,7 +73,7 @@ function CpuCard({ snapshot, history }: { snapshot: SystemSnapshot; history: num
       <Sparkline values={history} max={100} label="CPU use over the last two minutes" />
       <p className="sys-sub">
         {cpu.name || "Processor"}
-        {cpu.frequency_mhz > 0 && ` · ${(cpu.frequency_mhz / 1000).toFixed(2)} GHz`}
+        {cpu.frequency_mhz > 0 && `, ${(cpu.frequency_mhz / 1000).toFixed(2)} GHz`}
       </p>
       {cpu.per_core.length > 0 && (
         <div className="cores" aria-label="Use per logical core">
@@ -99,7 +99,7 @@ function MemoryCard({ snapshot, history }: { snapshot: SystemSnapshot; history: 
       <Sparkline values={history} max={100} label="Memory use over the last two minutes" />
       <p className="sys-sub">
         {formatBytes(memory.used)} of {formatBytes(memory.total)} in use
-        {memory.swap_total > 0 && ` · page file ${formatBytes(memory.swap_used)}`}
+        {memory.swap_total > 0 && `, page file ${formatBytes(memory.swap_used)}`}
       </p>
     </Card>
   );
@@ -131,7 +131,7 @@ function NetworkCard({
       </div>
       <p className="sys-sub">
         {wifi
-          ? `Wi-Fi: ${wifi.ssid}${wifi.signal_percent != null ? ` · signal ${wifi.signal_percent} %` : ""}`
+          ? `Wi-Fi: ${wifi.ssid}${wifi.signal_percent != null ? `, signal ${wifi.signal_percent} %` : ""}`
           : "Not on Wi-Fi"}
       </p>
     </Card>
@@ -142,11 +142,11 @@ function batteryLine(battery: BatteryReading): string {
   switch (battery.state) {
     case "charging":
       return battery.time_to_full_s != null
-        ? `Charging · full in ${formatDuration(battery.time_to_full_s)}`
+        ? `Charging, full in ${formatDuration(battery.time_to_full_s)}`
         : "Charging";
     case "discharging":
       return battery.time_to_empty_s != null
-        ? `On battery · ${formatDuration(battery.time_to_empty_s)} left`
+        ? `On battery, ${formatDuration(battery.time_to_empty_s)} left`
         : "On battery";
     case "full":
       return "Fully charged";
@@ -187,7 +187,7 @@ function GpuCards({ snapshot }: { snapshot: SystemSnapshot }) {
             {gpu.memory_used != null && gpu.memory_total != null
               ? `${formatBytes(gpu.memory_used)} of ${formatBytes(gpu.memory_total)} VRAM`
               : "VRAM unknown"}
-            {gpu.temperature_c != null && ` · ${gpu.temperature_c.toFixed(0)} °C`}
+            {gpu.temperature_c != null && `, ${gpu.temperature_c.toFixed(0)} °C`}
           </p>
         </Card>
       ))}
@@ -215,7 +215,7 @@ function DiskList({ snapshot }: { snapshot: SystemSnapshot }) {
                     disk.removable ? "removable" : null,
                   ]
                     .filter(Boolean)
-                    .join(" · ")}
+                    .join(", ")}
                 </span>
                 <span className="disk-free">
                   {formatBytes(disk.available)} free of {formatBytes(disk.total)}
@@ -223,7 +223,7 @@ function DiskList({ snapshot }: { snapshot: SystemSnapshot }) {
               </div>
               <Bar percent={used} label={`${disk.mount} used`} />
               <p className="sys-sub">
-                Read {formatByteRate(disk.read_per_s)} · Write {formatByteRate(disk.write_per_s)}
+                Read {formatByteRate(disk.read_per_s)}, write {formatByteRate(disk.write_per_s)}
               </p>
             </li>
           );

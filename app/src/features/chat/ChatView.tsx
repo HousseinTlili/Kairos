@@ -21,16 +21,17 @@ import {
   type Turn,
 } from "./turn";
 import { ModelPicker } from "../models/ModelPicker";
-import { costLabel, tokens } from "../models/model";
+import { usageLine } from "../models/model";
 import { useVoiceInChat } from "../voice/hooks";
 import { useVoice } from "../voice/store";
 import { MicButton, SpeakButton, VoiceStatus } from "../voice/VoiceControls";
 
+// Things Kairos does on this PC, so the first conversation shows what it is for.
 const SUGGESTIONS = [
-  "What can you help me with?",
+  "Which apps are using the most memory right now?",
+  "Summarise what I missed while I was away",
   "List the 10 largest files in my Downloads folder",
-  "Explain which of my actions Kairos asks me about, and why",
-  "Check which version of Node.js and Rust I have installed",
+  "Which of my actions do you ask me about, and why?",
 ];
 
 function greeting(now: Date): string {
@@ -133,14 +134,7 @@ export function TurnView({ turn }: { turn: Turn }) {
         {turn.taskId && turn.text && !working && isFinished(turn.status) && (
           <SpeakButton id={turn.taskId} text={turn.text} />
         )}
-        {turn.usage && (
-          <p className="turn-usage">
-            {tokens(turn.usage.input)} in · {tokens(turn.usage.output)} out
-            {costLabel(turn.usage.cost, turn.usage.provider) &&
-              ` · ${costLabel(turn.usage.cost, turn.usage.provider)}`}
-            {turn.usage.model && ` · ${turn.usage.model}`}
-          </p>
-        )}
+        {turn.usage && <p className="turn-usage">{usageLine(turn.usage)}</p>}
       </div>
     </article>
   );
@@ -150,7 +144,7 @@ function EmptyState({ onPick }: { onPick: (text: string) => void }) {
   return (
     <div className="empty-state">
       <h1 className="greeting">{greeting(new Date())}.</h1>
-      <p className="muted">What should we get done?</p>
+      <p className="kairos-says">What shall we do, Master?</p>
       <div className="suggestions">
         {SUGGESTIONS.map((text) => (
           <button key={text} className="suggestion" onClick={() => onPick(text)}>
