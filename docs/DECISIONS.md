@@ -325,6 +325,20 @@ Accepted when the product owner chose "persona now" on 2026-10-26.
 
 ---
 
+## D-025 — Speech out is Kokoro through sherpa-onnx, kept loaded; no Edge voices — Accepted
+
+For M9 Step 8. The product owner first chose Microsoft's free Edge neural voices; that route now
+requires a "v2" Sec-MS-GEC token computed by a reverse-engineered algorithm (`edge_tts`'s
+`drm.py`), which would mean bypassing Microsoft's access control on an Edge-only service, under a
+copyleft licence and liable to break. Not built. Instead: Kokoro (Apache 2.0) through k2-fsa's
+sherpa-onnx (Apache 2.0) C library, downloaded on the user's click with pinned SHA-256s, loaded at
+run time with `LoadLibraryExW` and kept loaded; voice George. Offline. Measured: the full model is
+4–5× faster than real time on the product owner's PC, the int8 one slower than real time. The
+Windows voices remain the fallback. Accepted by the product owner on 2026-10-26 ("Use George.
+Build Kokoro into Kairos with the full model.").
+
+---
+
 ## Answered questions
 
 - **Q-2 — First real use cases.** Answered 2026-10-24: the welcome-back briefing (an evolution of

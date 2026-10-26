@@ -106,10 +106,37 @@ pub fn list(dir: &Path) -> Vec<ModelInfo> {
         .collect()
 }
 
+/// A file to fetch, with the size and SHA-256 it must have (models here, the voice packages in
+/// `tts.rs`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Expected {
+    pub url: String,
+    pub file: String,
+    pub size: u64,
+    pub sha256: &'static str,
+    /// Named in the "couldn't reach" message.
+    pub host: &'static str,
+}
+
+impl Expected {
+    pub fn model(id: ModelId) -> Self {
+        Self {
+            url: format!("{SOURCE}/{}", id.file()),
+            file: id.file().to_string(),
+            size: id.size(),
+            sha256: id.sha256(),
+            host: "huggingface.co",
+        }
+    }
+}
+
 /// Writes the download to `<file>.part`, hashing as it goes; only a file with the right size and
-/// hash is renamed into place, so a broken download is never loaded.
+/// hash is renamed into place, so a broken download is never used.
 pub struct PartFile {
     path: PathBuf,
+    target: PathBuf,
+    size: u64,
+    sha256: &'static str,
     file: std::fs::File,
     hasher: Sha256,
     written: u64,
@@ -117,12 +144,15 @@ pub struct PartFile {
 
 impl PartFile {
     /// Starts from scratch: an earlier, interrupted `.part` is replaced.
-    pub fn create(dir: &Path, id: ModelId) -> Result<Self, VoiceError> {
+    pub fn create(dir: &Path, expected: &Expected) -> Result<Self, VoiceError> {
         std::fs::create_dir_all(dir)?;
-        let path = part_path(dir, id);
+        let path = dir.join(format!("{}.part", expected.file));
         let file = std::fs::File::create(&path)?;
         Ok(Self {
             path,
+            target: dir.join(&expected.file),
+            size: expected.size,
+            sha256: expected.sha256,
             file,
             hasher: Sha256::new(),
             written: 0,
@@ -137,8 +167,8 @@ impl PartFile {
     }
 
     /// Checks size and hash, then renames; on any mismatch the `.part` is removed.
-    pub fn finish(mut self, dir: &Path, id: ModelId) -> Result<(), VoiceError> {
-        let result = self.check(id).and_then(|()| {
+    pub fn finish(mut self) -> Result<PathBuf, VoiceError> {
+        let result = self.check().and_then(|()| {
             self.file.flush()?;
             self.file.sync_all()?;
             Ok(())
@@ -146,8 +176,8 @@ impl PartFile {
         drop(self.file);
         match result {
             Ok(()) => {
-                std::fs::rename(&self.path, path(dir, id))?;
-                Ok(())
+                std::fs::rename(&self.path, &self.target)?;
+                Ok(self.target)
             }
             Err(err) => {
                 let _ = std::fs::remove_file(&self.path);
@@ -156,18 +186,18 @@ impl PartFile {
         }
     }
 
-    fn check(&mut self, id: ModelId) -> Result<(), VoiceError> {
-        if self.written != id.size() {
+    fn check(&mut self) -> Result<(), VoiceError> {
+        if self.written != self.size {
             return Err(VoiceError::Model(format!(
                 "The download stopped early ({} of {} MB). Try again.",
                 self.written / 1_000_000,
-                id.size() / 1_000_000
+                self.size / 1_000_000
             )));
         }
         let hash = hex(&std::mem::take(&mut self.hasher).finalize());
-        if hash != id.sha256() {
+        if hash != self.sha256 {
             return Err(VoiceError::Model(
-                "The downloaded model doesn't match its published checksum, so it was deleted. Try again."
+                "The download doesn't match its published checksum, so it was deleted. Try again."
                     .into(),
             ));
         }
@@ -208,18 +238,36 @@ pub async fn download(
     id: ModelId,
     mut progress: impl FnMut(DownloadProgress),
 ) -> Result<(), VoiceError> {
+    fetch(dir, &Expected::model(id), |received| {
+        progress(DownloadProgress::Downloading {
+            id,
+            received,
+            total: id.size(),
+        })
+    })
+    .await
+    .map(|_| ())
+}
+
+/// Downloads `expected` into `dir`, calling `progress` with the bytes received about every 2 MB.
+pub async fn fetch(
+    dir: &Path,
+    expected: &Expected,
+    mut progress: impl FnMut(u64),
+) -> Result<PathBuf, VoiceError> {
+    let failed = |err: reqwest::Error| download_failed(err, expected.host);
     let http = reqwest::Client::builder()
         .connect_timeout(CONNECT_TIMEOUT)
         .timeout(DOWNLOAD_TIMEOUT)
         .build()
         .map_err(|err| VoiceError::Model(format!("couldn't start the download: {err}")))?;
     let mut response = http
-        .get(format!("{SOURCE}/{}", id.file()))
+        .get(&expected.url)
         .send()
         .await
         .and_then(reqwest::Response::error_for_status)
-        .map_err(download_failed)?;
-    let mut part = PartFile::create(dir, id)?;
+        .map_err(failed)?;
+    let mut part = PartFile::create(dir, expected)?;
     let mut last_reported = 0;
     loop {
         match response.chunk().await {
@@ -234,28 +282,24 @@ pub async fn download(
                 // About every 2 MB, so the page isn't flooded with events.
                 if received - last_reported >= 2_000_000 {
                     last_reported = received;
-                    progress(DownloadProgress::Downloading {
-                        id,
-                        received,
-                        total: id.size(),
-                    });
+                    progress(received);
                 }
             }
             Ok(None) => break,
             Err(err) => {
                 part.abandon();
-                return Err(download_failed(err));
+                return Err(failed(err));
             }
         }
     }
-    part.finish(dir, id)
+    part.finish()
 }
 
-fn download_failed(err: reqwest::Error) -> VoiceError {
+fn download_failed(err: reqwest::Error, host: &str) -> VoiceError {
     VoiceError::Model(if err.is_connect() || err.is_timeout() {
-        "Couldn't reach huggingface.co to download the model. Are you online?".to_string()
+        format!("Couldn't reach {host} for the download. Are you online?")
     } else {
-        format!("The model download failed: {err}")
+        format!("The download failed: {err}")
     })
 }
 
@@ -283,9 +327,9 @@ mod tests {
     #[test]
     fn a_download_with_the_wrong_bytes_leaves_no_model_and_no_part_file() {
         let dir = temp_dir("wrong");
-        let mut part = PartFile::create(&dir, ModelId::Base).unwrap();
+        let mut part = PartFile::create(&dir, &Expected::model(ModelId::Base)).unwrap();
         part.write(b"not a model").unwrap();
-        let err = part.finish(&dir, ModelId::Base).unwrap_err();
+        let err = part.finish().unwrap_err();
         assert!(err.to_string().contains("stopped early"), "{err}");
         assert!(!path(&dir, ModelId::Base).exists());
         assert!(!part_path(&dir, ModelId::Base).exists());
@@ -296,7 +340,7 @@ mod tests {
     #[test]
     fn the_right_size_with_the_wrong_hash_is_refused_too() {
         let dir = temp_dir("hash");
-        let mut part = PartFile::create(&dir, ModelId::Base).unwrap();
+        let mut part = PartFile::create(&dir, &Expected::model(ModelId::Base)).unwrap();
         // Zeros of the right length: the size check passes, the hash check must not.
         let block = vec![0u8; 1 << 20];
         let mut left = ModelId::Base.size();
@@ -305,7 +349,7 @@ mod tests {
             part.write(&block[..n]).unwrap();
             left -= n as u64;
         }
-        let err = part.finish(&dir, ModelId::Base).unwrap_err();
+        let err = part.finish().unwrap_err();
         assert!(err.to_string().contains("checksum"), "{err}");
         assert!(!path(&dir, ModelId::Base).exists());
         assert!(!part_path(&dir, ModelId::Base).exists());
@@ -315,10 +359,10 @@ mod tests {
     #[test]
     fn an_interrupted_download_starts_again_from_scratch() {
         let dir = temp_dir("restart");
-        let mut first = PartFile::create(&dir, ModelId::Small).unwrap();
+        let mut first = PartFile::create(&dir, &Expected::model(ModelId::Small)).unwrap();
         first.write(b"half of something").unwrap();
         drop(first);
-        let mut second = PartFile::create(&dir, ModelId::Small).unwrap();
+        let mut second = PartFile::create(&dir, &Expected::model(ModelId::Small)).unwrap();
         assert_eq!(second.write(b"abc").unwrap(), 3);
         second.abandon();
         assert!(!part_path(&dir, ModelId::Small).exists());

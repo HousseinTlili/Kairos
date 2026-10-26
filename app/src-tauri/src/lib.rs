@@ -90,7 +90,7 @@ pub fn run() {
             if let Err(err) = quick::register_ptt(app.handle(), None, &ptt) {
                 eprintln!("kairos: push-to-talk: {err}");
             }
-            // The voice model is freed after ten minutes without speech (M9 §3).
+            // The voice models are freed after a while without speech (M9 §3, Step 8).
             let voice = Arc::new(voice::VoiceState::default());
             app.manage(Arc::clone(&voice));
             std::thread::Builder::new()
@@ -99,6 +99,7 @@ pub fn run() {
                     loop {
                         std::thread::sleep(std::time::Duration::from_secs(60));
                         voice.engine.unload_if_idle();
+                        voice.voice.unload_if_idle();
                     }
                 })?;
             // The window starts hidden (tauri.conf.json); a login start stays in the tray.
@@ -212,7 +213,12 @@ pub fn run() {
             commands::set_ptt_hotkey,
             commands::persona_state,
             commands::save_persona,
-            commands::restore_persona
+            commands::restore_persona,
+            commands::save_speech_settings,
+            commands::install_natural_voice,
+            commands::remove_natural_voice,
+            commands::speak_natural,
+            commands::warm_natural_voice
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

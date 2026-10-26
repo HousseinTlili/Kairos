@@ -3,6 +3,7 @@
 
 pub mod models;
 pub mod stt;
+pub mod tts;
 #[cfg(test)]
 mod wav;
 
@@ -16,6 +17,9 @@ pub const READ_ALOUD_SETTING: &str = "voice_read_aloud";
 /// Asked by voice, answered by voice: on unless switched off ("0").
 pub const ANSWER_SPOKEN_SETTING: &str = "voice_answer_spoken";
 pub const PTT_SETTING: &str = "voice_ptt_hotkey";
+/// "natural" (Kokoro, M9 Step 8) or "windows"; natural once it is downloaded, unless set.
+pub const ENGINE_SETTING: &str = "voice_engine";
+pub const SPEAKER_SETTING: &str = "voice_speaker";
 /// Next to the quick box's Ctrl+Alt+K; J for "just say it".
 pub const DEFAULT_PTT: &str = "Ctrl+Alt+J";
 
@@ -37,4 +41,7 @@ pub struct VoiceState {
     pub engine: stt::Engine,
     /// One model download at a time.
     pub downloading: AtomicBool,
+    /// The natural voice (Kokoro), loaded on first use.
+    pub voice: tts::Voice,
+    pub installing_voice: AtomicBool,
 }

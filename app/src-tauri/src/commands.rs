@@ -1761,6 +1761,7 @@ mod tests {
 // --- Voice (M9, D-022) --------------------------------------------------------------------------
 
 use crate::voice::models::{self as voice_models, DownloadProgress, ModelId, ModelInfo};
+use crate::voice::tts::{self as voice_tts, Speaker};
 use crate::voice::{self, VoiceError, VoiceState};
 
 impl From<VoiceError> for CommandError {
@@ -1783,6 +1784,13 @@ pub struct VoiceSettings {
     pub answer_spoken: bool,
     pub ptt_hotkey: String,
     pub downloading: bool,
+    /// The natural voice (Kokoro, M9 Step 8).
+    pub natural_installed: bool,
+    pub natural_installing: bool,
+    pub natural_size_bytes: u64,
+    /// "natural" or "windows": what answers are read with now.
+    pub engine: &'static str,
+    pub speaker: Speaker,
 }
 
 fn setting_or(state: &AppState, key: &str) -> Option<String> {
@@ -1805,6 +1813,7 @@ fn stored_voice_model(state: &AppState) -> ModelId {
 
 fn voice_settings(state: &AppState, voice: &VoiceState) -> Result<VoiceSettings, CommandError> {
     let dir = voice_models::default_dir()?;
+    let natural_installed = crate::voice::tts::is_installed(&crate::voice::tts::default_dir()?);
     Ok(VoiceSettings {
         models: voice_models::list(&dir),
         model: stored_voice_model(state),
@@ -1814,6 +1823,19 @@ fn voice_settings(state: &AppState, voice: &VoiceState) -> Result<VoiceSettings,
         answer_spoken: setting_or(state, voice::ANSWER_SPOKEN_SETTING).as_deref() != Some("0"),
         ptt_hotkey: stored_ptt_hotkey(state),
         downloading: voice.downloading.load(std::sync::atomic::Ordering::SeqCst),
+        natural_installed,
+        natural_installing: voice
+            .installing_voice
+            .load(std::sync::atomic::Ordering::SeqCst),
+        natural_size_bytes: crate::voice::tts::total_size(),
+        engine: if natural_installed
+            && setting_or(state, voice::ENGINE_SETTING).as_deref() != Some("windows")
+        {
+            "natural"
+        } else {
+            "windows"
+        },
+        speaker: stored_speaker(state),
     })
 }
 
@@ -2012,4 +2034,113 @@ pub async fn save_persona(text: String) -> Result<PersonaState, CommandError> {
 #[tauri::command]
 pub async fn restore_persona() -> Result<PersonaState, CommandError> {
     Ok(persona_files()?.restore()?)
+}
+
+fn stored_speaker(state: &AppState) -> Speaker {
+    setting_or(state, voice::SPEAKER_SETTING)
+        .and_then(|s| Speaker::parse(&s))
+        .unwrap_or(Speaker::George)
+}
+
+/// The natural voice's engine and speaker (M9 Step 8).
+#[tauri::command]
+pub async fn save_speech_settings(
+    state: tauri::State<'_, AppState>,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+    natural: bool,
+    speaker: Speaker,
+) -> Result<VoiceSettings, CommandError> {
+    state.with_store(|store| {
+        store.set_setting(
+            voice::ENGINE_SETTING,
+            if natural { "natural" } else { "windows" },
+        )?;
+        store.set_setting(voice::SPEAKER_SETTING, speaker.as_str())
+    })?;
+    voice_settings(&state, &voice)
+}
+
+/// Downloads and unpacks the natural voice on the user's click, sending `voice-install` events
+/// ({received, total}, then {done} or {failed}).
+#[tauri::command]
+pub async fn install_natural_voice(
+    app: tauri::AppHandle,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+) -> Result<(), CommandError> {
+    use std::sync::atomic::Ordering;
+    if voice.installing_voice.swap(true, Ordering::SeqCst) {
+        return Err(CommandError {
+            kind: "busy",
+            message: "The natural voice is already downloading.".into(),
+        });
+    }
+    let outcome = match voice_tts::default_dir() {
+        Ok(dir) => {
+            voice_tts::install(&dir, |received, total| {
+                let _ = app.emit(
+                "voice-install",
+                serde_json::json!({ "phase": "downloading", "received": received, "total": total }),
+            );
+            })
+            .await
+        }
+        Err(err) => Err(err),
+    };
+    voice.installing_voice.store(false, Ordering::SeqCst);
+    let _ = app.emit(
+        "voice-install",
+        match &outcome {
+            Ok(()) => serde_json::json!({ "phase": "done" }),
+            Err(err) => serde_json::json!({ "phase": "failed", "message": err.to_string() }),
+        },
+    );
+    Ok(outcome?)
+}
+
+#[tauri::command]
+pub async fn remove_natural_voice(
+    state: tauri::State<'_, AppState>,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+) -> Result<VoiceSettings, CommandError> {
+    voice.voice.unload();
+    voice_tts::remove(&voice_tts::default_dir()?)?;
+    voice_settings(&state, &voice)
+}
+
+/// One sentence in the natural voice, as WAV bytes (the page queues the sentences of an answer).
+#[tauri::command]
+pub async fn speak_natural(
+    state: tauri::State<'_, AppState>,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+    text: String,
+) -> Result<tauri::ipc::Response, CommandError> {
+    let speaker = stored_speaker(&state);
+    let dir = voice_tts::default_dir()?;
+    let voice = Arc::clone(&voice);
+    let (samples, rate) =
+        tauri::async_runtime::spawn_blocking(move || voice.voice.speak(&dir, &text, speaker, 1.0))
+            .await
+            .map_err(|err| CommandError {
+                kind: "internal",
+                message: format!("speaking stopped: {err}"),
+            })??;
+    Ok(tauri::ipc::Response::new(voice_tts::wav(&samples, rate)))
+}
+
+/// Loads the natural voice in the background (when the user starts speaking), so the answer
+/// doesn't wait for it. Errors are ignored here: speaking reports them.
+#[tauri::command]
+pub async fn warm_natural_voice(
+    state: tauri::State<'_, AppState>,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+) -> Result<(), CommandError> {
+    if voice_settings(&state, &voice)?.engine != "natural" {
+        return Ok(());
+    }
+    let dir = voice_tts::default_dir()?;
+    let voice = Arc::clone(&voice);
+    tauri::async_runtime::spawn_blocking(move || {
+        let _ = voice.voice.warm(&dir);
+    });
+    Ok(())
 }
