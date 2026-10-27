@@ -349,6 +349,16 @@ default); enabling it changed one line of Hermes's `config.yaml` (`memory.provid
 first to `%APPDATA%\kairos\backups\hermes-config.yaml.before-holographic`. Accepted by the product
 owner on 2026-10-27, with a persona line telling Kairos to remember lasting facts and no secrets.
 
+## D-027 — Kairos may use a copy of the Master's Brave profile, behind the Kairos rules — Proposed
+
+For M12 (`docs/milestones/M12.md`). Hermes's `browser.use_real_profile: true` copies the default
+browser's profile (Brave on this PC: cookies, saved passwords, autofill) into a Hermes-owned
+folder and drives the real browser on that copy; switching it off deletes the copies.
+`browser.restrict_evaluate: true` goes with it. Both are Hermes configuration changes, backed up
+first and switched from Kairos's settings. Only after the M12 rules (a click, an Enter, a dialog,
+a vault fill or a script that buys, pays, sends, posts or deletes asks first; card numbers and
+passwords are never typed) are built. Proposed 2026-10-27; the product owner decides.
+
 ---
 
 ## Answered questions
