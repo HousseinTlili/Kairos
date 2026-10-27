@@ -1358,11 +1358,28 @@ code {
   gap: 16px;
 }
 
+/* Kairos tells you in its own voice what is wrong; the card below says what to do. */
+.connect-head {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 8px;
+}
+
+.connect-head h1 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.15;
+}
+
+.connect-head .kairos-says {
+  margin: 0;
+}
+
 .status-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-left: 4px solid var(--muted);
-  border-radius: 10px;
+  border-radius: var(--radius-panel);
   padding: 16px 20px;
 }
 
@@ -1386,15 +1403,15 @@ code {
 }
 
 .status-card.ok {
-  border-left-color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 50%, var(--border));
 }
 
 .status-card.bad {
-  border-left-color: var(--bad);
+  border-color: color-mix(in srgb, var(--gules-deep) 70%, var(--border));
 }
 
 .status-card.warn {
-  border-left-color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 50%, var(--border));
   background: var(--warn-bg);
 }
 
@@ -1431,6 +1448,25 @@ code {
   /* minmax(0, …): a long rule summary must not set the page's width. */
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;
+}
+
+/* The names of new rules as small chips that wrap, rather than one long sentence. */
+.rule-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rule-chips code {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-chip);
+  background: var(--code-bg);
+  font-size: 0.8125rem;
 }
 
 .rules-page > p {
@@ -2268,12 +2304,22 @@ code {
 
 /* ---------------------------------------------------------------- Quick box (M8 Step 2) */
 
+/* The quick box floats over other apps: a fine gold edge marks it as Kairos's. */
 .quick {
   height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--gilt) 45%, var(--border));
+}
+
+.quick-empty .kairos-says {
+  margin: 4px 0 6px;
+  font-size: 1.25rem;
+}
+
+.quick-empty .muted {
+  margin: 0;
 }
 
 .quick-input input {

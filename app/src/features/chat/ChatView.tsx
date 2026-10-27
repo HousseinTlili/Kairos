@@ -10,6 +10,7 @@ import { useConnection } from "../connection/store";
 import { LockIcon, SendIcon, StopIcon, TerminalIcon } from "../shell/icons";
 import { useShell } from "../shell/store";
 import { BriefingCard } from "../briefing/BriefingCard";
+import { Illuminated } from "../shell/Illuminated";
 import { ApprovalCard } from "./ApprovalCard";
 import { MarkdownView } from "./MarkdownView";
 import { useChat } from "./store";
@@ -42,18 +43,6 @@ function greeting(now: Date): string {
   if (hour < 12) return "Good morning, Master";
   if (hour < 18) return "Good afternoon, Master";
   return "Good evening, Master";
-}
-
-/** Kairos's line with an illuminated initial (BRAND.md, Ornament 2). */
-export function Illuminated({ text, className }: { text: string; className?: string }) {
-  return (
-    <h1 className={`illuminated ${className ?? ""}`} aria-label={text}>
-      <span className="initial" aria-hidden="true">
-        {text.slice(0, 1)}
-      </span>
-      <span aria-hidden="true">{text.slice(1)}</span>
-    </h1>
-  );
 }
 
 function statusLine(turn: Turn): { text: string; tone: "muted" | "bad" } | null {

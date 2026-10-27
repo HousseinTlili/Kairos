@@ -193,14 +193,20 @@ export function RulesPage() {
       {draft && saved.validation.result === "valid" && missingNewerRules(draft).length > 0 && (
         <div className="status-card" role="status">
           <p>
-            New starter rules came with this version of Kairos:{" "}
-            {missingNewerRules(draft)
-              .map((r) => r.id)
-              .join(", ")}
-            . Your rules file was written before them, so they aren't in it yet.
+            {missingNewerRules(draft).length} new starter rules came with this version of Kairos.
+            Your rules file was written before them, so they aren&apos;t in it yet.
           </p>
+          <ul className="rule-chips" aria-label="The new rules">
+            {missingNewerRules(draft).map((r) => (
+              <li key={r.id} title={r.description}>
+                <code>{r.id}</code>
+              </li>
+            ))}
+          </ul>
           <div className="actions" style={{ marginTop: 10 }}>
-            <button onClick={() => edit(addNewerRules)}>Add the new rules</button>
+            <button className="primary" onClick={() => edit(addNewerRules)}>
+              Add the new rules
+            </button>
           </div>
           <p className="detail">They are added to the list below; review them, then save.</p>
         </div>

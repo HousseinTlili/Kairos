@@ -126,9 +126,12 @@ export function QuickApp() {
         {last ? (
           <TurnView turn={last} />
         ) : (
-          <p className="muted small">
-            Ask anything, or &quot;what&apos;s on my screen?&quot;. Esc to hide.
-          </p>
+          <div className="quick-empty">
+            <p className="kairos-says">What is your will, Master?</p>
+            <p className="muted small">
+              Ask anything, or &quot;what&apos;s on my screen?&quot;. Hold Ctrl+Alt+J to speak.
+            </p>
+          </div>
         )}
       </div>
       <div className="quick-footer">

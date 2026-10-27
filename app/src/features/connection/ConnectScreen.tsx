@@ -1,9 +1,13 @@
 import { useEffect } from "react";
 import type { ConnectInfo } from "../../lib/tauri";
+import { Illuminated } from "../shell/Illuminated";
+import { SealMark } from "../shell/SealMark";
 import { approvalWarning, useConnection } from "./store";
 
 interface StatusView {
   tone: "ok" | "bad";
+  /** What Kairos says about it, in its own voice (BRAND.md, Words). */
+  says: string;
   title: string;
   body: string;
   command?: string;
@@ -14,12 +18,14 @@ function describe(info: ConnectInfo): StatusView {
     case "connected":
       return {
         tone: "ok",
+        says: "Hermes answers, Master.",
         title: "Connected to Hermes",
         body: `Hermes ${info.version ?? "(unknown version)"} at ${info.base_url}.`,
       };
     case "not_running":
       return {
         tone: "bad",
+        says: "Hermes does not answer, Master.",
         title: "Hermes isn't running",
         body: `Nothing answered at ${info.base_url}. Start the Hermes gateway, then check again.`,
         command: "hermes gateway restart",
@@ -27,18 +33,21 @@ function describe(info: ConnectInfo): StatusView {
     case "key_rejected":
       return {
         tone: "bad",
+        says: "Hermes refuses my key, Master.",
         title: "Key rejected",
         body: "Hermes is running but didn't accept the stored API key. If the key in Hermes's .env changed, re-read it.",
       };
     case "capability_missing":
       return {
         tone: "bad",
+        says: "This Hermes lacks what I need, Master.",
         title: "This Hermes is missing features Kairos needs",
         body: `Missing: ${info.missing_capabilities.join(", ")}. Kairos was tested with Hermes 0.22.5.`,
       };
     case "no_key":
       return {
         tone: "bad",
+        says: "I have no key to Hermes yet, Master.",
         title: "No API key",
         body: info.detail ?? "Run scripts/setup.ps1 to enable Hermes's API server.",
         command: "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1",
@@ -56,6 +65,10 @@ export function ConnectScreen() {
   if (error) {
     return (
       <section className="connect">
+        <header className="connect-head">
+          <SealMark size={64} />
+          <Illuminated text="I could not reach Hermes, Master." />
+        </header>
         <div className="status-card bad" role="alert">
           <h2>Couldn't check Hermes</h2>
           <p>{error.message}</p>
@@ -70,7 +83,10 @@ export function ConnectScreen() {
   if (!info) {
     return (
       <section className="connect">
-        <p className="muted">Looking for Hermes…</p>
+        <header className="connect-head">
+          <SealMark size={64} state="working" />
+          <p className="kairos-says">Looking for Hermes…</p>
+        </header>
       </section>
     );
   }
@@ -80,6 +96,10 @@ export function ConnectScreen() {
 
   return (
     <section className="connect">
+      <header className="connect-head">
+        <SealMark size={64} state={checking ? "working" : "idle"} />
+        <Illuminated text={view.says} />
+      </header>
       <div className={`status-card ${view.tone}`} role={view.tone === "bad" ? "alert" : "status"}>
         <h2>
           <span className="dot" aria-hidden="true" />
