@@ -69,3 +69,26 @@ Write down anything that looked wrong, including how long step 2 took.
 | 16 | A long answer | Read sentence after sentence without long gaps; Esc stops it | |
 | 17 | Switch to Windows voice, then back | Each is used; nothing else changes | |
 | 18 | Remove the natural voice (asks first), then ask by voice | The Windows voice reads it; Download is offered again | |
+
+## Step 9 — The wake word "Kairos" (2026-10-27, checks run by the agent)
+
+| Check | Result |
+|---|---|
+| Download the wake word (17.6 MB, SHA-256 checked) | Installed under `%APPDATA%\kairos\voices` |
+| George's clips through the real spotter (ignored Rust test) | "Kairos, open Notepad" and "Hey Kairos…" wake it; two sentences without the name don't |
+| Thresholds on those clips | Found at 0.15, 0.25, 0.28, 0.30, 0.32; missed at 0.35 and 0.45 |
+| In the dev app, a clip fed to `wake_feed` | Wakes at the 5th–6th chunk; the quick box opens and listens; 6 s of silence cancels it |
+| Live, on the PC's microphone, at 0.25 | **Two stray requests sent** ("E aí, Kairos?", a Russian sentence). Guards added (under 0.4 s of speech, or a language other than en/fr/ar, sends nothing) and normal moved to 0.28. Wake word left **off** |
+| Rust tests, clippy | Wake tests pass; clippy clean |
+| TS tests, lint, tsc | 140 passed; clean |
+
+**Product owner, on the PC:**
+
+| # | Do | Look for | Result |
+|---|---|---|---|
+| 19 | Settings ▸ Voice ▸ Wake word: switch on "Listen for Kairos" (Normal) | Windows shows the microphone in use | |
+| 20 | Say "Kairos, what time is it?" from your seat | The quick box opens, listens, sends when you pause, answers aloud | |
+| 21 | Say "Kairos", then nothing | The box opens and quietly gives up after about 6 s; nothing is sent | |
+| 22 | Talk, play a video, leave it on for 30 min | No wake, and nothing sent, without the name. If it wakes by itself, try Strict | |
+| 23 | A French and an Arabic request after "Kairos" | Both are sent | |
+| 24 | Switch it off | The microphone indicator goes away | |

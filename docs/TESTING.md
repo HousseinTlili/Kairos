@@ -128,6 +128,8 @@ downloaded (the agent's real-download check).
 - [ ] Offline (Wi-Fi off), transcription still works.
 - [ ] Natural voice (Kokoro, George): answers sound human; Esc stops; removing it falls back to
       the Windows voice (M9 Step 8, rows 14–18 of the acceptance file).
+- [ ] Wake word (Step 9, rows 19–24): switch it on, say "Kairos, …" from your seat; the quick box
+      answers. Leave it on for 30 min of normal noise: nothing is sent without the name.
 - [ ] Then sign M9 off.
 
 ## M10 — Persona (`m10/persona`)
