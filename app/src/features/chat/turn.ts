@@ -30,6 +30,8 @@ export interface ApprovalRow {
   source: "kairos" | "hermes";
   /** The Kairos rule that asked, if any. */
   rule: string | null;
+  /** What a browser script will do, in words, when the plugin could tell (M12 Step 4). */
+  will?: string;
 }
 
 // Hermes shows this instead of the command for approvals a plugin asked for (M2 spec §4).
@@ -44,11 +46,19 @@ const KAIROS_MESSAGE = /^Kairos rule '([a-z0-9][a-z0-9-]*)': ([\s\S]*?) — ([\s
 export function readApproval(
   command: string,
   description: string,
-): Pick<ApprovalRow, "source" | "rule" | "command" | "description"> {
+): Pick<ApprovalRow, "source" | "rule" | "command" | "description" | "will"> {
   if (PLUGIN_PLACEHOLDER.test(command)) {
     const parsed = KAIROS_MESSAGE.exec(description);
     if (parsed) {
-      return { source: "kairos", rule: parsed[1], description: parsed[2], command: parsed[3] };
+      // hooks.py puts a browser script's steps on a last "Will:" line of the reason.
+      const [reason, will] = parsed[2].split("\nWill: ");
+      return {
+        source: "kairos",
+        rule: parsed[1],
+        description: reason,
+        command: parsed[3],
+        ...(will ? { will } : {}),
+      };
     }
     return { source: "kairos", rule: null, description, command: "" };
   }

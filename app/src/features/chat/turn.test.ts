@@ -330,6 +330,21 @@ describe("approvals from a Kairos rule (M2 Step 8 recordings)", () => {
     });
   });
 
+  it("a browser script's approval says in words what it will do (M12)", () => {
+    expect(
+      readApproval(
+        "<browser_exec> (plugin approval rule)",
+        "Kairos rule 'browser-page-actions': Browser code that clicks needs your OK.\nWill: click at 412, 380, on httpbin.org — click_at_xy(412, 380)",
+      ),
+    ).toEqual({
+      source: "kairos",
+      rule: "browser-page-actions",
+      description: "Browser code that clicks needs your OK.",
+      command: "click_at_xy(412, 380)",
+      will: "click at 412, 380, on httpbin.org",
+    });
+  });
+
   it("a call denied at a Kairos rule counts as blocked though it never became a tool row", () => {
     const events = envelopes(kairosDenySse);
     let turn: Turn = { ...newTurn("x"), status: "running" };

@@ -163,6 +163,47 @@ class ApprovalKeyTest(unittest.TestCase):
         self.assertEqual(call_summary("web_extract", {"urls": ["https://a", "https://b"]}), "https://a, https://b")
 
 
+class BrowserScriptCardTest(HooksTestBase):
+    """M12 Step 4: the approval card says what a browser script will do, in words."""
+
+    def ask(self, code, session="s1"):
+        return self.hooks.pre_tool_call(tool_name="browser_exec", args={"code": code}, session_id=session)
+
+    def test_a_click_says_where_it_clicks_and_on_which_site(self):
+        self.ask('goto_url("https://httpbin.org/forms/post")\nwait_for_load()\npage_info()')
+        result = self.ask("click_at_xy(412, 380)")
+        self.assertEqual(result["action"], "approve")
+        self.assertIn("\nWill: click at 412, 380, on httpbin.org — click_at_xy(412, 380)", result["message"])
+
+    def test_steps_are_listed_in_the_order_the_script_does_them(self):
+        words = hooks_module.describe_script(
+            "goto_url('https://www.google.com')\nfill_input('textarea[name=q]', 'pizza near me')\npress_key('Enter')"
+        )
+        self.assertEqual(words, "open www.google.com; type «pizza near me» into textarea[name=q]; press Enter")
+
+    def test_a_secret_field_never_shows_what_is_typed(self):
+        words = hooks_module.describe_script("fill_input('#otp-code', '482913')")
+        self.assertEqual(words, "type a hidden value into #otp-code")
+
+    def test_script_actions_are_named(self):
+        words = hooks_module.describe_script("js(\"document.querySelector('form').requestSubmit()\")")
+        self.assertEqual(words, "submit a form by script")
+        self.assertEqual(hooks_module.describe_script("print(js('document.cookie'))"), "read cookies or site storage")
+
+    def test_the_whole_script_is_still_shown(self):
+        code = "goto_url('https://example.com')\n" + "wait(0.1)\n" * 60 + "click_at_xy(1, 2)"
+        result = self.ask(code)
+        self.assertTrue(result["message"].endswith("click_at_xy(1, 2)"))
+
+    def test_reading_a_page_asks_nothing(self):
+        self.assertIsNone(self.ask('goto_url("https://httpbin.org/forms/post")\npage_info()'))
+
+    def test_each_conversation_keeps_its_own_site(self):
+        self.ask("goto_url('https://a.example')\npage_info()", session="one")
+        self.ask("goto_url('https://b.example')\npage_info()", session="two")
+        self.assertIn("on a.example", self.ask("press_key('Enter')", session="one")["message"])
+
+
 class RegisterTest(unittest.TestCase):
     def test_register_wires_the_three_hooks_to_the_kairos_folder(self):
         registered = {}

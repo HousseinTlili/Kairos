@@ -51,6 +51,7 @@ export function ApprovalCard({ row, onAnswer }: Props) {
             : "Hermes asks your leave for this command"}
         </h3>
       </div>
+      {row.will && <p className="approval-will">It will {row.will}.</p>}
       <p className="approval-why">
         {row.source === "kairos" ? (
           <>

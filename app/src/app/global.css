@@ -858,6 +858,14 @@ code {
   color: var(--gilt);
 }
 
+/* M12: what a browser script will do, in words, before the rule and the code. */
+.approval-will {
+  margin: 8px 0 0;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  color: var(--text);
+}
+
 .approval-why {
   margin: 6px 0 10px;
   font-size: 0.875rem;
