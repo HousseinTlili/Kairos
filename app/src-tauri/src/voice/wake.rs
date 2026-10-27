@@ -33,12 +33,14 @@ pub const PACKAGES: [&Package; 2] = [&RUNTIME, &MODEL];
 /// Notepad" and "Hey Kairos, what time is it?" (both found) and two sentences without it (none).
 const SPELLINGS: [&str; 6] = ["KAIROS", "KYROS", "KIROS", "CAIROS", "KYRUS", "KIRUS"];
 
-/// Sensitivity → the spotter's threshold: lower hears more, and wakes by mistake more.
+/// Sensitivity → the spotter's threshold: lower hears more, and wakes by mistake more. The window
+/// is narrow: George's "Kairos" clips are found up to 0.32 and missed at 0.35, and at 0.25 the
+/// live test sent two requests nobody made (2026-10-27), so normal leans stricter than that.
 pub fn threshold(sensitivity: &str) -> f32 {
     match sensitivity {
-        "strict" => 0.35,
-        "eager" => 0.15,
-        _ => 0.25,
+        "strict" => 0.32,
+        "eager" => 0.20,
+        _ => 0.28,
     }
 }
 

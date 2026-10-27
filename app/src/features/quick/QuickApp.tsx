@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import {
   hideQuick,
   onPushToTalk,
+  onWake,
   onQuickShown,
   onRunEvent,
   openInMain,
@@ -65,6 +66,8 @@ export function QuickApp() {
       startChatEvents(),
       onQuickShown(() => inputRef.current?.focus()),
       // Push-to-talk (M9 §3): held, listen; let go, send what was said.
+      // The wake word (M9 Step 9): listen, and send when the Master pauses.
+      onWake(() => void useVoice.getState().startListening((text) => sendRef.current(text))),
       onPushToTalk((held) => {
         const voice = useVoice.getState();
         if (held) void voice.startListening();

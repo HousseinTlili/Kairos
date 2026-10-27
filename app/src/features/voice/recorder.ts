@@ -1,6 +1,6 @@
 // Records the microphone while push-to-talk is held (M9 §3, D-022). Audio stays in this page's
 // memory until it is handed to `transcribe`; nothing is written to disk.
-import { MAX_SECONDS, TARGET_RATE, downmix, joinChunks, level, resample } from "./model";
+import { MAX_SECONDS, TARGET_RATE, downmix, joinChunks, level, resample, toPcm16 } from "./model";
 
 // Copies each block of samples out of the audio thread. Inline, so there's no extra file to serve.
 const WORKLET = `
@@ -104,4 +104,71 @@ export function micError(err: unknown): string {
     return "The microphone is busy in another app.";
   }
   return `The microphone didn't start: ${err instanceof Error ? err.message : String(err)}`;
+}
+
+/**
+ * The always-on microphone for the wake word (M9 Step 9): audio stays in memory and goes to
+ * Kairos's spotter in ~200 ms chunks, never more than one at a time; nothing is kept.
+ */
+export class WakeListener {
+  private stream: MediaStream | null = null;
+  private context: AudioContext | null = null;
+  private pending: Float32Array[] = [];
+  private pendingLength = 0;
+  private sending = false;
+
+  constructor(private readonly send: (pcm: Int16Array) => Promise<unknown>) {}
+
+  async start(): Promise<void> {
+    this.stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    });
+    try {
+      this.context = new AudioContext({ sampleRate: TARGET_RATE });
+    } catch {
+      this.context = new AudioContext();
+    }
+    const url = URL.createObjectURL(new Blob([WORKLET], { type: "text/javascript" }));
+    try {
+      await this.context.audioWorklet.addModule(url);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+    const rate = this.context.sampleRate;
+    const source = this.context.createMediaStreamSource(this.stream);
+    const tap = new AudioWorkletNode(this.context, "kairos-tap");
+    tap.port.onmessage = (event: MessageEvent<Float32Array[]>) => {
+      this.pending.push(resample(downmix(event.data), rate));
+      this.pendingLength += this.pending[this.pending.length - 1].length;
+      if (this.pendingLength >= TARGET_RATE / 5 && !this.sending) void this.flush();
+    };
+    source.connect(tap);
+  }
+
+  private async flush() {
+    const chunk = joinChunks(this.pending);
+    this.pending = [];
+    this.pendingLength = 0;
+    this.sending = true;
+    try {
+      await this.send(toPcm16(chunk));
+    } finally {
+      this.sending = false;
+    }
+  }
+
+  async stop(): Promise<void> {
+    this.stream?.getTracks().forEach((track) => track.stop());
+    this.stream = null;
+    const context = this.context;
+    this.context = null;
+    this.pending = [];
+    this.pendingLength = 0;
+    if (context && context.state !== "closed") await context.close();
+  }
 }

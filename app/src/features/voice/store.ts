@@ -8,7 +8,15 @@ import {
   type CommandError,
   type VoiceSettings,
 } from "../../lib/tauri";
-import { guessLanguage, pickVoice, speechText, splitSentences, toPcm16 } from "./model";
+import {
+  SpeechEnd,
+  guessLanguage,
+  pickVoice,
+  plausibleAfterWake,
+  speechText,
+  splitSentences,
+  toPcm16,
+} from "./model";
 import { Recorder, micError } from "./recorder";
 
 export type VoicePhase = "idle" | "listening" | "transcribing";
@@ -23,13 +31,19 @@ interface VoiceState {
   heard: string | null;
   /** What is being read aloud: a turn's task id, "briefing", or null. */
   speaking: string | null;
+  /** Listening after the wake word: it sends by itself when the Master pauses. */
+  auto: boolean;
   loadSettings: () => Promise<void>;
   saveSettings: (
     patch: Partial<Pick<VoiceSettings, "model" | "language" | "read_aloud" | "answer_spoken">>,
   ) => Promise<void>;
   setSettings: (settings: VoiceSettings) => void;
   /** Starts recording; a second call while listening is ignored. */
-  startListening: () => Promise<void>;
+  /**
+   * Starts recording; a second call while listening is ignored. With `onAutoText` (after the wake
+   * word) it also stops by itself when the Master pauses, and hands over the words.
+   */
+  startListening: (onAutoText?: (text: string) => void) => Promise<void>;
   /** Stops recording and returns the words, or null for silence, a cancel or an error. */
   finishListening: () => Promise<string | null>;
   cancelListening: () => Promise<void>;
@@ -126,6 +140,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
   error: null,
   heard: null,
   speaking: null,
+  auto: false,
 
   async loadSettings() {
     try {
@@ -157,16 +172,32 @@ export const useVoice = create<VoiceState>((set, get) => ({
     set({ settings });
   },
 
-  async startListening() {
+  async startListening(onAutoText) {
     if (get().phase !== "idle") return;
     get().stopSpeaking();
-    set({ phase: "listening", level: 0, error: null });
+    set({ phase: "listening", level: 0, error: null, auto: Boolean(onAutoText) });
     // The natural voice takes seconds to load; it does so while the user speaks.
     if (get().settings?.engine === "natural") void warmNaturalVoice().catch(() => {});
     recorder = new Recorder();
+    const end = onAutoText ? new SpeechEnd() : null;
+    const started = performance.now();
+    let ended = false;
     try {
       await recorder.start(
-        (level) => set({ level }),
+        (level) => {
+          set({ level });
+          if (!end || ended) return;
+          const state = end.feed(level, performance.now() - started);
+          if (state === "done") {
+            ended = true;
+            void get()
+              .finishListening()
+              .then((text) => text && onAutoText?.(text));
+          } else if (state === "nothing") {
+            ended = true;
+            void get().cancelListening();
+          }
+        },
         () => onLimit?.(),
       );
     } catch (err) {
@@ -186,7 +217,12 @@ export const useVoice = create<VoiceState>((set, get) => ({
         toPcm16(recording.samples),
         get().settings?.language ?? null,
       );
-      set({ phase: "idle", heard: transcript.language });
+      const auto = get().auto;
+      set({ phase: "idle", heard: transcript.language, auto: false });
+      if (auto && !plausibleAfterWake(transcript.language)) {
+        set({ error: "Didn't catch that." });
+        return null;
+      }
       if (!transcript.text.trim()) {
         set({ error: "Didn't catch that. Hold the key while you speak." });
         return null;

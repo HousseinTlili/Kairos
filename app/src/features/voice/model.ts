@@ -196,3 +196,57 @@ export const SPEAKERS: { id: Speaker; label: string }[] = [
   { id: "sky", label: "Sky (American)" },
   { id: "heart", label: "Heart (American)" },
 ];
+
+// --- After the wake word: when has the Master finished speaking? (M9 Step 9) ---------------------
+
+/** Less real speech than this after a wake is a noise, not a request: nothing is sent. */
+export const MIN_SPOKEN_MS = 400;
+
+/**
+ * The Master speaks English, French or Arabic; after a wake (no key pressed), a transcript in any
+ * other language is Whisper making words out of room noise, as seen on 2026-10-27 ("E aí,
+ * Kairos?", a Russian sentence), so it is dropped.
+ */
+export function plausibleAfterWake(language: string | null): boolean {
+  return language === null || ["en", "fr", "ar"].includes(language);
+}
+
+export type SpeechEndState = "waiting" | "speaking" | "done" | "nothing";
+
+/**
+ * Follows the meter after "Kairos": done after a pause that follows speech, nothing if no speech
+ * starts at all. Times are in milliseconds since listening began.
+ */
+export class SpeechEnd {
+  private heardAt: number | null = null;
+  private quietSince: number | null = null;
+  private lastAt: number | null = null;
+  /** How long real speech has been heard; a noise or a cough is too short to send. */
+  spokenMs = 0;
+
+  constructor(
+    private readonly speech = 0.15,
+    private readonly quiet = 0.06,
+    private readonly pauseMs = 1200,
+    private readonly giveUpMs = 6000,
+  ) {}
+
+  feed(level: number, now: number): SpeechEndState {
+    const step = this.lastAt === null ? 0 : now - this.lastAt;
+    this.lastAt = now;
+    if (level >= this.speech) {
+      this.heardAt ??= now;
+      this.quietSince = null;
+      this.spokenMs += step;
+      return "speaking";
+    }
+    if (this.heardAt === null) return now >= this.giveUpMs ? "nothing" : "waiting";
+    if (level < this.quiet) {
+      this.quietSince ??= now;
+      if (now - this.quietSince >= this.pauseMs) {
+        return this.spokenMs >= MIN_SPOKEN_MS ? "done" : "nothing";
+      }
+    }
+    return "speaking";
+  }
+}

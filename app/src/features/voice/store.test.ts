@@ -40,6 +40,11 @@ const naturalSettings = {
   natural_size_bytes: 0,
   engine: "natural" as const,
   speaker: "george" as const,
+  wake_installed: false,
+  wake_installing: false,
+  wake_enabled: false,
+  wake_sensitivity: "normal" as const,
+  wake_size_bytes: 0,
 };
 
 describe("the voice states", () => {
@@ -85,6 +90,11 @@ describe("the voice states", () => {
         natural_size_bytes: 0,
         engine: "windows",
         speaker: "george",
+        wake_installed: false,
+        wake_installing: false,
+        wake_enabled: false,
+        wake_sensitivity: "normal",
+        wake_size_bytes: 0,
       },
     });
     tauri.transcribe.mockResolvedValue({ text: "Bonjour", language: "fr", elapsed_ms: 1 });

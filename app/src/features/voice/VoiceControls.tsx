@@ -51,12 +51,14 @@ export function MicButton({
 
 /** What the voice is doing, under a chat box: listening, transcribing, or what went wrong. */
 export function VoiceStatus() {
-  const { phase, error, heard, cancelListening } = useVoice();
+  const { phase, error, heard, auto, cancelListening } = useVoice();
   const { showSettings } = useShell();
   if (phase === "listening") {
     return (
       <p className="voice-status" role="status">
-        Listening… click the mic again to send, Esc to cancel.{" "}
+        {auto
+          ? "Listening… it sends when you pause. Esc to cancel."
+          : "Listening… click the mic again to send, Esc to cancel."}{" "}
         <button className="link" onClick={() => void cancelListening()}>
           Cancel
         </button>

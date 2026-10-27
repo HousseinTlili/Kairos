@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 import { isFinished, type Turn } from "../chat/turn";
+import { wakeFeed } from "../../lib/tauri";
+import { WakeListener, micError } from "./recorder";
 import { useVoice, wasSpoken } from "./store";
 
 /**
@@ -37,4 +39,30 @@ export function useVoiceInChat(turns: Turn[]) {
       }
     }
   }, [turns, readAloud, answerSpoken, speak]);
+}
+
+/**
+ * The wake word (M9 Step 9), in the main window: while it is on, the microphone streams to
+ * Kairos's spotter; "Kairos" opens the quick box, which does the listening. Off, nothing listens.
+ */
+export function useWakeWord() {
+  const enabled = useVoice((s) => s.settings?.wake_enabled ?? false);
+  const loadSettings = useVoice((s) => s.loadSettings);
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const listener = new WakeListener((pcm) => wakeFeed(pcm).catch(() => false));
+    let stopped = false;
+    listener.start().catch((err: unknown) => {
+      if (!stopped) useVoice.setState({ error: micError(err) });
+    });
+    return () => {
+      stopped = true;
+      void listener.stop();
+    };
+  }, [enabled]);
 }

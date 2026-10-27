@@ -12,6 +12,7 @@ import { hotkeyLabel } from "../quick/model";
 import { LANGUAGE_NAMES, megabytes, missingVoices } from "./model";
 import { MicButton, VoiceStatus } from "./VoiceControls";
 import { NaturalVoice } from "./NaturalVoice";
+import { WakeWord } from "./WakeWord";
 import { useVoice } from "./store";
 
 function useWindowsVoices(): SpeechSynthesisVoice[] {
@@ -177,6 +178,8 @@ export function VoiceSettings() {
         <VoiceStatus />
         {heardText && <p className="voice-heard">“{heardText}”</p>}
       </div>
+
+      <WakeWord settings={settings} />
 
       <div className="settings-section">
         <h2>Push-to-talk key</h2>

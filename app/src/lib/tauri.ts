@@ -547,7 +547,15 @@ export interface VoiceSettings {
   /** What answers are read with now. */
   engine: "natural" | "windows";
   speaker: Speaker;
+  /** The wake word "Kairos" (M9 Step 9). */
+  wake_installed: boolean;
+  wake_installing: boolean;
+  wake_enabled: boolean;
+  wake_sensitivity: WakeSensitivity;
+  wake_size_bytes: number;
 }
+
+export type WakeSensitivity = "strict" | "normal" | "eager";
 
 export type Speaker =
   | "heart"
@@ -563,9 +571,9 @@ export type Speaker =
   | "lewis";
 
 export type VoiceInstallProgress =
-  | { phase: "downloading"; received: number; total: number }
-  | { phase: "done" }
-  | { phase: "failed"; message: string };
+  | { phase: "downloading"; received: number; total: number; what?: "wake" }
+  | { phase: "done"; what?: "wake" }
+  | { phase: "failed"; message: string; what?: "wake" };
 
 export type VoiceModelProgress =
   | { phase: "downloading"; id: VoiceModelId; received: number; total: number }
@@ -679,3 +687,26 @@ export interface MemoryState {
 }
 
 export const memoryState = () => call<MemoryState>("memory_state");
+
+// --- Wake word (M9 Step 9) ---------------------------------------------------------------------
+
+export const saveWakeSettings = (enabled: boolean, sensitivity: WakeSensitivity) =>
+  call<VoiceSettings>("save_wake_settings", { enabled, sensitivity });
+export const installWakeWord = () => call<null>("install_wake_word");
+
+/** A chunk of the always-on microphone, raw 16 kHz 16-bit; true when "Kairos" was heard. */
+export async function wakeFeed(pcm: Int16Array): Promise<boolean> {
+  try {
+    return await invoke<boolean>(
+      "wake_feed",
+      new Uint8Array(pcm.buffer, pcm.byteOffset, pcm.byteLength),
+    );
+  } catch (err) {
+    throw asCommandError(err);
+  }
+}
+
+/** Sent to the quick box when the wake word was heard. */
+export function onWake(handler: () => void): Promise<UnlistenFn> {
+  return listen<null>("wake", () => handler());
+}

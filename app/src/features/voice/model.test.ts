@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   MAX_SECONDS,
+  SpeechEnd,
+  plausibleAfterWake,
   downmix,
   guessLanguage,
   joinChunks,
@@ -116,5 +118,47 @@ describe("the natural voice's pieces", () => {
 
   it("gives nothing for nothing", () => {
     expect(splitSentences("   ")).toEqual([]);
+  });
+});
+
+describe("after the wake word", () => {
+  it("a noise too short to be a request sends nothing", () => {
+    const end = new SpeechEnd();
+    end.feed(0.01, 0);
+    end.feed(0.5, 100);
+    end.feed(0.5, 200);
+    expect(end.feed(0.02, 300)).toBe("speaking");
+    expect(end.feed(0.02, 1600)).toBe("nothing");
+  });
+
+  it("drops a transcript in a language the Master doesn't speak", () => {
+    expect(plausibleAfterWake("en")).toBe(true);
+    expect(plausibleAfterWake("ar")).toBe(true);
+    expect(plausibleAfterWake("pt")).toBe(false);
+    expect(plausibleAfterWake("ru")).toBe(false);
+    expect(plausibleAfterWake(null)).toBe(true);
+  });
+
+  it("is done after a pause that follows speech", () => {
+    const end = new SpeechEnd();
+    expect(end.feed(0.02, 100)).toBe("waiting");
+    expect(end.feed(0.4, 500)).toBe("speaking");
+    expect(end.feed(0.03, 900)).toBe("speaking");
+    expect(end.feed(0.02, 1900)).toBe("speaking");
+    expect(end.feed(0.02, 2150)).toBe("done");
+  });
+
+  it("a short breath between words doesn't end it", () => {
+    const end = new SpeechEnd();
+    end.feed(0.5, 100);
+    end.feed(0.02, 300);
+    expect(end.feed(0.5, 900)).toBe("speaking");
+    expect(end.feed(0.02, 1500)).toBe("speaking");
+  });
+
+  it("gives up when nothing is said", () => {
+    const end = new SpeechEnd();
+    expect(end.feed(0.01, 3000)).toBe("waiting");
+    expect(end.feed(0.01, 6000)).toBe("nothing");
   });
 });

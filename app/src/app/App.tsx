@@ -14,6 +14,7 @@ import { SystemPage } from "../features/system/SystemPage";
 import { useSystem } from "../features/system/store";
 import { useShell } from "../features/shell/store";
 import { useStartup } from "../features/startup/store";
+import { useWakeWord } from "../features/voice/hooks";
 import { onNavigate, onOpenConversation } from "../lib/tauri";
 
 export default function App() {
@@ -26,6 +27,8 @@ export default function App() {
   const startNotifications = useNotifications((state) => state.start);
   const startBriefing = useBriefing((state) => state.start);
   const show = useShell((state) => state.show);
+  // The main window keeps the wake-word microphone; it lives as long as Kairos runs (M9 Step 9).
+  useWakeWord();
 
   useEffect(() => {
     // Listen before anything can be sent or resumed, so no run event is missed.

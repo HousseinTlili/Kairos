@@ -20,6 +20,7 @@ export function NaturalVoice({ settings }: { settings: VoiceSettings }) {
 
   useEffect(() => {
     const stop = onVoiceInstall((event) => {
+      if (event.what === "wake") return;
       if (event.phase === "downloading") setProgress(event);
       else {
         setProgress(null);
