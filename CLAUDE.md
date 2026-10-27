@@ -19,6 +19,8 @@ verify on the PC; add every new **(on the PC)** check to it.
 **M9** (voice, `m9/voice`): local Whisper via `whisper-rs`; the build needs CMake and libclang,
 which the repo's `.cargo/config.toml` points at (VS Build Tools 2022, `C:\Program Files\LLVM`).
 It also sets whisper.cpp's Release flags: without them MSVC builds it unoptimised (~15x slower).
+**M12** (Kairos in the Master's own browser, `m12/browser`): spec only, `docs/milestones/M12.md`;
+D-027 is Proposed. Rules first (Steps 2–4), the profile switch last (Step 5).
 
 ## Roles
 
