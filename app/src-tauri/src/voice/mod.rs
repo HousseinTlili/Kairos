@@ -4,6 +4,7 @@
 pub mod models;
 pub mod stt;
 pub mod tts;
+pub mod wake;
 #[cfg(test)]
 mod wav;
 
@@ -20,6 +21,9 @@ pub const PTT_SETTING: &str = "voice_ptt_hotkey";
 /// "natural" (Kokoro, M9 Step 8) or "windows"; natural once it is downloaded, unless set.
 pub const ENGINE_SETTING: &str = "voice_engine";
 pub const SPEAKER_SETTING: &str = "voice_speaker";
+/// "1" when the wake word listens; "strict" | "normal" | "eager".
+pub const WAKE_SETTING: &str = "voice_wake";
+pub const WAKE_SENSITIVITY_SETTING: &str = "voice_wake_sensitivity";
 /// Next to the quick box's Ctrl+Alt+K; J for "just say it".
 pub const DEFAULT_PTT: &str = "Ctrl+Alt+J";
 
@@ -44,4 +48,7 @@ pub struct VoiceState {
     /// The natural voice (Kokoro), loaded on first use.
     pub voice: tts::Voice,
     pub installing_voice: AtomicBool,
+    /// The wake word "Kairos" (M9 Step 9).
+    pub wake: wake::Wake,
+    pub installing_wake: AtomicBool,
 }

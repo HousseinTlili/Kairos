@@ -115,16 +115,33 @@ pub fn default_dir() -> Result<PathBuf, VoiceError> {
 }
 
 pub fn is_installed(dir: &Path) -> bool {
-    PACKAGES
+    is_installed_all(dir, &PACKAGES)
+}
+
+pub fn is_installed_all(dir: &Path, packages: &[&Package]) -> bool {
+    packages
         .iter()
         .all(|p| dir.join(p.folder).join(p.marker).is_file())
 }
 
 /// Downloads and unpacks whatever is missing; `progress` gets (bytes so far, total bytes).
-pub async fn install(dir: &Path, mut progress: impl FnMut(u64, u64)) -> Result<(), VoiceError> {
-    let total = total_size();
+pub async fn install(dir: &Path, progress: impl FnMut(u64, u64)) -> Result<(), VoiceError> {
+    install_packages(dir, &PACKAGES, progress).await
+}
+
+/// Downloads and unpacks whichever of `packages` is missing (the wake word shares the runtime).
+pub async fn install_packages(
+    dir: &Path,
+    packages: &[&Package],
+    mut progress: impl FnMut(u64, u64),
+) -> Result<(), VoiceError> {
+    let total: u64 = packages
+        .iter()
+        .filter(|p| !dir.join(p.folder).join(p.marker).is_file())
+        .map(|p| (p.expected)().size)
+        .sum();
     let mut done = 0;
-    for package in PACKAGES {
+    for package in packages.iter().copied() {
         let expected = (package.expected)();
         if !dir.join(package.folder).join(package.marker).is_file() {
             let base = done;
@@ -139,8 +156,8 @@ pub async fn install(dir: &Path, mut progress: impl FnMut(u64, u64)) -> Result<(
                     expected.file, package.marker
                 )));
             }
+            done += expected.size;
         }
-        done += expected.size;
         progress(done, total);
     }
     Ok(())
@@ -283,7 +300,7 @@ impl Voice {
 }
 
 #[cfg(windows)]
-mod ffi {
+pub(crate) mod ffi {
     //! The few sherpa-onnx C functions Kairos needs, from `c-api.h` of v1.13.8. The structs must
     //! match that header field for field; zeroed fields mean "default" to sherpa-onnx.
 
@@ -421,12 +438,12 @@ mod ffi {
     // offline TTS has no thread affinity.
     unsafe impl Send for Engine {}
 
-    fn c(path: &Path) -> Result<CString, VoiceError> {
+    pub(crate) fn c(path: &Path) -> Result<CString, VoiceError> {
         CString::new(path.to_string_lossy().into_owned())
             .map_err(|_| VoiceError::Model("a voice file path contains a NUL".into()))
     }
 
-    fn symbol<T>(module: *mut c_void, name: &str) -> Result<T, VoiceError> {
+    pub(crate) fn symbol<T>(module: *mut c_void, name: &str) -> Result<T, VoiceError> {
         use windows_sys::Win32::System::LibraryLoader::GetProcAddress;
         let cname = CString::new(name).map_err(|_| VoiceError::Model("bad symbol".into()))?;
         // SAFETY: `module` is a loaded sherpa-onnx-c-api.dll; the name is NUL-terminated.
@@ -437,33 +454,40 @@ mod ffi {
         Ok(unsafe { std::mem::transmute_copy(&proc) })
     }
 
+    /// sherpa-onnx-c-api.dll, shared by the voice and the wake word (Windows hands back the same
+    /// module when it is already loaded). Never freed: unloading ONNX Runtime isn't safe.
+    pub(crate) fn library(lib_dir: &Path) -> Result<*mut c_void, VoiceError> {
+        use std::os::windows::ffi::OsStrExt;
+        use windows_sys::Win32::System::LibraryLoader::{
+            LOAD_LIBRARY_SEARCH_DEFAULT_DIRS, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR, LoadLibraryExW,
+        };
+        let dll: Vec<u16> = lib_dir
+            .join("sherpa-onnx-c-api.dll")
+            .as_os_str()
+            .encode_wide()
+            .chain(Some(0))
+            .collect();
+        // Its own folder is searched for onnxruntime.dll; PATH isn't.
+        // SAFETY: a NUL-terminated wide path.
+        let module = unsafe {
+            LoadLibraryExW(
+                dll.as_ptr(),
+                std::ptr::null_mut(),
+                LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS,
+            )
+        };
+        if module.is_null() {
+            return Err(VoiceError::Model(format!(
+                "couldn't load the voice engine: {}",
+                std::io::Error::last_os_error()
+            )));
+        }
+        Ok(module)
+    }
+
     impl Engine {
         pub fn load(lib_dir: &Path, model_dir: &Path) -> Result<Self, VoiceError> {
-            use std::os::windows::ffi::OsStrExt;
-            use windows_sys::Win32::System::LibraryLoader::{
-                LOAD_LIBRARY_SEARCH_DEFAULT_DIRS, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR, LoadLibraryExW,
-            };
-            let dll: Vec<u16> = lib_dir
-                .join("sherpa-onnx-c-api.dll")
-                .as_os_str()
-                .encode_wide()
-                .chain(Some(0))
-                .collect();
-            // Its own folder is searched for onnxruntime.dll; PATH isn't.
-            // SAFETY: a NUL-terminated wide path; the module is never freed (see `Voice::unload`).
-            let module = unsafe {
-                LoadLibraryExW(
-                    dll.as_ptr(),
-                    std::ptr::null_mut(),
-                    LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS,
-                )
-            };
-            if module.is_null() {
-                return Err(VoiceError::Model(format!(
-                    "couldn't load the voice engine: {}",
-                    std::io::Error::last_os_error()
-                )));
-            }
+            let module = library(lib_dir)?;
             let create: Create = symbol(module, "SherpaOnnxCreateOfflineTts")?;
             let destroy: Destroy = symbol(module, "SherpaOnnxDestroyOfflineTts")?;
             let generate: Generate = symbol(module, "SherpaOnnxOfflineTtsGenerate")?;

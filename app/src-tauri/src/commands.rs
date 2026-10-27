@@ -1791,6 +1791,14 @@ pub struct VoiceSettings {
     /// "natural" or "windows": what answers are read with now.
     pub engine: &'static str,
     pub speaker: Speaker,
+    /// The wake word "Kairos" (M9 Step 9).
+    pub wake_installed: bool,
+    pub wake_installing: bool,
+    pub wake_enabled: bool,
+    /// "strict" | "normal" | "eager".
+    pub wake_sensitivity: String,
+    /// What a wake-word download still needs (the runtime is shared with the natural voice).
+    pub wake_size_bytes: u64,
 }
 
 fn setting_or(state: &AppState, key: &str) -> Option<String> {
@@ -1813,7 +1821,10 @@ fn stored_voice_model(state: &AppState) -> ModelId {
 
 fn voice_settings(state: &AppState, voice: &VoiceState) -> Result<VoiceSettings, CommandError> {
     let dir = voice_models::default_dir()?;
-    let natural_installed = crate::voice::tts::is_installed(&crate::voice::tts::default_dir()?);
+    let voices = crate::voice::tts::default_dir()?;
+    let natural_installed = crate::voice::tts::is_installed(&voices);
+    let wake_installed =
+        crate::voice::tts::is_installed_all(&voices, &crate::voice::wake::PACKAGES);
     Ok(VoiceSettings {
         models: voice_models::list(&dir),
         model: stored_voice_model(state),
@@ -1836,6 +1847,18 @@ fn voice_settings(state: &AppState, voice: &VoiceState) -> Result<VoiceSettings,
             "windows"
         },
         speaker: stored_speaker(state),
+        wake_installed,
+        wake_installing: voice
+            .installing_wake
+            .load(std::sync::atomic::Ordering::SeqCst),
+        wake_enabled: wake_installed
+            && setting_or(state, voice::WAKE_SETTING).as_deref() == Some("1"),
+        wake_sensitivity: stored_wake_sensitivity(state),
+        wake_size_bytes: crate::voice::wake::PACKAGES
+            .iter()
+            .filter(|p| !voices.join(p.folder).join(p.marker).is_file())
+            .map(|p| (p.expected)().size)
+            .sum(),
     })
 }
 
@@ -2164,4 +2187,103 @@ pub async fn memory_state() -> Result<crate::memory::MemoryState, CommandError> 
         kind: "memory",
         message: err.to_string(),
     })
+}
+
+// --- Wake word (M9 Step 9) ----------------------------------------------------------------------
+
+fn stored_wake_sensitivity(state: &AppState) -> String {
+    setting_or(state, voice::WAKE_SENSITIVITY_SETTING)
+        .filter(|s| ["strict", "normal", "eager"].contains(&s.as_str()))
+        .unwrap_or_else(|| "normal".to_string())
+}
+
+#[tauri::command]
+pub async fn save_wake_settings(
+    state: tauri::State<'_, AppState>,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+    enabled: bool,
+    sensitivity: String,
+) -> Result<VoiceSettings, CommandError> {
+    let sensitivity = if ["strict", "normal", "eager"].contains(&sensitivity.as_str()) {
+        sensitivity
+    } else {
+        "normal".to_string()
+    };
+    state.with_store(|store| {
+        store.set_setting(voice::WAKE_SETTING, if enabled { "1" } else { "0" })?;
+        store.set_setting(voice::WAKE_SENSITIVITY_SETTING, &sensitivity)
+    })?;
+    if !enabled {
+        voice.wake.unload();
+    }
+    voice_settings(&state, &voice)
+}
+
+/// Downloads the wake-word model (and the runtime, if the natural voice isn't installed), on the
+/// user's click, sending `voice-install` events like the natural voice.
+#[tauri::command]
+pub async fn install_wake_word(
+    app: tauri::AppHandle,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+) -> Result<(), CommandError> {
+    use std::sync::atomic::Ordering;
+    if voice.installing_wake.swap(true, Ordering::SeqCst) {
+        return Err(CommandError {
+            kind: "busy",
+            message: "The wake word is already downloading.".into(),
+        });
+    }
+    let outcome = match voice_tts::default_dir() {
+        Ok(dir) => {
+            voice_tts::install_packages(&dir, &crate::voice::wake::PACKAGES, |received, total| {
+                let _ = app.emit(
+                    "voice-install",
+                    serde_json::json!({ "phase": "downloading", "received": received, "total": total, "what": "wake" }),
+                );
+            })
+            .await
+        }
+        Err(err) => Err(err),
+    };
+    voice.installing_wake.store(false, Ordering::SeqCst);
+    let _ = app.emit(
+        "voice-install",
+        match &outcome {
+            Ok(()) => serde_json::json!({ "phase": "done", "what": "wake" }),
+            Err(err) => {
+                serde_json::json!({ "phase": "failed", "message": err.to_string(), "what": "wake" })
+            }
+        },
+    );
+    Ok(outcome?)
+}
+
+/// One chunk of the always-on microphone (raw 16 kHz 16-bit mono, as for `transcribe`). When
+/// "Kairos" is heard, the quick box opens and is told to listen.
+#[tauri::command]
+pub async fn wake_feed(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+    request: tauri::ipc::Request<'_>,
+) -> Result<bool, CommandError> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(VoiceError::Audio("expected raw audio".into()).into());
+    };
+    let samples = crate::voice::stt::pcm16_to_f32(bytes);
+    let sensitivity = stored_wake_sensitivity(&state);
+    let dir = voice_tts::default_dir()?;
+    let voice = Arc::clone(&voice);
+    let heard =
+        tauri::async_runtime::spawn_blocking(move || voice.wake.feed(&dir, &samples, &sensitivity))
+            .await
+            .map_err(|err| CommandError {
+                kind: "internal",
+                message: format!("the wake word stopped: {err}"),
+            })??;
+    if heard {
+        crate::quick::show(&app);
+        let _ = app.emit_to(crate::quick::QUICK_WINDOW, "wake", ());
+    }
+    Ok(heard)
 }
