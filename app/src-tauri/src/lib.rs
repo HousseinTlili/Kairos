@@ -5,6 +5,7 @@ mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
 mod keyring;
+mod memory;
 mod models;
 mod notifications;
 mod persona;
@@ -222,7 +223,8 @@ pub fn run() {
             commands::install_natural_voice,
             commands::remove_natural_voice,
             commands::speak_natural,
-            commands::warm_natural_voice
+            commands::warm_natural_voice,
+            commands::memory_state
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

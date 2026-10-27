@@ -339,6 +339,18 @@ Build Kokoro into Kairos with the full model.").
 
 ---
 
+## D-026 — Memory: shown read-only, forgotten through Hermes; holographic provider — Accepted
+
+For M11. Kairos reads Hermes's `memories\USER.md` and `MEMORY.md` and the holographic provider's
+`memory_store.db` read-only for the "What Kairos remembers" page, and never edits them: a Forget
+is a request to Kairos to remove that item with its own memory tool, in a conversation the sidebar
+hides. The provider is `holographic` 0.18.3 (local SQLite, no key, network or model calls by
+default); enabling it changed one line of Hermes's `config.yaml` (`memory.provider`), backed up
+first to `%APPDATA%\kairos\backups\hermes-config.yaml.before-holographic`. Accepted by the product
+owner on 2026-10-27, with a persona line telling Kairos to remember lasting facts and no secrets.
+
+---
+
 ## Answered questions
 
 - **Q-2 — First real use cases.** Answered 2026-10-24: the welcome-back briefing (an evolution of

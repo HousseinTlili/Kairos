@@ -139,3 +139,14 @@ Spec: `docs/milestones/M10.md`. About 5 minutes.
 - [ ] Ask in French (typed or spoken): the answer is still in English.
 - [ ] **Restore the original** (asks first) brings Hermes's default back; then save Kairos again.
 - [ ] Then sign the persona off.
+
+## M11 — Memory (`m10/persona`)
+
+Spec: `docs/milestones/M11.md`. About 5 minutes.
+
+- [ ] Tell Kairos something lasting ("I prefer short answers", "my project is called Kairos").
+- [ ] Settings ▸ Memory shows it (under About you, Kairos's notes or Facts).
+- [ ] Forget it (asks first): it disappears after a moment, and Kairos no longer knows it.
+- [ ] The "Forget a memory" conversation doesn't clutter the sidebar.
+- [ ] Then sign memory off.
+

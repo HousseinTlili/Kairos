@@ -13,7 +13,8 @@ import { useConnection } from "../connection/store";
 import { useVoiceInChat } from "../voice/hooks";
 import { useVoice } from "../voice/store";
 import { MicButton, VoiceStatus } from "../voice/VoiceControls";
-import { SealMark, usePresence } from "../shell/SealMark";
+import { usePresence } from "../shell/presence";
+import { SealMark } from "../shell/SealMark";
 import { hidesForCapture, quickSessionKey } from "./model";
 
 function rememberedSession(): string | null {

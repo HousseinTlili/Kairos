@@ -2144,3 +2144,24 @@ pub async fn warm_natural_voice(
     });
     Ok(())
 }
+
+// --- Memory (M11, D-026) ------------------------------------------------------------------------
+
+/// What Kairos remembers: Hermes's memory files and the fact store, read-only.
+#[tauri::command]
+pub async fn memory_state() -> Result<crate::memory::MemoryState, CommandError> {
+    let home = local::hermes_home()?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let provider = local::memory_provider(&home);
+        crate::memory::read_all(&home, provider)
+    })
+    .await
+    .map_err(|err| CommandError {
+        kind: "internal",
+        message: format!("couldn't read memory: {err}"),
+    })?
+    .map_err(|err| CommandError {
+        kind: "memory",
+        message: err.to_string(),
+    })
+}

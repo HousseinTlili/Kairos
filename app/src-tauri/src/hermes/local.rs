@@ -100,6 +100,11 @@ pub fn terminal_backend(home: &Path) -> Option<String> {
     config_word(home, "terminal.backend")
 }
 
+/// `hermes config get memory.provider` (`holographic`, or empty for built-in only; M11). Blocking.
+pub fn memory_provider(home: &Path) -> Option<String> {
+    config_word(home, "memory.provider")
+}
+
 /// A one-word Hermes setting through the CLI (`admin_config_rw` is false, so not through the API).
 fn config_word(home: &Path, key: &str) -> Option<String> {
     let mut command = Command::new(hermes_cli(home));

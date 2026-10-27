@@ -651,3 +651,31 @@ export function onVoiceInstall(
 ): Promise<UnlistenFn> {
   return listen<VoiceInstallProgress>("voice-install", (event) => handler(event.payload));
 }
+
+// --- Memory (M11, D-026). Shapes mirror src-tauri/src/memory.rs. -------------------------------
+
+export interface MemoryFile {
+  entries: string[];
+  /** Characters used, as Hermes counts them. */
+  used: number;
+  limit: number;
+}
+
+export interface Fact {
+  id: number;
+  content: string;
+  category: string;
+  /** 0–1. */
+  trust: number;
+  updated_at: string;
+}
+
+export interface MemoryState {
+  user: MemoryFile;
+  notes: MemoryFile;
+  /** null when there is no fact store yet. */
+  facts: Fact[] | null;
+  provider: string | null;
+}
+
+export const memoryState = () => call<MemoryState>("memory_state");

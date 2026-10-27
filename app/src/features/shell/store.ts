@@ -12,6 +12,7 @@ export type SettingsTab =
   | "quick"
   | "voice"
   | "persona"
+  | "memory"
   | "startup";
 
 interface ShellState {

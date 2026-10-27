@@ -8,6 +8,7 @@ import { RulesPage } from "../rules/RulesPage";
 import { StartupSettings } from "../startup/StartupSettings";
 import { VoiceSettings } from "../voice/VoiceSettings";
 import { PersonaSettings } from "../persona/PersonaSettings";
+import { MemorySettings } from "../memory/MemorySettings";
 import { useSystem } from "../system/store";
 import { useShell, type SettingsTab } from "./store";
 
@@ -17,6 +18,7 @@ const GROUPS: { label: string; tabs: { id: SettingsTab; label: string }[] }[] = 
     label: "Kairos",
     tabs: [
       { id: "persona", label: "Persona" },
+      { id: "memory", label: "Memory" },
       { id: "voice", label: "Voice" },
       { id: "quick", label: "Quick box" },
       { id: "briefing", label: "Briefing" },
@@ -94,6 +96,8 @@ export function Settings() {
           <VoiceSettings />
         ) : settingsTab === "persona" ? (
           <PersonaSettings />
+        ) : settingsTab === "memory" ? (
+          <MemorySettings />
         ) : settingsTab === "startup" ? (
           <StartupSettings />
         ) : (

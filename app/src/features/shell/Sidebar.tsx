@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useChat } from "../chat/store";
 import { useConnection } from "../connection/store";
 import type { Conversation, OtherConversation } from "../../lib/tauri";
-import { PRESENCE_WORDS, SealMark, usePresence } from "./SealMark";
+import { PRESENCE_WORDS, usePresence } from "./presence";
+import { SealMark } from "./SealMark";
 import { useBriefing } from "../briefing/store";
 import { badgeText } from "../notifications/model";
 import { useNotifications } from "../notifications/store";
@@ -16,6 +17,7 @@ import {
   SidebarIcon,
   SunIcon,
 } from "./icons";
+import { isMemoryConversation } from "../memory/model";
 import { useShell } from "./store";
 
 const DAY = 24 * 60 * 60;
@@ -88,7 +90,10 @@ export function Sidebar() {
   const busy = turns.some((t) =>
     ["sending", "running", "waiting_for_approval", "stopping"].includes(t.status),
   );
-  const groups = groupByAge(conversations.kairos);
+  // Forget requests (M11) have their own conversation, kept out of the list.
+  const groups = groupByAge(
+    conversations.kairos.filter((c) => !isMemoryConversation(c.session_id)),
+  );
   const badge = badgeText(useNotifications((s) => s.state?.unread ?? 0));
   const reopenBriefing = useBriefing((s) => s.reopen);
 
