@@ -45,7 +45,9 @@ export function WakeWord({ settings }: { settings: VoiceSettings }) {
       <p className="muted small">
         Say <strong>&ldquo;Kairos&rdquo;</strong> (or &ldquo;Hey Kairos&rdquo;) and the quick box
         opens and listens; it sends what you say when you pause. It runs on this PC: nothing is
-        recorded or sent while it waits for its name.
+        recorded or sent while it waits for its name. When you start speaking, the speech model
+        checks the first two seconds for the name, so it works with your accent and costs a little
+        processor time while people talk.
       </p>
       {!settings.wake_installed ? (
         settings.wake_installing || progress ? (

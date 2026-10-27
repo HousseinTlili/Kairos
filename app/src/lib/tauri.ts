@@ -706,7 +706,21 @@ export async function wakeFeed(pcm: Int16Array): Promise<boolean> {
   }
 }
 
-/** Sent to the quick box when the wake word was heard. */
-export function onWake(handler: () => void): Promise<UnlistenFn> {
-  return listen<null>("wake", () => handler());
+/** A wake: `spoken` when words already followed the name ("Kairos, open…"). */
+export interface Woken {
+  spoken: boolean;
 }
+
+/** Sent to the quick box when Whisper confirmed the name. */
+export function onWake(handler: (woken: Woken) => void): Promise<UnlistenFn> {
+  return listen<Woken>("wake", (event) => handler(event.payload));
+}
+
+/**
+ * The request after a wake, heard from the start of the sentence that held the name (Rust keeps
+ * it), without the name.
+ */
+export const wakeTranscribe = (language: string | null) =>
+  call<Transcript>("wake_transcribe", { language });
+/** The quick box stopped listening after a wake without a request. */
+export const wakeCancel = () => call<null>("wake_cancel");

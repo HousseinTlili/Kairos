@@ -227,7 +227,9 @@ pub fn run() {
             commands::memory_state,
             commands::save_wake_settings,
             commands::install_wake_word,
-            commands::wake_feed
+            commands::wake_feed,
+            commands::wake_transcribe,
+            commands::wake_cancel
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

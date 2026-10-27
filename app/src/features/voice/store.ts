@@ -4,6 +4,8 @@ import {
   speakNatural,
   transcribe,
   voiceState,
+  wakeCancel,
+  wakeTranscribe,
   warmNaturalVoice,
   type CommandError,
   type VoiceSettings,
@@ -43,7 +45,7 @@ interface VoiceState {
    * Starts recording; a second call while listening is ignored. With `onAutoText` (after the wake
    * word) it also stops by itself when the Master pauses, and hands over the words.
    */
-  startListening: (onAutoText?: (text: string) => void) => Promise<void>;
+  startListening: (onAutoText?: (text: string) => void, spoken?: boolean) => Promise<void>;
   /** Stops recording and returns the words, or null for silence, a cancel or an error. */
   finishListening: () => Promise<string | null>;
   cancelListening: () => Promise<void>;
@@ -172,7 +174,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
     set({ settings });
   },
 
-  async startListening(onAutoText) {
+  async startListening(onAutoText, spoken) {
     if (get().phase !== "idle") return;
     get().stopSpeaking();
     set({ phase: "listening", level: 0, error: null, auto: Boolean(onAutoText) });
@@ -180,6 +182,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
     if (get().settings?.engine === "natural") void warmNaturalVoice().catch(() => {});
     recorder = new Recorder();
     const end = onAutoText ? new SpeechEnd() : null;
+    if (spoken) end?.alreadySpoken();
     const started = performance.now();
     let ended = false;
     try {
@@ -211,13 +214,19 @@ export const useVoice = create<VoiceState>((set, get) => ({
     const current = recorder;
     recorder = null;
     set({ phase: "transcribing", level: 0 });
+    const auto = get().auto;
+    const language = get().settings?.language ?? null;
     try {
-      const recording = await current.stop();
-      const transcript = await transcribe(
-        toPcm16(recording.samples),
-        get().settings?.language ?? null,
-      );
-      const auto = get().auto;
+      // After a wake, Rust kept the request from the start of the sentence that held the name;
+      // this recording only tells when the Master paused.
+      let transcript;
+      if (auto) {
+        await current.cancel();
+        transcript = await wakeTranscribe(language);
+      } else {
+        const recording = await current.stop();
+        transcript = await transcribe(toPcm16(recording.samples), language);
+      }
       set({ phase: "idle", heard: transcript.language, auto: false });
       if (auto && !plausibleAfterWake(transcript.language)) {
         set({ error: "Didn't catch that." });
@@ -238,7 +247,8 @@ export const useVoice = create<VoiceState>((set, get) => ({
   async cancelListening() {
     const current = recorder;
     recorder = null;
-    set({ phase: "idle", level: 0 });
+    if (get().auto) void wakeCancel().catch(() => {});
+    set({ phase: "idle", level: 0, auto: false });
     await current?.cancel();
   },
 

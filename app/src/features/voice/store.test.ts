@@ -6,6 +6,8 @@ const tauri = vi.hoisted(() => ({
   saveVoiceSettings: vi.fn(),
   speakNatural: vi.fn(),
   warmNaturalVoice: vi.fn(),
+  wakeTranscribe: vi.fn(),
+  wakeCancel: vi.fn(),
 }));
 vi.mock("../../lib/tauri", () => tauri);
 
@@ -134,6 +136,30 @@ describe("the voice states", () => {
     expect(tauri.transcribe).not.toHaveBeenCalled();
     expect(useVoice.getState().phase).toBe("idle");
     expect(await useVoice.getState().finishListening()).toBeNull();
+  });
+
+  it("after a wake, the request is the one Kairos kept from the start of the sentence", async () => {
+    tauri.wakeTranscribe.mockResolvedValue({ text: "open Notepad", language: "en", elapsed_ms: 1 });
+    await useVoice.getState().startListening(() => {});
+    expect(await useVoice.getState().finishListening()).toBe("open Notepad");
+    expect(tauri.wakeTranscribe).toHaveBeenCalledWith(null);
+    expect(tauri.transcribe).not.toHaveBeenCalled();
+    expect(recorder.cancel).toHaveBeenCalled();
+    expect(useVoice.getState().auto).toBe(false);
+  });
+
+  it("after a wake, a request in a language the Master doesn't speak is dropped", async () => {
+    tauri.wakeTranscribe.mockResolvedValue({ text: "E aí", language: "pt", elapsed_ms: 1 });
+    await useVoice.getState().startListening(() => {});
+    expect(await useVoice.getState().finishListening()).toBeNull();
+  });
+
+  it("a wake that ends in silence lets Kairos drop what it kept", async () => {
+    tauri.wakeCancel.mockResolvedValue(null);
+    await useVoice.getState().startListening(() => {});
+    await useVoice.getState().cancelListening();
+    expect(tauri.wakeCancel).toHaveBeenCalled();
+    expect(tauri.wakeTranscribe).not.toHaveBeenCalled();
   });
 
   it("warms the natural voice while the user speaks", async () => {

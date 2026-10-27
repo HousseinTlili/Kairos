@@ -81,6 +81,11 @@ Write down anything that looked wrong, including how long step 2 took.
 | Live, on the PC's microphone, at 0.25 | **Two stray requests sent** ("E aí, Kairos?", a Russian sentence). Guards added (under 0.4 s of speech, or a language other than en/fr/ar, sends nothing) and normal moved to 0.28. Wake word left **off** |
 | Rust tests, clippy | Wake tests pass; clippy clean |
 | TS tests, lint, tsc | 140 passed; clean |
+| The product owner's own voice, spotter alone (three recordings, 2026-10-27) | **Never found**, at any threshold down to 0.10 and with ~17,700 sound-alike spellings; it hears only "GA I E", "KA I O", "GA U" |
+| Same recordings, two steps (Whisper confirms; ignored Rust test) | **5 of 5** wake it, one by one (Whisper: "Gairo's", "Kairos" ×3, "Keiras"); George's 2 of 2; the two sentences without the name 0 |
+| Live, in the dev app: George's "Hey Kairos, what time is it?" fed to `wake_feed` | Wakes at 1.8 s; the quick box sends **"what time is it?"** (the name dropped, nothing lost) and Kairos answers |
+| Rust tests, clippy, fmt (two steps) | 197 + 19 passed; clean |
+| TS tests, lint, tsc (two steps) | 144 passed; clean |
 
 **Product owner, on the PC:**
 

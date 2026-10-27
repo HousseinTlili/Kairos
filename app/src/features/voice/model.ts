@@ -231,6 +231,12 @@ export class SpeechEnd {
     private readonly giveUpMs = 6000,
   ) {}
 
+  /** The Master was already speaking when listening began (the request after "Kairos, …"). */
+  alreadySpoken() {
+    this.heardAt ??= 0;
+    this.spokenMs = Math.max(this.spokenMs, MIN_SPOKEN_MS);
+  }
+
   feed(level: number, now: number): SpeechEndState {
     const step = this.lastAt === null ? 0 : now - this.lastAt;
     this.lastAt = now;

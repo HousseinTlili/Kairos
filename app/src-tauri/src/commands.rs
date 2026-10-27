@@ -2273,17 +2273,70 @@ pub async fn wake_feed(
     let samples = crate::voice::stt::pcm16_to_f32(bytes);
     let sensitivity = stored_wake_sensitivity(&state);
     let dir = voice_tts::default_dir()?;
+    // Whisper confirms the name (two steps, 2026-10-27), so the wake word needs the speech model.
+    let model = whisper_model(&state)?;
     let voice = Arc::clone(&voice);
-    let heard =
-        tauri::async_runtime::spawn_blocking(move || voice.wake.feed(&dir, &samples, &sensitivity))
-            .await
-            .map_err(|err| CommandError {
-                kind: "internal",
-                message: format!("the wake word stopped: {err}"),
-            })??;
-    if heard {
+    let woken = tauri::async_runtime::spawn_blocking(move || {
+        voice.wake.feed(&dir, &samples, &sensitivity, |moment| {
+            Ok(voice.engine.transcribe(&model, moment, None)?.text)
+        })
+    })
+    .await
+    .map_err(|err| CommandError {
+        kind: "internal",
+        message: format!("the wake word stopped: {err}"),
+    })??;
+    if let Some(woken) = woken {
         crate::quick::show(&app);
-        let _ = app.emit_to(crate::quick::QUICK_WINDOW, "wake", ());
+        let _ = app.emit_to(crate::quick::QUICK_WINDOW, "wake", woken);
     }
-    Ok(heard)
+    Ok(woken.is_some())
+}
+
+fn whisper_model(state: &AppState) -> Result<std::path::PathBuf, CommandError> {
+    let id = stored_voice_model(state);
+    let dir = voice_models::default_dir()?;
+    if !voice_models::is_ready(&dir, id) {
+        return Err(CommandError {
+            kind: "voice_model_missing",
+            message: "Download a voice model first: Settings ▸ Voice.".into(),
+        });
+    }
+    Ok(voice_models::path(&dir, id))
+}
+
+/// The request heard after a wake, from the start of the utterance that held the name (so
+/// "Kairos, open Notepad" said in one breath loses nothing), without the name itself.
+#[tauri::command]
+pub async fn wake_transcribe(
+    state: tauri::State<'_, AppState>,
+    voice: tauri::State<'_, Arc<VoiceState>>,
+    language: Option<String>,
+) -> Result<crate::voice::stt::Transcript, CommandError> {
+    let model = whisper_model(&state)?;
+    let sensitivity = stored_wake_sensitivity(&state);
+    let voice = Arc::clone(&voice);
+    tauri::async_runtime::spawn_blocking(move || {
+        let samples = voice.wake.take_capture().unwrap_or_default();
+        let mut heard = voice
+            .engine
+            .transcribe(&model, &samples, language.as_deref())?;
+        if let Some(rest) = crate::voice::wake::after_name(&heard.text, &sensitivity) {
+            heard.text = rest.to_string();
+        }
+        Ok::<_, VoiceError>(heard)
+    })
+    .await
+    .map_err(|err| CommandError {
+        kind: "internal",
+        message: format!("transcription stopped: {err}"),
+    })?
+    .map_err(CommandError::from)
+}
+
+/// The quick box stopped listening after a wake without sending anything.
+#[tauri::command]
+pub async fn wake_cancel(voice: tauri::State<'_, Arc<VoiceState>>) -> Result<(), CommandError> {
+    voice.wake.drop_capture();
+    Ok(())
 }

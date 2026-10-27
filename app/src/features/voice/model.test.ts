@@ -122,6 +122,13 @@ describe("the natural voice's pieces", () => {
 });
 
 describe("after the wake word", () => {
+  it("ends at the first pause when the Master was already speaking at the wake", () => {
+    const end = new SpeechEnd();
+    end.alreadySpoken();
+    expect(end.feed(0.02, 100)).toBe("speaking");
+    expect(end.feed(0.02, 1400)).toBe("done");
+  });
+
   it("a noise too short to be a request sends nothing", () => {
     const end = new SpeechEnd();
     end.feed(0.01, 0);
