@@ -91,8 +91,8 @@ Write down anything that looked wrong, including how long step 2 took.
 
 | # | Do | Look for | Result |
 |---|---|---|---|
-| 19 | Settings ▸ Voice ▸ Wake word: switch on "Listen for Kairos" (Normal) | Windows shows the microphone in use | |
-| 20 | Say "Kairos, what time is it?" from your seat | The quick box opens, listens, sends when you pause, answers aloud | |
+| 19 | Settings ▸ Voice ▸ Wake word: switch on "Listen for Kairos" (Normal) | Windows shows the microphone in use || Works (product owner, live, 2026-10-27) |
+| 20 | Say "Kairos, what time is it?" from your seat | The quick box opens, listens, sends when you pause, answers aloud || Works (product owner, live, 2026-10-27) |
 | 21 | Say "Kairos", then nothing | The box opens and quietly gives up after about 6 s; nothing is sent | |
 | 22 | Talk, play a video, leave it on for 30 min | No wake, and nothing sent, without the name. If it wakes by itself, try Strict | |
 | 23 | A French and an Arabic request after "Kairos" | Both are sent | |
