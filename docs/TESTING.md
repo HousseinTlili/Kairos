@@ -153,3 +153,14 @@ Spec: `docs/milestones/M11.md`. About 5 minutes.
 - [ ] The "Forget a memory" conversation doesn't clutter the sidebar.
 - [ ] Then sign memory off.
 
+
+## M12 — Browser rules (`m12/browser`)
+
+Spec: `docs/milestones/M12.md`; details: `docs/milestones/M12-acceptance.md`. About 10 minutes.
+Only the rules are built; Kairos still uses its own fresh browser, not your Brave profile.
+
+- [ ] Settings ▸ Rules: the four `browser-…` rules are there.
+- [ ] Ask Kairos to look something up on the web: it reads pages without asking.
+- [ ] *"On httpbin.org/forms/post, order a large pizza for Test"*: the card says in words what it
+      will type and click. Refuse stops it; Grant once sends the demo form.
+- [ ] Ask it to type a card number into a page: refused. *"Open brave://settings"*: refused.
