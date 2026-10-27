@@ -26,7 +26,7 @@ describe("the rules model", () => {
   it("reads the plugin's starter rules in order", () => {
     const doc = starter();
     expect(doc.rules[0].id).toBe("no-credentials");
-    expect(doc.rules).toHaveLength(31);
+    expect(doc.rules).toHaveLength(35);
   });
 
   it("saves the starter rules unchanged when nothing was edited", () => {
@@ -150,6 +150,10 @@ describe("rules added to the starter set later (M3)", () => {
       "screen-capture",
       "scheduled-jobs",
       "scheduled-jobs-cli",
+      "browser-settings-pages",
+      "browser-no-card-numbers",
+      "browser-page-actions",
+      "browser-vault-fill",
     ]);
     expect(addNewerRules(m2SignOff)).toEqual(starter());
   });

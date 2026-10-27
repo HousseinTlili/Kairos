@@ -352,6 +352,76 @@ export const NEWER_STARTER_RULES: { after: string; rules: RuleDoc[] }[] = [
       },
     ],
   },
+  // M12 (2026-10-27): Hermes's Browser Use mode acts through browser_exec scripts, so a click
+  // carries no label; every script that acts on a page asks.
+  {
+    after: "run-installers",
+    rules: [
+      {
+        id: "browser-settings-pages",
+        description:
+          "The browser's own pages (settings, saved passwords, local files) are off limits to Kairos.",
+        tools: ["browser_exec"],
+        match: {
+          commands: [
+            "\\b(goto_url|new_tab|goto)\\s*\\(\\s*(url\\s*=\\s*)?[rbuf]{0,2}['\\\"]\\s*((brave|chrome|edge|opera|vivaldi|file|view-source|devtools|chrome-extension):|about:(?!blank))",
+            "\\blocation(\\.href)?\\s*=\\s*['\\\"`]\\s*(brave|chrome|edge|opera|vivaldi|file|view-source|devtools|chrome-extension):",
+          ],
+        },
+        action: "deny",
+      },
+      {
+        id: "browser-no-card-numbers",
+        description:
+          "Kairos never types a card number, a password or a security code into a page: the browser vault fills them, after asking you.",
+        tools: ["browser_exec"],
+        match: {
+          commands: [
+            "\\b(type_text|fill_input|dispatch_key)\\s*\\([^)]*['\\\"]\\s*(\\d[ -]?){12,18}\\d\\s*['\\\"]",
+            "\\.value\\s*=\\s*['\\\"`]\\s*(\\d[ -]?){12,18}\\d\\s*['\\\"`]",
+            "\\bfill_input\\s*\\(\\s*(selector\\s*=\\s*)?[rbuf]{0,2}['\\\"][^'\\\"]*(password|passwd|pwd|passcode|cvc|cvv|csc|card.?number|cc-number|cc-csc|cc-exp|iban|mot.?de.?passe|كلمة)",
+            "querySelector(All)?\\s*\\([^)]*(password|cvc|cvv|cc-number|card.?number|iban)[^)]*\\)[^\\n;]*\\.value\\s*=(?!=)",
+          ],
+        },
+        action: "deny",
+      },
+    ],
+  },
+  {
+    after: "browser-code-system-access",
+    rules: [
+      {
+        id: "browser-page-actions",
+        description:
+          "Browser code that clicks, types, presses keys, submits, uploads, sends raw browser commands, or reads cookies and site storage needs your OK. Reading a page doesn't.",
+        tools: ["browser_exec"],
+        match: {
+          commands: [
+            "\\b(click_at_xy|click|type_text|fill_input|press_key|dispatch_key|upload_file)\\s*\\(",
+            "\\b(cdp|_send)\\s*\\(",
+            "\\.(click|submit|requestSubmit|dispatchEvent)\\s*\\(",
+            "\\bexecCommand\\s*\\(",
+            "\\.(value|checked|selected|selectedIndex|innerHTML|innerText|textContent)\\s*=(?!=)",
+            "\\bdocument\\.cookie\\b",
+            "\\b(localStorage|sessionStorage|indexedDB)\\b",
+            "\\b(fetch|sendBeacon)\\s*\\(",
+            "\\b(XMLHttpRequest|WebSocket)\\b",
+          ],
+        },
+        action: "ask",
+      },
+      {
+        id: "browser-vault-fill",
+        description:
+          "Filling a saved password or card into a page, or saving a new login, needs your OK.",
+        tools: ["browser_vault"],
+        match: {
+          any_text: ["fill", "save_login"],
+        },
+        action: "ask",
+      },
+    ],
+  },
 ];
 
 /** The newer starter rules this document doesn't have yet (matched by id). */
