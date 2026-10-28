@@ -5,6 +5,7 @@ mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
 mod keyring;
+mod media;
 mod memory;
 mod models;
 mod notifications;
@@ -229,7 +230,9 @@ pub fn run() {
             commands::install_wake_word,
             commands::wake_feed,
             commands::wake_transcribe,
-            commands::wake_cancel
+            commands::wake_cancel,
+            commands::media_image,
+            commands::save_image
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

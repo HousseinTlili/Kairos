@@ -863,7 +863,7 @@ code {
   margin: 8px 0 0;
   font-family: var(--font-display);
   font-size: 1.0625rem;
-  color: var(--text);
+  color: var(--fg);
 }
 
 .approval-why {
@@ -953,6 +953,135 @@ code {
 
 .markdown p {
   white-space: pre-wrap;
+}
+
+/* M13 — tables, diagrams and pictures in answers. Tables use the interface face (figures line
+   up), ruled in gold like a ledger; wide ones scroll sideways rather than squeeze. */
+.md-table,
+.diagram {
+  margin: 4px 0 14px;
+}
+
+.md-table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.md-table table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: normal;
+}
+
+.md-table th,
+.md-table td {
+  padding: 7px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+
+.md-table th {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--gilt);
+  border-bottom: 1px solid color-mix(in srgb, var(--gilt) 55%, var(--border));
+  white-space: nowrap;
+}
+
+.md-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.md-table tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--raised) 45%, transparent);
+}
+
+.md-table figcaption,
+.diagram figcaption {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.diagram-svg {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow-x: auto;
+  text-align: center;
+}
+
+/* Mermaid sizes some charts (pies) to the full width; a diagram stays a figure, not a page. */
+.diagram-svg svg {
+  max-width: 100%;
+  max-height: 420px;
+  width: auto;
+  height: auto;
+}
+
+.diagram-wait {
+  font-style: italic;
+}
+
+.md-picture {
+  display: inline-block;
+  margin: 4px 0 12px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.md-picture img {
+  display: block;
+  max-width: min(100%, 480px);
+  max-height: 360px;
+  object-fit: contain;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  background: rgba(8, 7, 6, 0.88);
+  cursor: zoom-out;
+}
+
+.lightbox img {
+  max-width: 100%;
+  max-height: calc(100% - 64px);
+  object-fit: contain;
+  border-radius: 6px;
+  cursor: default;
+}
+
+.lightbox-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: default;
+}
+
+/* The quick box is narrow: pictures stay small, diagrams fit its width. */
+.quick .md-picture img {
+  max-height: 200px;
 }
 
 .markdown h3,

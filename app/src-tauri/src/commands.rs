@@ -2340,3 +2340,45 @@ pub async fn wake_cancel(voice: tauri::State<'_, Arc<VoiceState>>) -> Result<(),
     voice.wake.drop_capture();
     Ok(())
 }
+
+// --- Pictures in answers (M13 Step 4) -----------------------------------------------------------
+
+impl From<crate::media::MediaError> for CommandError {
+    fn from(err: crate::media::MediaError) -> Self {
+        CommandError {
+            kind: "media",
+            message: err.to_string(),
+        }
+    }
+}
+
+/// A `MEDIA:` picture from a conversation's history, read only inside Hermes's image folders.
+#[tauri::command]
+pub async fn media_image(path: String) -> Result<tauri::ipc::Response, CommandError> {
+    let home = crate::hermes::local::hermes_home()?;
+    let bytes = tauri::async_runtime::spawn_blocking(move || crate::media::read(&path, &home))
+        .await
+        .map_err(|err| CommandError {
+            kind: "internal",
+            message: format!("reading the picture stopped: {err}"),
+        })??;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// Saves a picture from an answer to Downloads (raw body; the file name in the `name` header).
+/// Returns where it went.
+#[tauri::command]
+pub async fn save_image(request: tauri::ipc::Request<'_>) -> Result<String, CommandError> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(crate::media::MediaError::NotPicture.into());
+    };
+    let name = request
+        .headers()
+        .get("name")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("kairos-image.png")
+        .to_string();
+    let dir = crate::media::downloads()?;
+    let path = crate::media::save(&dir, &name, bytes)?;
+    Ok(path.display().to_string())
+}

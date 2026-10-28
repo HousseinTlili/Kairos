@@ -724,3 +724,23 @@ export const wakeTranscribe = (language: string | null) =>
   call<Transcript>("wake_transcribe", { language });
 /** The quick box stopped listening after a wake without a request. */
 export const wakeCancel = () => call<null>("wake_cancel");
+
+// --- Pictures in answers (M13 Step 4) -----------------------------------------------------------
+
+/** A `MEDIA:` picture from history; Rust reads it only inside Hermes's image folders. */
+export async function mediaImage(path: string): Promise<ArrayBuffer> {
+  try {
+    return await invoke<ArrayBuffer>("media_image", { path });
+  } catch (err) {
+    throw asCommandError(err);
+  }
+}
+
+/** Saves a picture to Downloads; returns where it went. */
+export async function saveImage(bytes: Uint8Array, name: string): Promise<string> {
+  try {
+    return await invoke<string>("save_image", bytes, { headers: { name } });
+  } catch (err) {
+    throw asCommandError(err);
+  }
+}
