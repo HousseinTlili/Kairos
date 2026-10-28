@@ -1,10 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for the main window and the quick box",
+  "description": "Capability for the main window, the quick box, the island and the wake panel",
   "windows": [
     "main",
-    "quick"
+    "quick",
+    "island",
+    "presence-panel"
   ],
   "permissions": [
     "core:default"

@@ -2320,10 +2320,127 @@ pub async fn wake_feed(
         message: format!("the wake word stopped: {err}"),
     })??;
     if let Some(woken) = woken {
-        crate::quick::show(&app);
+        // With the island on, the quick box opens under the pill and the standing Kairos slides
+        // in (M14).
+        let island = island_settings(&state);
+        if island.enabled {
+            crate::island::open_quick(&app);
+        } else {
+            crate::quick::show(&app);
+        }
+        if island.panel {
+            crate::island::show_panel(&app);
+            let _ = app.emit_to(crate::island::PANEL_WINDOW, "wake", woken);
+        }
         let _ = app.emit_to(crate::quick::QUICK_WINDOW, "wake", woken);
     }
     Ok(woken.is_some())
+}
+
+// --- The island (M14, D-029) ---------------------------------------------------------------------
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct IslandSettings {
+    /// The pill at the top of the screen; on unless the Master switched it off.
+    pub enabled: bool,
+    /// The standing Kairos sliding in on the wake word.
+    pub panel: bool,
+}
+
+fn setting_flag(state: &AppState, key: &str) -> bool {
+    setting_or(state, key).is_none_or(|v| v != "false")
+}
+
+pub fn island_settings(state: &AppState) -> IslandSettings {
+    IslandSettings {
+        enabled: setting_flag(state, crate::island::ENABLED_SETTING),
+        panel: setting_flag(state, crate::island::PANEL_SETTING),
+    }
+}
+
+pub fn island_enabled<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> bool {
+    island_settings(&app.state::<AppState>()).enabled
+}
+
+#[tauri::command]
+pub async fn island_state(
+    state: tauri::State<'_, AppState>,
+) -> Result<IslandSettings, CommandError> {
+    Ok(island_settings(&state))
+}
+
+#[tauri::command]
+pub async fn save_island_settings(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    enabled: bool,
+    panel: bool,
+) -> Result<IslandSettings, CommandError> {
+    state.with_store(|store| {
+        store.set_setting(
+            crate::island::ENABLED_SETTING,
+            if enabled { "true" } else { "false" },
+        )?;
+        store.set_setting(
+            crate::island::PANEL_SETTING,
+            if panel { "true" } else { "false" },
+        )
+    })?;
+    crate::island::refresh(&app, enabled);
+    if !panel {
+        crate::island::hide_panel(&app);
+    }
+    Ok(island_settings(&state))
+}
+
+/// A click on the pill.
+#[tauri::command]
+pub async fn island_open_quick(app: tauri::AppHandle) -> Result<(), CommandError> {
+    crate::island::open_quick(&app);
+    Ok(())
+}
+
+/// The pill's microphone, held: the same as holding the push-to-talk key (M9 §3).
+#[tauri::command]
+pub async fn island_push_to_talk(app: tauri::AppHandle, held: bool) -> Result<(), CommandError> {
+    if held {
+        crate::island::open_quick(&app);
+    }
+    let _ = app.emit_to(crate::quick::QUICK_WINDOW, "push-to-talk", held);
+    Ok(())
+}
+
+/// "Hide for an hour" from the pill's menu.
+#[tauri::command]
+pub async fn island_snooze(app: tauri::AppHandle, minutes: u64) -> Result<(), CommandError> {
+    crate::island::snooze(&app, minutes.clamp(1, 24 * 60), island_enabled(&app));
+    Ok(())
+}
+
+/// The quick box steps aside for a screen capture (M8 §4); the pill does too.
+#[tauri::command]
+pub async fn island_capturing(app: tauri::AppHandle, capturing: bool) -> Result<(), CommandError> {
+    crate::island::set_capturing(&app, capturing, island_enabled(&app));
+    Ok(())
+}
+
+/// The pill's menu: the main window, optionally on a page ("settings:island").
+#[tauri::command]
+pub async fn show_main_window(
+    app: tauri::AppHandle,
+    view: Option<String>,
+) -> Result<(), CommandError> {
+    crate::tray::show_main(&app);
+    if let Some(view) = view {
+        let _ = app.emit_to(crate::tray::MAIN_WINDOW, "navigate", view);
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn hide_presence_panel(app: tauri::AppHandle) -> Result<(), CommandError> {
+    crate::island::hide_panel(&app);
+    Ok(())
 }
 
 fn whisper_model(state: &AppState) -> Result<std::path::PathBuf, CommandError> {

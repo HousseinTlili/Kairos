@@ -4,6 +4,7 @@ mod briefing;
 mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
+mod island;
 mod keyring;
 mod media;
 mod memory;
@@ -65,6 +66,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .manage(commands::AppState::default())
+        .manage(island::IslandState::default())
         .manage(Arc::new(SystemMonitor::default()))
         .on_window_event(|window, event| {
             // Closing the window keeps Kairos in the tray; "Quit" in the tray menu ends it.
@@ -92,6 +94,10 @@ pub fn run() {
             if let Err(err) = quick::register(app.handle(), None, &hotkey) {
                 eprintln!("kairos: {err}");
             }
+            // The island (M14): shown from the start unless switched off, out of the way of
+            // full-screen apps.
+            island::refresh(app.handle(), commands::island_enabled(app.handle()));
+            island::watch(app.handle().clone(), commands::island_enabled);
             let ptt = commands::stored_ptt_hotkey(&app.state::<commands::AppState>());
             if let Err(err) = quick::register_ptt(app.handle(), None, &ptt) {
                 eprintln!("kairos: push-to-talk: {err}");
@@ -233,7 +239,15 @@ pub fn run() {
             commands::wake_transcribe,
             commands::wake_cancel,
             commands::media_image,
-            commands::save_image
+            commands::save_image,
+            commands::island_state,
+            commands::save_island_settings,
+            commands::island_open_quick,
+            commands::island_push_to_talk,
+            commands::island_snooze,
+            commands::island_capturing,
+            commands::hide_presence_panel,
+            commands::show_main_window
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

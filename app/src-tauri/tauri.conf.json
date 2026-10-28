@@ -31,6 +31,34 @@
         "skipTaskbar": true,
         "resizable": false,
         "center": true
+      },
+      {
+        "label": "island",
+        "title": "Kairos island",
+        "width": 300,
+        "height": 40,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "visible": false,
+        "focus": false
+      },
+      {
+        "label": "presence-panel",
+        "title": "Kairos",
+        "width": 300,
+        "height": 560,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "visible": false,
+        "focus": false
       }
     ],
     "security": {
