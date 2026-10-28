@@ -178,3 +178,16 @@ Spec: `docs/milestones/M13.md`; details: `docs/milestones/M13-acceptance.md`. Ab
 - [ ] Light theme: tables and diagrams stay readable.
 - [ ] Sidebar: hover a conversation, click the bin. It asks "Delete this conversation?"; Keep backs
       out; Delete removes it (also from Hermes). While Kairos is still answering, it refuses.
+
+## M14 — The island (`m14/island`)
+
+Spec: `docs/milestones/M14.md`; details: `docs/milestones/M14-acceptance.md`. A day of use.
+
+- [ ] The pill at the top-centre: its corners see-through on your desktop, readable on light and dark wallpapers.
+- [ ] Click it: the quick box opens under it. Hold its microphone: push-to-talk.
+- [ ] Right-click: Open Kairos, Hide for an hour (it comes back), Island settings.
+- [ ] A request in the main window: the pill shows it, then "Done". An approval: the pill says "Kairos asks your leave"; a click opens it.
+- [ ] Say "Kairos, …": your standing Kairos slides in on the right, with what he heard and his answer, and slides away after.
+- [ ] A full-screen game or film: the pill steps aside, and returns after.
+- [ ] A second screen, or 150 % scaling: still at the top-centre of the main screen.
+- [ ] Settings ▸ Kairos ▸ Island: switching it off hides it at once.

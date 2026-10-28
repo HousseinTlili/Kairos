@@ -25,7 +25,8 @@ the rules (Steps 2–4) are built: every script that acts on a page asks. The pr
 D-027 Proposed) is not.
 **M13** (rich answers: tables, diagrams, images, `m13/rich-answers`): built, `docs/milestones/M13.md`;
 D-028 and `mermaid` 11.17.2 accepted. Mermaid is loaded only when an answer holds a diagram.
-**M14** (the Kairos island, `m14/island`): spec only, `docs/milestones/M14.md`; D-029 Proposed.
+**M14** (the Kairos island, `m14/island`): built, `docs/milestones/M14.md`; D-029 accepted. Four windows
+load the same page now (`main.tsx` picks by label): main, quick, island, presence-panel.
 
 ## Roles
 

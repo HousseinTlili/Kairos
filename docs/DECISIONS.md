@@ -360,7 +360,7 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
-## D-029 — The Kairos island: a pill the size of the pill, and a wake panel with the Master's Kairos — Proposed
+## D-029 — The Kairos island: a pill the size of the pill, and a wake panel with the Master's Kairos — Accepted
 
 For M14 (`docs/milestones/M14.md`). Two small Kairos windows: `island`, a transparent,
 always-on-top pill sized to itself (so no cursor polling for click-through, Elissa's lesson) that
@@ -369,7 +369,8 @@ shows Kairos's state and opens the quick box, the main window or push-to-talk; a
 pill is still unless its state changes and the video plays only while shown (Elissa's idle
 animation cost a third of a core). Full-screen apps hide it, through `SHQueryUserNotificationState`
 (the `Win32_UI_Shell` feature of the `windows-sys` crate already used). The videos are the
-Master's own, re-encoded to 540 × 960 H.264 with Hermes's bundled ffmpeg. Proposed 2026-10-29.
+Master's own, re-encoded to 540 px wide H.264 with Hermes's bundled ffmpeg. Accepted by the product
+owner on 2026-10-29: top-centre, the butler clip for everything, on at start.
 
 ## D-028 — Rich answers: tables drawn by Kairos, diagrams by Mermaid, only safe images — Accepted
 
