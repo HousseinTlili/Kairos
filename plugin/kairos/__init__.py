@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 from .audit import AuditStore
-from . import notifications, screen
+from . import notifications, screen, style
 from .hooks import KairosHooks
 from .pctools import CLOSE_APP, LIST_RUNNING_APPS, OPEN_APP, PcTools, steering
 from .policy import PolicyFile
@@ -109,6 +109,8 @@ def register(ctx) -> KairosHooks:
     ctx.register_hook("pre_tool_call", hooks.pre_tool_call)
     ctx.register_hook("post_tool_call", hooks.post_tool_call)
     ctx.register_hook("post_approval_response", hooks.post_approval_response)
+    # Tables, diagrams and pictures only when they help (M13 §4), in Kairos's own conversations.
+    ctx.register_hook("pre_llm_call", style.steering)
     register_tools(ctx)
     register_notifications(ctx, home)
     register_screen(ctx, home)

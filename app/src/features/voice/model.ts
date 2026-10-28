@@ -79,13 +79,21 @@ export function level(samples: Float32Array): number {
 
 /**
  * The answer as it should be heard: Markdown marks dropped, links read as their text, code blocks
- * replaced by a short note (reading code aloud helps nobody).
+ * replaced by a short note (reading code aloud helps nobody). Tables, diagrams and pictures (M13)
+ * are announced, not read: "There's a table on screen."
  */
 export function speechText(markdown: string): string {
   return markdown
+    .replace(/```\s*mermaid[\s\S]*?(```|$)/gi, "\nThere's a diagram on screen.\n")
+    .replace(/```\s*svg[\s\S]*?(```|$)/gi, "\nThere's a drawing on screen.\n")
     .replace(/```[\s\S]*?(```|$)/g, " (code block skipped) ")
+    .replace(
+      /^[ \t]*\|?.*\|.*\n[ \t]*\|?[ \t]*:?-+:?[ \t]*(\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*(\n[ \t]*\|?.*\|.*)*/gm,
+      "There's a table on screen.",
+    )
+    .replace(/^\s*MEDIA:.*$/gm, "There's a picture on screen.")
     .replace(/`([^`]+)`/g, "$1")
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, (_, alt: string) => alt || "a picture")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/https?:\/\/\S+/g, "a link")
     .replace(/^\s{0,3}#{1,6}\s+/gm, "")

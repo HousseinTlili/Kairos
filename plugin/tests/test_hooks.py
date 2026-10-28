@@ -204,6 +204,24 @@ class BrowserScriptCardTest(HooksTestBase):
         self.assertIn("on a.example", self.ask("press_key('Enter')", session="one")["message"])
 
 
+class StyleTest(unittest.TestCase):
+    """M13 §4: the note on tables, diagrams and pictures goes only to Kairos's conversations."""
+
+    def test_a_kairos_conversation_gets_the_note(self):
+        from kairos import style
+
+        result = style.steering(session_id="kairos-01m629k1eg6ps1bm2r46mv9dkc", user_message="compare")
+        self.assertIn("Mermaid diagram", result["context"])
+        self.assertIn("Never add a table, diagram or picture as decoration", result["context"])
+
+    def test_other_conversations_dont(self):
+        from kairos import style
+
+        self.assertIsNone(style.steering(session_id="20261028_101500_abc123"))
+        self.assertIsNone(style.steering())
+        self.assertIsNone(style.steering(session_id=None))
+
+
 class RegisterTest(unittest.TestCase):
     def test_register_wires_the_three_hooks_to_the_kairos_folder(self):
         registered = {}
@@ -214,7 +232,9 @@ class RegisterTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as home, mock.patch.dict("os.environ", {"KAIROS_HOME": home}):
             hooks = kairos.register(FakeCtx())
-            self.assertEqual(set(registered), {"pre_tool_call", "post_tool_call", "post_approval_response"})
+            self.assertEqual(
+                set(registered), {"pre_tool_call", "post_tool_call", "post_approval_response", "pre_llm_call"}
+            )
             self.assertEqual(hooks.policy_file.path, Path(home) / "policy.json")
             hooks.audit.close()
 

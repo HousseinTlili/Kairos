@@ -71,6 +71,32 @@ describe("reading answers aloud", () => {
     expect(spoken).toContain("More at a link");
   });
 
+  it("announces tables, diagrams and pictures instead of reading them (M13)", () => {
+    const answer = [
+      "Here is the comparison:",
+      "| Laptop | Price |",
+      "|---|--:|",
+      "| A | 900 € |",
+      "| B | 1 200 € |",
+      "",
+      "```mermaid",
+      "flowchart LR",
+      "A-->B",
+      "```",
+      "MEDIA: C:\\Users\\USER\\shot.png",
+      "![apple](data:image/png;base64,iVBORw0KGgo=)",
+      "That's all.",
+    ].join("\n");
+    const spoken = speechText(answer);
+    expect(spoken).toContain("Here is the comparison:");
+    expect(spoken).toContain("There's a table on screen.");
+    expect(spoken).toContain("There's a diagram on screen.");
+    expect(spoken).toContain("There's a picture on screen.");
+    expect(spoken).toContain("apple");
+    expect(spoken).toContain("That's all.");
+    expect(spoken).not.toMatch(/900|Laptop|flowchart|MEDIA|base64/);
+  });
+
   it("guesses the language of an answer to pick a voice", () => {
     expect(guessLanguage("J'ai ouvert le Bloc-notes et la calculatrice pour vous.")).toBe("fr");
     expect(guessLanguage("فتحت المفكرة لك")).toBe("ar");
