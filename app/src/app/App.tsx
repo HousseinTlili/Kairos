@@ -15,6 +15,7 @@ import { useSystem } from "../features/system/store";
 import { useShell } from "../features/shell/store";
 import { useStartup } from "../features/startup/store";
 import { useWakeWord } from "../features/voice/hooks";
+import { useReportState } from "../features/island/report";
 import { onNavigate, onOpenConversation } from "../lib/tauri";
 
 export default function App() {
@@ -29,6 +30,8 @@ export default function App() {
   const show = useShell((state) => state.show);
   // The main window keeps the wake-word microphone; it lives as long as Kairos runs (M9 Step 9).
   useWakeWord();
+  // The island shows what this window is doing (M14).
+  useReportState("main");
 
   useEffect(() => {
     // Listen before anything can be sent or resumed, so no run event is missed.
@@ -54,6 +57,8 @@ export default function App() {
       // The tray menu's "System" item.
       onNavigate((target) => {
         if (target === "system") show("system");
+        // The island's menu (M14).
+        if (target === "settings:island") useShell.getState().showSettings("island");
       }),
       // "Open in Kairos" from the quick box (M8).
       onOpenConversation((sessionId) => {

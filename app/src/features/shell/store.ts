@@ -13,6 +13,7 @@ export type SettingsTab =
   | "voice"
   | "persona"
   | "memory"
+  | "island"
   | "startup";
 
 interface ShellState {

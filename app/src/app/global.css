@@ -2805,3 +2805,169 @@ code {
   gap: 8px;
   flex: none;
 }
+
+/* --- M14: the island pill and the wake panel ------------------------------------------------- */
+
+/* Their windows are transparent: only the pill and the card show, the rest of the page is see-through. */
+html.island-window,
+html.island-window body,
+html.panel-window,
+html.panel-window body {
+  background: transparent;
+  overflow: hidden;
+}
+
+.island {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 40px;
+  width: 300px;
+  box-sizing: border-box;
+  padding: 0 4px 0 6px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--gilt) 55%, transparent);
+  background: rgba(18, 17, 16, 0.94);
+  color: var(--fg);
+  user-select: none;
+}
+
+.island.asking {
+  border-color: var(--oxblood);
+}
+
+.island-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.island-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+}
+
+.island.asking .island-text {
+  color: var(--gilt);
+}
+
+.island-mic {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.island-mic:hover,
+.island-mic:active {
+  color: var(--lume);
+  background: var(--raised);
+}
+
+.presence-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  height: 560px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--gilt) 50%, transparent);
+  background: #0c0b0a;
+  color: var(--fg);
+  animation: presence-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.presence-panel.leaving {
+  animation: presence-out 240ms ease-in forwards;
+}
+
+@keyframes presence-in {
+  from {
+    transform: translateX(110%);
+  }
+}
+
+@keyframes presence-out {
+  to {
+    transform: translateX(110%);
+  }
+}
+
+.presence-video {
+  display: block;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.presence-caption {
+  padding: 12px 16px 16px;
+  border-top: 1px solid color-mix(in srgb, var(--gilt) 30%, transparent);
+  background: #0c0b0a;
+}
+
+.presence-state {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  color: var(--gilt);
+}
+
+.presence-heard,
+.presence-answer {
+  margin: 6px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.presence-heard {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.presence-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(12, 11, 10, 0.7);
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presence-panel,
+  .presence-panel.leaving {
+    animation: none;
+  }
+}

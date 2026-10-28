@@ -2,18 +2,32 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import App from "./app/App";
+import { IslandApp } from "./features/island/IslandApp";
+import { PresencePanel } from "./features/island/PresencePanel";
 import { QuickApp } from "./features/quick/QuickApp";
 import "./app/global.css";
 
-// Two windows load this page: the main one, and the quick box (M8 §3).
-const isQuick = (() => {
+// Four windows load this page: the main one, the quick box (M8 §3), the island pill and the wake
+// panel (M14).
+const label = (() => {
   try {
-    return getCurrentWindow().label === "quick";
+    return getCurrentWindow().label;
   } catch {
-    return false;
+    return "main";
   }
 })();
 
+const Root =
+  label === "quick"
+    ? QuickApp
+    : label === "island"
+      ? IslandApp
+      : label === "presence-panel"
+        ? PresencePanel
+        : App;
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>{isQuick ? <QuickApp /> : <App />}</React.StrictMode>,
+  <React.StrictMode>
+    <Root />
+  </React.StrictMode>,
 );

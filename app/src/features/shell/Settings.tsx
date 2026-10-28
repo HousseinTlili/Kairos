@@ -11,6 +11,7 @@ import { PersonaSettings } from "../persona/PersonaSettings";
 import { MemorySettings } from "../memory/MemorySettings";
 import { useSystem } from "../system/store";
 import { useShell, type SettingsTab } from "./store";
+import { IslandSettings } from "../island/IslandSettings";
 
 // Four groups instead of one row of tabs, which no longer fit the window (docs/design/BRAND.md).
 const GROUPS: { label: string; tabs: { id: SettingsTab; label: string }[] }[] = [
@@ -21,6 +22,7 @@ const GROUPS: { label: string; tabs: { id: SettingsTab; label: string }[] }[] = 
       { id: "memory", label: "Memory" },
       { id: "voice", label: "Voice" },
       { id: "quick", label: "Quick box" },
+      { id: "island", label: "Island" },
       { id: "briefing", label: "Briefing" },
     ],
   },
@@ -98,6 +100,8 @@ export function Settings() {
           <PersonaSettings />
         ) : settingsTab === "memory" ? (
           <MemorySettings />
+        ) : settingsTab === "island" ? (
+          <IslandSettings />
         ) : settingsTab === "startup" ? (
           <StartupSettings />
         ) : (

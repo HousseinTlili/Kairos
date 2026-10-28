@@ -16,6 +16,7 @@ import { useVoice } from "../voice/store";
 import { MicButton, VoiceStatus } from "../voice/VoiceControls";
 import { usePresence } from "../shell/presence";
 import { SealMark } from "../shell/SealMark";
+import { useReportState } from "../island/report";
 import { hidesForCapture, quickSessionKey } from "./model";
 
 function rememberedSession(): string | null {
@@ -47,6 +48,7 @@ export function QuickApp() {
   const last = turns[turns.length - 1];
   useVoiceInChat(turns);
   const presence = usePresence();
+  useReportState("quick");
 
   // The latest values for the push-to-talk listener, which is set up once.
   const sendRef = useRef<(text: string) => void>(() => {});

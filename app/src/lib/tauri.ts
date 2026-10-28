@@ -1,7 +1,8 @@
 // Typed wrappers around Tauri `invoke` for the commands in M1 §8.
 // Shapes mirror the Rust types in src-tauri/src/commands.rs.
 import { invoke } from "@tauri-apps/api/core";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { KairosState } from "../features/island/model";
 import type { RunEventPayload, RunStreamEnd } from "./hermes-events";
 
 export type ConnectStatus =
@@ -747,3 +748,34 @@ export async function saveImage(bytes: Uint8Array, name: string): Promise<string
     throw asCommandError(err);
   }
 }
+
+// --- The island (M14, D-029) ---------------------------------------------------------------------
+
+export interface IslandSettings {
+  enabled: boolean;
+  panel: boolean;
+}
+
+export const islandState = () => call<IslandSettings>("island_state");
+export const saveIslandSettings = (enabled: boolean, panel: boolean) =>
+  call<IslandSettings>("save_island_settings", { enabled, panel });
+export const islandOpenQuick = () => call<null>("island_open_quick");
+export const islandPushToTalk = (held: boolean) => call<null>("island_push_to_talk", { held });
+export const islandSnooze = (minutes: number) => call<null>("island_snooze", { minutes });
+export const islandCapturing = (capturing: boolean) =>
+  call<null>("island_capturing", { capturing });
+export const hidePresencePanel = () => call<null>("hide_presence_panel");
+
+/** The main window and the quick box tell the island what they are doing. */
+export const emitKairosState = (state: KairosState) => emit("kairos-state", state);
+export function onKairosState(handler: (state: KairosState) => void): Promise<UnlistenFn> {
+  return listen<KairosState>("kairos-state", (event) => handler(event.payload));
+}
+
+/** The wake panel was placed and shown (it then slides in). */
+export function onPanelShown(handler: () => void): Promise<UnlistenFn> {
+  return listen<null>("panel-shown", () => handler());
+}
+/** The main window, optionally on a page ("settings:island"). */
+export const showMainWindow = (view?: string) =>
+  call<null>("show_main_window", { view: view ?? null });
