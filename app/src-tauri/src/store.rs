@@ -421,6 +421,22 @@ impl TaskStore {
     }
 
     /// Remembers a conversation's model; the default (both `None`) removes the row.
+    /// Forgets a conversation: its requests and its model choice (Delete in the sidebar). Returns
+    /// how many requests went.
+    pub fn delete_conversation(&self, session_id: &str) -> Result<usize, StoreError> {
+        let tx = self.conn.unchecked_transaction()?;
+        let removed = tx.execute(
+            "DELETE FROM task WHERE session_id = ?1",
+            params![session_id],
+        )?;
+        tx.execute(
+            "DELETE FROM conversation WHERE session_id = ?1",
+            params![session_id],
+        )?;
+        tx.commit()?;
+        Ok(removed)
+    }
+
     pub fn set_conversation_model(
         &self,
         session_id: &str,
@@ -678,6 +694,34 @@ mod tests {
             .expect("s1");
         assert_eq!(s1.title, "first");
         assert_eq!(s1.task_count, 2);
+    }
+
+    #[test]
+    fn deleting_a_conversation_forgets_it_and_nothing_else() {
+        let store = store();
+        store.create("a", "kairos-s1", "first").expect("create");
+        store.create("b", "kairos-s1", "second").expect("create");
+        store.create("c", "kairos-s2", "kept").expect("create");
+        let choice = ModelChoice {
+            provider: Some("nous".into()),
+            model: Some("m".into()),
+        };
+        store
+            .set_conversation_model("kairos-s1", &choice)
+            .expect("model");
+        assert_eq!(store.delete_conversation("kairos-s1").expect("delete"), 2);
+        let left: Vec<String> = store
+            .conversations()
+            .expect("conversations")
+            .into_iter()
+            .map(|c| c.session_id)
+            .collect();
+        assert_eq!(left, ["kairos-s2"]);
+        assert_eq!(
+            store.conversation_model("kairos-s1").expect("model").model,
+            None
+        );
+        assert_eq!(store.delete_conversation("kairos-s1").expect("again"), 0);
     }
 
     #[test]

@@ -324,6 +324,15 @@ impl HermesClient {
         Ok(())
     }
 
+    /// `DELETE /api/sessions/{id}`: the conversation and its transcript. Hermes answers 409
+    /// (`session_active_turn`) while a turn is still running in it.
+    pub async fn delete_session(&self, session_id: &str) -> Result<(), HermesError> {
+        let url = self.url(&format!("/api/sessions/{}", path_segment(session_id)?));
+        let builder = self.authed(self.http.delete(url)).timeout(REQUEST_TIMEOUT);
+        let _: serde_json::Value = read_json(builder.send().await).await?;
+        Ok(())
+    }
+
     pub async fn list_sessions(&self) -> Result<SessionList, HermesError> {
         self.get_json("/api/sessions").await
     }

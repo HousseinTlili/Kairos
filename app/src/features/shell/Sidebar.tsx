@@ -15,6 +15,7 @@ import {
   PlusIcon,
   SettingsIcon,
   SidebarIcon,
+  TrashIcon,
   SunIcon,
 } from "./icons";
 import { isMemoryConversation } from "../memory/model";
@@ -82,8 +83,83 @@ function OtherList({ items }: { items: OtherConversation[] }) {
   );
 }
 
+/**
+ * One conversation in the list. Its bin turns the row into a question first ("Delete this
+ * conversation?"), so a stray click never deletes anything; Esc or Keep backs out.
+ */
+function ConversationRow({
+  title,
+  active,
+  onOpen,
+  onDelete,
+}: {
+  title: string;
+  active: boolean;
+  onOpen: () => void;
+  onDelete: () => Promise<string | null>;
+}) {
+  const [asking, setAsking] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (asking) {
+    return (
+      <li
+        className="conversation-confirm"
+        role="group"
+        aria-label={`Delete ${title}?`}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setAsking(false);
+        }}
+      >
+        <span className="conversation-confirm-text">Delete this conversation?</span>
+        <span className="conversation-confirm-actions">
+          <button
+            className="danger small"
+            autoFocus
+            disabled={deleting}
+            onClick={() => {
+              setDeleting(true);
+              void onDelete().then((why) => {
+                setDeleting(false);
+                setError(why);
+                if (!why) setAsking(false);
+              });
+            }}
+          >
+            {deleting ? "Deleting…" : "Delete"}
+          </button>
+          <button className="small" disabled={deleting} onClick={() => setAsking(false)}>
+            Keep
+          </button>
+        </span>
+        {error && <span className="conversation-confirm-error">{error}</span>}
+      </li>
+    );
+  }
+  return (
+    <li className="conversation-row">
+      <button className={`conversation ${active ? "active" : ""}`} onClick={onOpen} title={title}>
+        <span className="conversation-title">{title}</span>
+      </button>
+      <button
+        className="icon-button conversation-delete"
+        onClick={() => {
+          setError(null);
+          setAsking(true);
+        }}
+        aria-label={`Delete ${title}`}
+        title="Delete this conversation"
+      >
+        <TrashIcon />
+      </button>
+    </li>
+  );
+}
+
 export function Sidebar() {
-  const { conversations, sessionId, turns, newConversation, openConversation } = useChat();
+  const { conversations, sessionId, turns, newConversation, openConversation, deleteConversation } =
+    useChat();
   const { view, peekId, show, sidebarCollapsed, toggleSidebar } = useShell();
   const info = useConnection((s) => s.info);
   const connected = info?.status === "connected";
@@ -198,20 +274,16 @@ export function Sidebar() {
             <h2 className="group-label">{group.label}</h2>
             <ul className="conversation-list">
               {group.items.map((item) => (
-                <li key={item.session_id}>
-                  <button
-                    className={`conversation ${
-                      view === "chat" && !peekId && sessionId === item.session_id ? "active" : ""
-                    }`}
-                    onClick={() => {
-                      show("chat");
-                      void openConversation(item.session_id);
-                    }}
-                    title={item.title}
-                  >
-                    <span className="conversation-title">{item.title}</span>
-                  </button>
-                </li>
+                <ConversationRow
+                  key={item.session_id}
+                  title={item.title}
+                  active={view === "chat" && !peekId && sessionId === item.session_id}
+                  onOpen={() => {
+                    show("chat");
+                    void openConversation(item.session_id);
+                  }}
+                  onDelete={() => deleteConversation(item.session_id)}
+                />
               ))}
             </ul>
           </div>

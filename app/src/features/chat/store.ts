@@ -5,6 +5,7 @@ import {
   auditForSession,
   conversationTasks,
   createRun,
+  deleteConversation as deleteConversationEverywhere,
   listConversations,
   onCostCap,
   onRunEvent,
@@ -47,6 +48,8 @@ interface ChatState {
   newConversation: () => void;
   openConversation: (sessionId: string) => Promise<void>;
   refreshConversations: () => Promise<void>;
+  /** Deletes a conversation everywhere; resolves to why it couldn't, or null when done. */
+  deleteConversation: (sessionId: string) => Promise<string | null>;
   /** Re-reads the Kairos plugin's audit of the open conversation onto its tool rows. */
   refreshAudit: () => Promise<void>;
   stop: (taskId: string) => Promise<void>;
@@ -142,6 +145,17 @@ export const useChat = create<ChatState>((set, get) => {
       } catch {
         // The timeline is extra detail; a failed read leaves the rows as they are.
       }
+    },
+
+    async deleteConversation(sessionId) {
+      try {
+        await deleteConversationEverywhere(sessionId);
+      } catch (err) {
+        return messageOf(err);
+      }
+      if (get().sessionId === sessionId) get().newConversation();
+      await get().refreshConversations();
+      return null;
     },
 
     async refreshConversations() {

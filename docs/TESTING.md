@@ -176,3 +176,5 @@ Spec: `docs/milestones/M13.md`; details: `docs/milestones/M13-acceptance.md`. Ab
 - [ ] A screenshot through Kairos (grant it): the picture shows in the answer, and again after reopening the conversation.
 - [ ] The same table question in the quick box, and once spoken: it says "There's a table on screen".
 - [ ] Light theme: tables and diagrams stay readable.
+- [ ] Sidebar: hover a conversation, click the bin. It asks "Delete this conversation?"; Keep backs
+      out; Delete removes it (also from Hermes). While Kairos is still answering, it refuses.

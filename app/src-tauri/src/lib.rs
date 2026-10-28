@@ -171,6 +171,7 @@ pub fn run() {
             commands::resume_open_tasks,
             commands::list_conversations,
             commands::conversation_tasks,
+            commands::delete_conversation,
             commands::audit_for_session,
             commands::rules_state,
             commands::validate_rules,

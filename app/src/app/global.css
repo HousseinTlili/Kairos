@@ -593,6 +593,68 @@ code {
   font-size: 0.875rem;
 }
 
+/* The bin sits over the row's right end, shown on hover or focus, so titles keep their width. */
+.conversation-row {
+  position: relative;
+}
+
+.conversation-delete {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  padding: 4px;
+  border: none;
+  border-radius: 5px;
+  background: var(--sidebar-hover);
+  color: var(--sidebar-muted);
+  opacity: 0;
+}
+
+.conversation-row:hover .conversation-delete,
+.conversation-delete:focus-visible {
+  opacity: 1;
+}
+
+.conversation-row:hover .conversation-title {
+  padding-right: 26px;
+}
+
+.conversation-delete:hover {
+  color: var(--oxblood);
+}
+
+.conversation-confirm {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  margin: 2px 0;
+  border-radius: 6px;
+  background: var(--sidebar-hover);
+  box-shadow: inset 2px 0 0 var(--oxblood);
+  font-size: 0.8125rem;
+  color: var(--sidebar-fg);
+}
+
+.conversation-confirm-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.conversation-confirm-actions button {
+  padding: 3px 10px;
+}
+
+.conversation-confirm-actions .danger {
+  color: var(--oxblood);
+  border-color: color-mix(in srgb, var(--oxblood) 45%, var(--border));
+}
+
+.conversation-confirm-error {
+  color: var(--oxblood);
+  font-size: 0.75rem;
+}
+
 .conversation.other .conversation-title {
   color: var(--sidebar-muted);
 }

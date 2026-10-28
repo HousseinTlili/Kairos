@@ -780,6 +780,39 @@ pub async fn list_conversations(
     Ok(ConversationList { kairos, other })
 }
 
+/// Deletes a Kairos conversation in Hermes and in Kairos's own list (the sidebar's Delete, after
+/// the user confirmed). Not while Kairos is still working in it: that would orphan a running request.
+#[tauri::command]
+pub async fn delete_conversation(
+    state: tauri::State<'_, AppState>,
+    session_id: String,
+) -> Result<(), CommandError> {
+    if !session_id.starts_with("kairos-") {
+        return Err(CommandError {
+            kind: "not_kairos",
+            message: "Only conversations started in Kairos can be deleted here.".into(),
+        });
+    }
+    let still_working = || CommandError {
+        kind: "busy",
+        message: "Kairos is still working in this conversation. Stop it first, then delete it."
+            .into(),
+    };
+    let tasks = state.with_store(|store| store.for_session(&session_id))?;
+    if tasks.iter().any(|task| !task.status.is_terminal()) {
+        return Err(still_working());
+    }
+    // Hermes first: if it refuses, Kairos keeps the conversation rather than lose track of it.
+    match state.connected_client()?.delete_session(&session_id).await {
+        // Never reached Hermes (a request that failed before starting): nothing to delete there.
+        Ok(()) | Err(HermesError::NotFound { .. }) => {}
+        Err(HermesError::Conflict { .. }) => return Err(still_working()),
+        Err(err) => return Err(err.into()),
+    }
+    state.with_store(|store| store.delete_conversation(&session_id))?;
+    Ok(())
+}
+
 /// A Kairos conversation's earlier requests and their outcomes, oldest first.
 #[tauri::command]
 pub async fn conversation_tasks(

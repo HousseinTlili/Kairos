@@ -128,6 +128,9 @@ export const resumeOpenTasks = () => call<StoredTask[]>("resume_open_tasks");
 export const listConversations = () => call<ConversationList>("list_conversations");
 export const conversationTasks = (sessionId: string) =>
   call<StoredTask[]>("conversation_tasks", { sessionId });
+/** Deletes a Kairos conversation in Hermes and in Kairos's list; refused while it is running. */
+export const deleteConversation = (sessionId: string) =>
+  call<null>("delete_conversation", { sessionId });
 
 /** One tool call as the Kairos plugin recorded it in audit.db (audit.rs `AuditEvent`). */
 export interface AuditEvent {
