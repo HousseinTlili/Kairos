@@ -23,8 +23,8 @@ It also sets whisper.cpp's Release flags: without them MSVC builds it unoptimise
 its browser in Browser Use mode (one `browser_exec` tool running Python), kept by the product owner;
 the rules (Steps 2–4) are built: every script that acts on a page asks. The profile switch (Step 5,
 D-027 Proposed) is not.
-**M13** (rich answers: tables, diagrams, images, `m13/rich-answers`): spec only,
-`docs/milestones/M13.md`; D-028 and the `mermaid` dependency are Proposed.
+**M13** (rich answers: tables, diagrams, images, `m13/rich-answers`): built, `docs/milestones/M13.md`;
+D-028 and `mermaid` 11.17.2 accepted. Mermaid is loaded only when an answer holds a diagram.
 
 ## Roles
 

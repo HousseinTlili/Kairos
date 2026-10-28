@@ -360,7 +360,7 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
-## D-028 — Rich answers: tables drawn by Kairos, diagrams by Mermaid, only safe images — Proposed
+## D-028 — Rich answers: tables drawn by Kairos, diagrams by Mermaid, only safe images — Accepted
 
 For M13 (`docs/milestones/M13.md`). Tables are added to Kairos's own Markdown reader (no library).
 Diagrams and charts are Mermaid code blocks drawn by the `mermaid` package (MIT, an exact 11.x
@@ -368,8 +368,8 @@ version, loaded only when needed, `securityLevel: "strict"`): its SVG is the onl
 inserts. Images are only the `data:image/…` pictures Hermes makes and the model's SVG sketches,
 both shown with `<img>` (no scripts, no network); images from web addresses show as links, and
 older conversations' `MEDIA:` paths are read only from Hermes's own folders. The model is told
-to use them only when they help. Proposed 2026-10-28; the product owner decides, with the
-`mermaid` dependency.
+to use them only when they help. Accepted by the product owner on 2026-10-28, with the `mermaid`
+dependency.
 
 ---
 

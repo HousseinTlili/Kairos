@@ -164,3 +164,15 @@ Only the rules are built; Kairos still uses its own fresh browser, not your Brav
 - [ ] *"On httpbin.org/forms/post, order a large pizza for Test"*: the card says in words what it
       will type and click. Refuse stops it; Grant once sends the demo form.
 - [ ] Ask it to type a card number into a page: refused. *"Open brave://settings"*: refused.
+
+## M13 — Rich answers (`m13/rich-answers`)
+
+Spec: `docs/milestones/M13.md`; details: `docs/milestones/M13-acceptance.md`. About 10 minutes.
+
+- [ ] *"Compare three laptops under 1 000 € on price, battery and weight"*: a table; Copy pastes into Excel.
+- [ ] *"How does Kairos's wake word work?"*: one diagram; Source shows its code.
+- [ ] A plain question: a plain answer, no table or diagram.
+- [ ] *"Draw me a simple sketch of a cat"*: a small drawing; click enlarges, Save puts it in Downloads.
+- [ ] A screenshot through Kairos (grant it): the picture shows in the answer, and again after reopening the conversation.
+- [ ] The same table question in the quick box, and once spoken: it says "There's a table on screen".
+- [ ] Light theme: tables and diagrams stay readable.
