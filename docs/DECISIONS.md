@@ -360,21 +360,22 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
-## D-031 — Themes are sets of the nine base tokens, chosen on `<html>`; patterns are tiled images — Proposed
+## D-031 — Themes are sets of the nine base tokens, chosen on `<html>`; patterns are tiled images — Accepted
 
 For M16 (`docs/milestones/M16.md`). Charter, Carthage, Midnight and Ember, each dark and light:
 `html[data-theme][data-mode]` redefine the nine base colour tokens and `--pattern`, nothing else in
 the stylesheet changes; the choice is a Kairos setting applied by every window and the title bar.
 Patterns are the Master's images, tiled faintly. A contrast test (WCAG AA) guards every theme and
-mode. No new dependency. Proposed 2026-10-29.
+mode. No new dependency. Accepted by the product owner on 2026-10-29.
 
-## D-030 — The island's panel ports Elissa's wallpaper, media, open-apps and pinned-apps modules — Proposed
+## D-030 — The island's panel ports Elissa's wallpaper, media, open-apps and pinned-apps modules — Accepted
 
 For M15 (`docs/milestones/M15.md`). A click on the pill expands it into a tabbed panel (Home,
 Media, Wallpaper, Apps), the window growing and shrinking with it. The four modules are ported
 from the Master's Elissa project, without her audio visualiser; no new crate, more features on the
 `windows` crate already used. Media is subscribed only while its tab shows; window titles are never
-read; pins launch only by id. Proposed 2026-10-29.
+read; pins launch only by id. Accepted by the product owner on 2026-10-29, with the `windows`
+features listed in M15 §3.
 
 ## D-029 — The Kairos island: a pill the size of the pill, and a wake panel with the Master's Kairos — Accepted
 
