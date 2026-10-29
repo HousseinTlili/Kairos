@@ -760,6 +760,12 @@ export const islandState = () => call<IslandSettings>("island_state");
 export const saveIslandSettings = (enabled: boolean, panel: boolean) =>
   call<IslandSettings>("save_island_settings", { enabled, panel });
 export const islandOpenQuick = () => call<null>("island_open_quick");
+/** The pill expands into its panel, or folds back (M15). */
+export const islandExpand = (expanded: boolean) => call<null>("island_expand", { expanded });
+/** Sent by Rust when the island expanded or folded. */
+export function onIslandExpanded(handler: (expanded: boolean) => void): Promise<UnlistenFn> {
+  return listen<boolean>("island-expanded", (event) => handler(event.payload));
+}
 export const islandPushToTalk = (held: boolean) => call<null>("island_push_to_talk", { held });
 export const islandSnooze = (minutes: number) => call<null>("island_snooze", { minutes });
 export const islandCapturing = (capturing: boolean) =>

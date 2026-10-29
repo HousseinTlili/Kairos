@@ -2437,6 +2437,13 @@ pub async fn show_main_window(
     Ok(())
 }
 
+/// A click on the pill expands it; Esc, the pill again, or a click elsewhere folds it (M15).
+#[tauri::command]
+pub async fn island_expand(app: tauri::AppHandle, expanded: bool) -> Result<(), CommandError> {
+    crate::island::set_expanded(&app, expanded);
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn hide_presence_panel(app: tauri::AppHandle) -> Result<(), CommandError> {
     crate::island::hide_panel(&app);

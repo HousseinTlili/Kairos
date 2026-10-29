@@ -9,7 +9,7 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, Runtime, WebviewWindow};
+use tauri::{AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, Runtime, WebviewWindow};
 
 pub const ISLAND_WINDOW: &str = "island";
 pub const PANEL_WINDOW: &str = "presence-panel";
@@ -19,6 +19,9 @@ pub const PANEL_SETTING: &str = "island_panel";
 /// Logical sizes; tauri.conf.json creates the windows with the same numbers.
 pub const PILL_W: f64 = 300.0;
 pub const PILL_H: f64 = 40.0;
+/// The pill expanded into its panel (M15): tabs for Home, Media, Wallpaper and Apps.
+pub const EXPANDED_W: f64 = 600.0;
+pub const EXPANDED_H: f64 = 380.0;
 pub const PANEL_W: f64 = 300.0;
 pub const PANEL_H: f64 = 560.0;
 const TOP_MARGIN: f64 = 8.0;
@@ -46,6 +49,14 @@ fn px(logical: f64, scale: f64) -> i32 {
 pub fn pill_position(area: Area) -> (i32, i32) {
     (
         area.x + (area.w as i32 - px(PILL_W, area.scale)) / 2,
+        area.y + px(TOP_MARGIN, area.scale),
+    )
+}
+
+/// The expanded panel: centred at the top, where the pill was.
+pub fn expanded_position(area: Area) -> (i32, i32) {
+    (
+        area.x + (area.w as i32 - px(EXPANDED_W, area.scale)) / 2,
         area.y + px(TOP_MARGIN, area.scale),
     )
 }
@@ -94,6 +105,7 @@ pub struct IslandState {
     snoozed_until: Mutex<Option<Instant>>,
     capturing: AtomicBool,
     full_screen: AtomicBool,
+    expanded: AtomicBool,
 }
 
 impl IslandState {
@@ -131,7 +143,11 @@ pub fn refresh<R: Runtime>(app: &AppHandle<R>, enabled: bool) {
         && !state.full_screen.load(Ordering::SeqCst);
     if visible {
         if let Some(area) = area_of(&window) {
-            let (x, y) = pill_position(area);
+            let (x, y) = if state.expanded.load(Ordering::SeqCst) {
+                expanded_position(area)
+            } else {
+                pill_position(area)
+            };
             let _ = window.set_position(PhysicalPosition::new(x, y));
         }
         if !window.is_visible().unwrap_or(false) {
@@ -203,6 +219,37 @@ pub fn open_quick<R: Runtime>(app: &AppHandle<R>) {
     crate::quick::show(app);
 }
 
+/// The pill expands into its panel or folds back (M15). The window always has the size of what
+/// shows, so nothing needs to be click-through. Expanded, it takes the focus (the Master clicked
+/// it), so a click elsewhere is seen as the window losing focus, and it folds back.
+pub fn set_expanded<R: Runtime>(app: &AppHandle<R>, expanded: bool) {
+    let Some(window) = app.get_webview_window(ISLAND_WINDOW) else {
+        return;
+    };
+    app.state::<IslandState>()
+        .expanded
+        .store(expanded, Ordering::SeqCst);
+    let (w, h) = if expanded {
+        (EXPANDED_W, EXPANDED_H)
+    } else {
+        (PILL_W, PILL_H)
+    };
+    let _ = window.set_size(LogicalSize::new(w, h));
+    if let Some(area) = area_of(&window) {
+        let (x, y) = if expanded {
+            expanded_position(area)
+        } else {
+            pill_position(area)
+        };
+        let _ = window.set_position(PhysicalPosition::new(x, y));
+    }
+    let _ = window.set_focusable(expanded);
+    if expanded {
+        let _ = window.set_focus();
+    }
+    let _ = app.emit_to(ISLAND_WINDOW, "island-expanded", expanded);
+}
+
 /// The wake panel slides in (its page does the sliding; this places and shows the window).
 pub fn show_panel<R: Runtime>(app: &AppHandle<R>) {
     if let Some(panel) = app.get_webview_window(PANEL_WINDOW) {
@@ -267,6 +314,21 @@ mod tests {
         assert_eq!(quick_position(HD, 640), (960 - 320, 8 + 48));
         let tiny = Area { w: 500, ..HD };
         assert_eq!(quick_position(tiny, 640).0, 0);
+    }
+
+    #[test]
+    fn the_panel_opens_where_the_pill_was() {
+        assert_eq!(expanded_position(HD), (660, 8));
+        let hidpi = Area {
+            w: 2880,
+            h: 1728,
+            scale: 1.5,
+            ..HD
+        };
+        // The pill and the panel share their centre at any scaling.
+        let (pill_x, _) = pill_position(hidpi);
+        let (panel_x, _) = expanded_position(hidpi);
+        assert_eq!(pill_x + 450 / 2, panel_x + 900 / 2);
     }
 
     #[test]
