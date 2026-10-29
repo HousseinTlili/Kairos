@@ -53,6 +53,20 @@ windows = { version = "=0.62.2", features = [
   "Foundation_Collections",
   "UI_Notifications",
   "UI_Notifications_Management",
+  # M15 (D-030): the island's panel, ported from Elissa. Window and app icons, IDesktopWallpaper,
+  # Store apps, and the media session.
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_UI_Shell",
+  "Win32_UI_Shell_PropertiesSystem",
+  "Win32_System_Com",
+  "Win32_System_Variant",
+  "Win32_System_Threading",
+  "Win32_Graphics_Gdi",
+  "Win32_Storage_EnhancedStorage",
+  "Win32_Storage_Packaging_Appx",
+  "Win32_System_WinRT",
+  "Media_Control",
+  "Storage_Streams",
 ] }
 
 [profile.release]

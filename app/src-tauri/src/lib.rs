@@ -5,6 +5,7 @@ mod commands;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
 mod island;
+mod island_panel;
 mod keyring;
 mod media;
 mod memory;
@@ -98,6 +99,9 @@ pub fn run() {
             // full-screen apps.
             island::refresh(app.handle(), commands::island_enabled(app.handle()));
             island::watch(app.handle().clone(), commands::island_enabled);
+            if let Err(err) = island_panel::setup(app.handle()) {
+                eprintln!("kairos: the island's panel: {err}");
+            }
             let ptt = commands::stored_ptt_hotkey(&app.state::<commands::AppState>());
             if let Err(err) = quick::register_ptt(app.handle(), None, &ptt) {
                 eprintln!("kairos: push-to-talk: {err}");
@@ -247,7 +251,9 @@ pub fn run() {
             commands::island_snooze,
             commands::island_capturing,
             commands::hide_presence_panel,
-            commands::show_main_window
+            commands::show_main_window,
+            commands::island_expand,
+            island_panel::registry::island_module
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
