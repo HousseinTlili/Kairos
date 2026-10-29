@@ -27,8 +27,9 @@ D-027 Proposed) is not.
 D-028 and `mermaid` 11.17.2 accepted. Mermaid is loaded only when an answer holds a diagram.
 **M14** (the Kairos island, `m14/island`): built, `docs/milestones/M14.md`; D-029 accepted. Four windows
 load the same page now (`main.tsx` picks by label): main, quick, island, presence-panel.
-**M15** (the island's panel: wallpaper, media, apps, ported from Elissa, `m15/island-panel`) and **M16**
-(themes and patterns, `m16/themes`): specs only; D-030 and D-031 Proposed.
+**M15** (the island's panel: wallpaper, media, apps, ported from Elissa, `m15/island-panel`): built;
+the ported Rust is in `src-tauri/src/island_panel/` behind one `island_module` command, as in Elissa.
+**M16** (themes and patterns, `m16/themes`): spec only; D-031 accepted.
 
 ## Roles
 

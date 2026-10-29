@@ -191,3 +191,12 @@ Spec: `docs/milestones/M14.md`; details: `docs/milestones/M14-acceptance.md`. A 
 - [ ] A full-screen game or film: the pill steps aside, and returns after.
 - [ ] A second screen, or 150 % scaling: still at the top-centre of the main screen.
 - [ ] Settings ▸ Kairos ▸ Island: switching it off hides it at once.
+
+## M15 — The island's panel (`m15/island-panel`)
+
+Spec: `docs/milestones/M15.md`; details: `docs/milestones/M15-acceptance.md`. About 10 minutes.
+
+- [ ] Click the pill: the panel opens; click elsewhere or Esc: it folds back.
+- [ ] Media with music playing: cover, progress, play/pause, next, previous.
+- [ ] Wallpaper: next, previous, a click on a thumbnail (and one monitor or all, with two).
+- [ ] Apps: pin and launch apps; right-click an open app then ×: it closes politely.
