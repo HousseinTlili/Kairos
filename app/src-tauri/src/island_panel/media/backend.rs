@@ -65,11 +65,6 @@ impl Controller {
         }
     }
 
-    #[cfg(test)]
-    pub fn last(&self) -> &MediaState {
-        &self.last
-    }
-
     pub fn subscribe(&mut self, wake: Wake) -> Result<(), String> {
         self.backend.subscribe(wake)
     }
