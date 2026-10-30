@@ -1,5 +1,6 @@
 mod accounts;
 mod audit;
+mod automations;
 mod briefing;
 mod commands;
 // Public so the fixture tests in tests/ can drive it.
@@ -27,12 +28,26 @@ use std::sync::atomic::AtomicBool;
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 use tauri_plugin_notification::NotificationExt;
 
+use automations::{Happening, engine as automation_engine, watch::SnapshotWatch};
 use presence::{PresenceEvent, PresenceKind};
 use system::alerts::{Alerts, Evaluation};
 use system::{AlertSwitch, SystemMonitor};
 
 /// The argument Kairos's login entry starts it with: start hidden in the tray.
 const AUTOSTART_ARG: &str = "--autostart";
+
+/// What a presence event means to the automations (M17): a login start, or a return after a while.
+fn presence_happening(event: &PresenceEvent) -> Option<Happening> {
+    match event.kind {
+        PresenceKind::Startup if event.detail.as_deref() == Some("autostart") => {
+            Some(Happening::Login)
+        }
+        PresenceKind::Resume | PresenceKind::Unlock => {
+            event.away_s.map(|away_s| Happening::Back { away_s })
+        }
+        PresenceKind::Startup => None,
+    }
+}
 
 /// Sends new alerts to the page (banners) and to Windows (toasts), and cleared ones to the page.
 fn announce(app: &AppHandle, evaluation: &Evaluation) {
@@ -142,6 +157,9 @@ pub fn run() {
             commands::record_presence(&app.state::<commands::AppState>(), &startup);
             app.manage(Arc::new(briefing::BriefingClock::default()));
             commands::on_presence(app.handle(), &startup);
+            if let Some(happening) = presence_happening(&startup) {
+                automation_engine::on_happening(app.handle(), happening);
+            }
             let notification_switch =
                 commands::stored_notification_switch(&app.state::<commands::AppState>());
             app.manage(Arc::new(notification_switch));
@@ -157,6 +175,9 @@ pub fn run() {
                     commands::record_presence(&handle.state::<commands::AppState>(), &event);
                     let _ = handle.emit("presence", &event);
                     commands::on_presence(&handle, &event);
+                    if let Some(happening) = presence_happening(&event) {
+                        automation_engine::on_happening(&handle, happening);
+                    }
                 },
                 move |now| commands::set_last_seen(&heartbeat.state::<commands::AppState>(), now),
             )?;
@@ -167,6 +188,7 @@ pub fn run() {
 
             let handle = app.handle().clone();
             let mut alerts = Alerts::for_this_pc();
+            let mut watch = SnapshotWatch::default();
             app.state::<Arc<SystemMonitor>>().start(move |snapshot| {
                 let _ = handle.emit("system-snapshot", snapshot);
                 // Evaluated even while switched off, so turning alerts on doesn't replay old ones.
@@ -174,7 +196,43 @@ pub fn run() {
                 if switch.enabled() {
                     announce(&handle, &evaluation);
                 }
+                // M17: the charger, the battery and Wi-Fi from two snapshots; a full disk from
+                // its alert (whether or not alerts are shown).
+                let mut happenings = watch.observe(snapshot);
+                happenings.extend(
+                    evaluation
+                        .fired
+                        .iter()
+                        .filter(|a| a.kind == system::alerts::AlertKind::DiskFull)
+                        .map(|a| Happening::DiskFull {
+                            message: a.message.clone(),
+                        }),
+                );
+                for happening in happenings {
+                    automation_engine::on_happening(&handle, happening);
+                }
             })?;
+
+            // M17: program crashes from the Application event log.
+            #[cfg(windows)]
+            {
+                let handle = app.handle().clone();
+                let mut recent = std::collections::HashMap::new();
+                automations::crash::watch(move |crash| {
+                    let ignore = handle
+                        .state::<commands::AppState>()
+                        .with_store(|store| store.crash_ignore())
+                        .unwrap_or_default();
+                    if automations::crash::worth_telling(
+                        &crash,
+                        presence::unix_now(),
+                        &ignore,
+                        &mut recent,
+                    ) {
+                        automation_engine::on_happening(&handle, Happening::Crash(crash));
+                    }
+                })?;
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -263,7 +321,14 @@ pub fn run() {
             commands::appearance_state,
             commands::save_appearance,
             commands::paint_titlebar,
-            island_panel::registry::island_module
+            island_panel::registry::island_module,
+            automations::api::automations_state,
+            automations::api::save_automation,
+            automations::api::delete_automation,
+            automations::api::set_automations_enabled,
+            automations::api::set_crash_ignore,
+            automations::api::test_automation,
+            automations::api::automation_outcome
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -19,6 +19,13 @@ via Nous Portal.
 | `run-kairos-rule-double-prompt/` | M2 Step 8, approval mode `manual`: the Kairos rule asks, then (after `tool.started`) Hermes's own recursive-delete check asks again |
 | `plugin-hooks/` | Recorded 2026-10-24 by a temporary probe plugin (M2 Step 1): what `pre_tool_call`, `post_tool_call`, the two approval hooks and the session hooks receive, for `read_file`, `terminal`, `search_files`, `web_extract` and a denied `rm -rf`. Each line holds key names, value types and samples cut to 160 characters, not full values |
 
+## `eventlog/`
+
+Two events from the Windows Application log, recorded on the product owner's PC on 2026-10-30 with
+`Get-WinEvent … .ToXml()` for M17's crash trigger: `crash-1000.xml` (*Application Error*, a crash)
+and `hang-1002.xml` (*Application Hang*). The computer name is replaced with `PC` and the user's
+SID with `S-1-5-21-0-0-0-1001`; neither event holds a user path.
+
 ## Sanitising
 
 Recorded responses can contain personal data. Before committing a new fixture:

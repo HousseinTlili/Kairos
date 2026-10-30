@@ -1,7 +1,8 @@
 //! Local `kairos.db`: the `task` table (M1 §10, ARCHITECTURE.md §4), and from schema 2 the
 //! `setting` and `presence_event` tables (M3 §8), and from schema 3 the `notification` table
 //! (M4 §6, methods in `notifications/store.rs`), and from schema 4 each conversation's model and
-//! each request's usage and estimated cost (M7 §5).
+//! each request's usage and estimated cost (M7 §5), and from schema 5 the automations and their
+//! history (M17 §4, methods in `automations/store.rs`).
 //!
 //! A task row is written *before* Hermes is called and its ID is the run's Idempotency-Key, so a
 //! retry after a crash or a network error can never start a second run (M1 §9 rule 1).
@@ -15,7 +16,7 @@ use serde::Serialize;
 use crate::hermes::events::RunEvent;
 use crate::presence::{PresenceEvent, PresenceKind};
 
-const SCHEMA_VERSION: i32 = 4;
+const SCHEMA_VERSION: i32 = 5;
 
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 #[error("local task database: {0}")]
@@ -263,6 +264,28 @@ impl TaskStore {
                  ALTER TABLE task ADD COLUMN served_provider TEXT;
                  ALTER TABLE task ADD COLUMN served_model TEXT;
                  PRAGMA user_version = 4;",
+            )?;
+        }
+        if version < 5 {
+            conn.execute_batch(
+                "CREATE TABLE automation (
+                   id         TEXT PRIMARY KEY,
+                   position   INTEGER NOT NULL,
+                   definition TEXT NOT NULL
+                 );
+                 CREATE TABLE automation_run (
+                   id            INTEGER PRIMARY KEY,
+                   automation_id TEXT NOT NULL,
+                   name          TEXT NOT NULL,
+                   at            INTEGER NOT NULL,
+                   event         TEXT NOT NULL,
+                   outcome       TEXT NOT NULL,
+                   reason        TEXT,
+                   asked         INTEGER NOT NULL DEFAULT 0,
+                   test          INTEGER NOT NULL DEFAULT 0
+                 );
+                 CREATE INDEX automation_run_at ON automation_run(at);
+                 PRAGMA user_version = 5;",
             )?;
         }
         Ok(Self { conn })

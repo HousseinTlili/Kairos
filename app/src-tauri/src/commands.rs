@@ -56,7 +56,7 @@ impl AppState {
             })
     }
 
-    fn with_store<T>(
+    pub(crate) fn with_store<T>(
         &self,
         action: impl FnOnce(&TaskStore) -> Result<T, StoreError>,
     ) -> Result<T, CommandError> {
