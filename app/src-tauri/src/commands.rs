@@ -1020,6 +1020,18 @@ pub async fn set_kairos_at_login(
     enabled: bool,
 ) -> Result<bool, CommandError> {
     use tauri_plugin_autostart::ManagerExt;
+    // A development build at login opens a console window, and its pages need the dev server
+    // (`pnpm tauri dev`), which isn't running then: the island showed WebView2's "can't reach this
+    // page" and the console held the desktop until closed (2026-10-30). Only an installed build
+    // may start at login; switching it off still works here, to clean up.
+    if enabled && cfg!(debug_assertions) {
+        return Err(CommandError {
+            kind: "autostart",
+            message: "This is a development build: it can't start at login (it needs the dev \
+                      server and opens a console window). Install Kairos to have it start at login."
+                .into(),
+        });
+    }
     let manager = app.autolaunch();
     let outcome = if enabled {
         manager.enable()
