@@ -51,6 +51,9 @@ export function IslandApp() {
 
   useEffect(() => {
     document.documentElement.classList.add("island-window");
+    // The page starts folded; the window must too, or an invisible expanded window would sit over
+    // the top of the screen and take its clicks (seen 2026-10-30 after a reload).
+    void islandExpand(false);
     const stops = [
       onIslandExpanded(setExpanded),
       onKairosState((state) => {

@@ -200,3 +200,11 @@ Spec: `docs/milestones/M15.md`; details: `docs/milestones/M15-acceptance.md`. Ab
 - [ ] Media with music playing: cover, progress, play/pause, next, previous.
 - [ ] Wallpaper: next, previous, a click on a thumbnail (and one monitor or all, with two).
 - [ ] Apps: pin and launch apps; right-click an open app then ×: it closes politely.
+
+## M16 — Themes (`m16/themes`)
+
+Spec: `docs/milestones/M16.md`; details: `docs/milestones/M16-acceptance.md`. About 5 minutes.
+
+- [ ] Settings ▸ Kairos ▸ Appearance: each theme changes every window, the title bar and the island at once.
+- [ ] Light, Dark, Follow Windows: every theme stays readable.
+- [ ] Patterns: faint, never in the way.

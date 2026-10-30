@@ -5,19 +5,27 @@
 import { useSyncExternalStore } from "react";
 import type { Mermaid } from "mermaid";
 
-export type Scheme = "dark" | "light";
-
-const LIGHT = "(prefers-color-scheme: light)";
+/** The theme and its mode ("charter/dark"): a diagram is redrawn in new colours when either changes. */
+export type Scheme = string;
 
 function subscribe(onChange: () => void) {
-  const media = matchMedia(LIGHT);
-  media.addEventListener("change", onChange);
-  return () => media.removeEventListener("change", onChange);
+  // The theme is applied on <html> (M16), so that is what changes.
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme", "data-mode"],
+  });
+  return () => observer.disconnect();
 }
 
-/** The colour scheme, so diagrams are redrawn in the charter's light or dark colours. */
+function scheme(): Scheme {
+  const { theme = "charter", mode = "dark" } = document.documentElement.dataset;
+  return `${theme}/${mode}`;
+}
+
+/** The theme in use, so diagrams are redrawn in its colours. */
 export function useScheme(): Scheme {
-  return useSyncExternalStore(subscribe, () => (matchMedia(LIGHT).matches ? "light" : "dark"));
+  return useSyncExternalStore(subscribe, scheme);
 }
 
 let mermaid: Promise<Mermaid> | null = null;

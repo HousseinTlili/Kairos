@@ -142,8 +142,15 @@ pub fn refresh<R: Runtime>(app: &AppHandle<R>, enabled: bool) {
         && !state.capturing.load(Ordering::SeqCst)
         && !state.full_screen.load(Ordering::SeqCst);
     if visible {
+        let expanded = state.expanded.load(Ordering::SeqCst);
+        // The size follows the state every time, so the window never stays larger than what shows.
+        let _ = window.set_size(if expanded {
+            LogicalSize::new(EXPANDED_W, EXPANDED_H)
+        } else {
+            LogicalSize::new(PILL_W, PILL_H)
+        });
         if let Some(area) = area_of(&window) {
-            let (x, y) = if state.expanded.load(Ordering::SeqCst) {
+            let (x, y) = if expanded {
                 expanded_position(area)
             } else {
                 pill_position(area)

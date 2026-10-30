@@ -253,6 +253,9 @@ pub fn run() {
             commands::hide_presence_panel,
             commands::show_main_window,
             commands::island_expand,
+            commands::appearance_state,
+            commands::save_appearance,
+            commands::paint_titlebar,
             island_panel::registry::island_module
         ])
         .run(tauri::generate_context!())

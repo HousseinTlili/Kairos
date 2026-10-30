@@ -82,6 +82,15 @@
   --sidebar-muted: var(--ash);
   --sidebar-hover: #191715;
   --sidebar-active: #23201c;
+  /* The sidebar's accents, the name and the seal: the theme's (M16; Charter's here, before the
+     theme is applied). */
+  --sidebar-gold: #c9a043;
+  --sidebar-vert: #7db394;
+  --sidebar-gules: #e5847f;
+  --wordmark: #e2c47a;
+  --seal-wax: #9c2e33;
+  --seal-edge: #7a2227;
+  --seal-letter: #ecd28f;
 
   /*
    * The room's pattern: a manuscript diaper, gold lozenges with a quatrefoil in each, very faint
@@ -111,34 +120,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color-scheme: light;
-    --charcoal: #ede5d4;
-    --hearth: #f7f1e4;
-    --ember: #e5dcc8;
-    --iron: #cdbfa3;
-    --gold: #86661d;
-    --gold-soft: rgba(134, 102, 29, 0.12);
-    --gules: #9c2c30;
-    --gules-soft: rgba(156, 44, 48, 0.1);
-    --vert: #2e7a55;
-    --vert-soft: rgba(46, 122, 85, 0.12);
-    --vellum: #2a2420;
-    --ash: #6b5f50;
-    --warn: #8a5a00;
-    --warn-bg: #f6e8c8;
-    --code-bg: #e5dcc8;
-    --on-gilt: #fffaf0;
-    --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cpath d='M0 28L28 0L56 28L28 56Z' fill='none' stroke='%2386661d' stroke-opacity='0.12' stroke-width='0.8'/%3E%3Cg fill='%2386661d' fill-opacity='0.12'%3E%3Ccircle cx='28' cy='25.2' r='2'/%3E%3Ccircle cx='30.8' cy='28' r='2'/%3E%3Ccircle cx='28' cy='30.8' r='2'/%3E%3Ccircle cx='25.2' cy='28' r='2'/%3E%3Ccircle cx='0' cy='28' r='1'/%3E%3Ccircle cx='56' cy='28' r='1'/%3E%3Ccircle cx='28' cy='0' r='1'/%3E%3Ccircle cx='28' cy='56' r='1'/%3E%3C/g%3E%3C/svg%3E");
-    /* The sidebar stays charcoal panelling in both themes, so its text stays vellum. */
-    --sidebar-bg: #121110;
-    --sidebar-fg: #ece4d3;
-    --sidebar-muted: #a89f8e;
-    --sidebar-hover: #201d1a;
-    --sidebar-active: #2a2622;
-  }
-}
+/* Light mode and the other themes are set on <html> by features/appearance (M16, D-031). */
 
 * {
   box-sizing: border-box;
@@ -381,10 +363,10 @@ code {
 /* ---------------------------------------------------------------- Sidebar */
 
 .sidebar {
-  /* The sidebar is dark in both themes, so it keeps the dark theme's accents. */
-  --gilt: #c9a043;
-  --lume: #7db394;
-  --garnet: #e5847f;
+  /* The sidebar is dark in every mode, so it has its theme's dark accents (M16). */
+  --gilt: var(--sidebar-gold);
+  --lume: var(--sidebar-vert);
+  --garnet: var(--sidebar-gules);
   --on-gilt: #1d1406;
   display: flex;
   flex-direction: column;
@@ -411,7 +393,7 @@ code {
   font-weight: 700;
   font-size: 1.75rem;
   line-height: 1;
-  color: #e2c47a;
+  color: var(--wordmark);
 }
 
 .brand-state {
@@ -433,8 +415,8 @@ code {
   flex: none;
 }
 .seal-mark .seal-wax {
-  fill: #9c2e33;
-  stroke: #7a2227;
+  fill: var(--seal-wax);
+  stroke: var(--seal-edge);
   stroke-width: 0.6;
 }
 .seal-mark .seal-inner {
@@ -447,7 +429,7 @@ code {
   font-family: var(--font-blackletter);
   font-weight: 700;
   font-size: 15px;
-  fill: #ecd28f;
+  fill: var(--seal-letter);
 }
 .seal-mark .seal-ring {
   fill: none;
@@ -2817,6 +2799,23 @@ html.panel-window body {
   overflow: hidden;
 }
 
+/* The island and the wake panel are dark panelling in every mode, like the sidebar: they take
+   its colours, so a light theme can't put dark text on them (M16). */
+.island,
+.presence-panel {
+  --fg: var(--sidebar-fg);
+  --muted: var(--sidebar-muted);
+  --gilt: var(--sidebar-gold);
+  --lume: var(--sidebar-vert);
+  --garnet: var(--sidebar-gules);
+  --oxblood: var(--sidebar-gules);
+  --surface: var(--sidebar-hover);
+  --raised: var(--sidebar-active);
+  --border: color-mix(in srgb, var(--sidebar-fg) 14%, transparent);
+  --bg: var(--sidebar-bg);
+  color-scheme: dark;
+}
+
 .island {
   display: flex;
   align-items: center;
@@ -2827,7 +2826,7 @@ html.panel-window body {
   padding: 0 4px 0 6px;
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--gilt) 55%, transparent);
-  background: rgba(18, 17, 16, 0.94);
+  background: color-mix(in srgb, var(--sidebar-bg) 94%, transparent);
   color: var(--fg);
   user-select: none;
 }
@@ -2892,7 +2891,7 @@ html.panel-window body {
   overflow: hidden;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--gilt) 50%, transparent);
-  background: #0c0b0a;
+  background: var(--sidebar-bg);
   color: var(--fg);
   animation: presence-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -2925,7 +2924,7 @@ html.panel-window body {
 .presence-caption {
   padding: 12px 16px 16px;
   border-top: 1px solid color-mix(in srgb, var(--gilt) 30%, transparent);
-  background: #0c0b0a;
+  background: var(--sidebar-bg);
 }
 
 .presence-state {
@@ -3307,4 +3306,68 @@ html.panel-window body {
 
 .wall-thumb.active {
   border-color: var(--gilt);
+}
+
+/* --- M16: Settings ▸ Appearance ---------------------------------------------------------------- */
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+
+.theme-card {
+  display: flex;
+  height: 104px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.theme-card-side {
+  display: grid;
+  place-items: start center;
+  width: 38px;
+  padding-top: 10px;
+  flex: none;
+}
+
+.theme-card-seal {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-family: var(--font-blackletter);
+  font-size: 0.75rem;
+}
+
+.theme-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 9px 10px;
+  min-width: 0;
+}
+
+.theme-card-name {
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+}
+
+.theme-card-line {
+  font-size: 0.6875rem;
+  line-height: 1.35;
+}
+
+.theme-card-gold {
+  margin-top: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
 }

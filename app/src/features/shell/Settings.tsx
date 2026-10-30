@@ -12,6 +12,7 @@ import { MemorySettings } from "../memory/MemorySettings";
 import { useSystem } from "../system/store";
 import { useShell, type SettingsTab } from "./store";
 import { IslandSettings } from "../island/IslandSettings";
+import { AppearanceSettings } from "../appearance/AppearanceSettings";
 
 // Four groups instead of one row of tabs, which no longer fit the window (docs/design/BRAND.md).
 const GROUPS: { label: string; tabs: { id: SettingsTab; label: string }[] }[] = [
@@ -19,6 +20,7 @@ const GROUPS: { label: string; tabs: { id: SettingsTab; label: string }[] }[] = 
     label: "Kairos",
     tabs: [
       { id: "persona", label: "Persona" },
+      { id: "appearance", label: "Appearance" },
       { id: "memory", label: "Memory" },
       { id: "voice", label: "Voice" },
       { id: "quick", label: "Quick box" },
@@ -102,6 +104,8 @@ export function Settings() {
           <MemorySettings />
         ) : settingsTab === "island" ? (
           <IslandSettings />
+        ) : settingsTab === "appearance" ? (
+          <AppearanceSettings />
         ) : settingsTab === "startup" ? (
           <StartupSettings />
         ) : (

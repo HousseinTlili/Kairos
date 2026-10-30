@@ -2551,3 +2551,52 @@ pub async fn save_image(request: tauri::ipc::Request<'_>) -> Result<String, Comm
     let path = crate::media::save(&dir, &name, bytes)?;
     Ok(path.display().to_string())
 }
+
+// --- Appearance (M16, D-031) ---------------------------------------------------------------------
+
+const APPEARANCE_SETTING: &str = "appearance";
+
+/// The theme, mode and pattern as the page stores them (JSON), or null for the default.
+#[tauri::command]
+pub async fn appearance_state(
+    state: tauri::State<'_, AppState>,
+) -> Result<Option<serde_json::Value>, CommandError> {
+    Ok(setting_or(&state, APPEARANCE_SETTING).and_then(|text| serde_json::from_str(&text).ok()))
+}
+
+/// Saves the appearance and tells every window, so all of Kairos changes at once.
+#[tauri::command]
+pub async fn save_appearance(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    appearance: serde_json::Value,
+) -> Result<(), CommandError> {
+    state.with_store(|store| store.set_setting(APPEARANCE_SETTING, &appearance.to_string()))?;
+    let _ = app.emit("appearance-changed", appearance);
+    Ok(())
+}
+
+/// The main window's title bar in the theme's colours ("#rrggbb" each).
+#[tauri::command]
+pub async fn paint_titlebar(
+    app: tauri::AppHandle,
+    caption: String,
+    text: String,
+    border: String,
+) -> Result<(), CommandError> {
+    let parse = |value: &str| {
+        crate::titlebar::parse_hex(value).ok_or_else(|| CommandError {
+            kind: "invalid",
+            message: format!("{value:?} isn't a #rrggbb colour."),
+        })
+    };
+    let colors = crate::titlebar::Colors {
+        caption: parse(&caption)?,
+        text: parse(&text)?,
+        border: parse(&border)?,
+    };
+    if let Some(main) = app.get_webview_window(crate::tray::MAIN_WINDOW) {
+        crate::titlebar::paint_with(&main, colors);
+    }
+    Ok(())
+}

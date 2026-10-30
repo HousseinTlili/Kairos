@@ -5,6 +5,7 @@ import App from "./app/App";
 import { IslandApp } from "./features/island/IslandApp";
 import { PresencePanel } from "./features/island/PresencePanel";
 import { QuickApp } from "./features/quick/QuickApp";
+import { startAppearance } from "./features/appearance/apply";
 import "./app/global.css";
 
 // Four windows load this page: the main one, the quick box (M8 §3), the island pill and the wake
@@ -16,6 +17,9 @@ const label = (() => {
     return "main";
   }
 })();
+
+// The theme first, so the first paint is already right (M16).
+startAppearance(label);
 
 const app =
   label === "quick"

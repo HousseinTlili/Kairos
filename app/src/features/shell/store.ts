@@ -14,6 +14,7 @@ export type SettingsTab =
   | "persona"
   | "memory"
   | "island"
+  | "appearance"
   | "startup";
 
 interface ShellState {

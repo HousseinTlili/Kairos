@@ -29,7 +29,9 @@ D-028 and `mermaid` 11.17.2 accepted. Mermaid is loaded only when an answer hold
 load the same page now (`main.tsx` picks by label): main, quick, island, presence-panel.
 **M15** (the island's panel: wallpaper, media, apps, ported from Elissa, `m15/island-panel`): built;
 the ported Rust is in `src-tauri/src/island_panel/` behind one `island_module` command, as in Elissa.
-**M16** (themes and patterns, `m16/themes`): spec only; D-031 accepted.
+**M16** (themes and patterns, `m16/themes`): Steps 2–4 built; the palettes are data in
+`features/appearance/palettes.ts` (a contrast test guards them), applied on `<html>` by every window.
+Step 5 waits for the product owner's pattern images.
 
 ## Roles
 
