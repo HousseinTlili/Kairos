@@ -360,7 +360,7 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
-## D-033 — Automations are Kairos's own: events from the PC, decided in the core, AI requests under the usual rules — Proposed
+## D-033 — Automations are Kairos's own: events from the PC, decided in the core, AI requests under the usual rules — Accepted
 
 For M17 (`docs/milestones/M17.md`). Hermes's scheduled jobs only know the time; login, return,
 battery, charger, Wi-Fi, a full disk and program crashes are local Windows facts Hermes doesn't
@@ -369,7 +369,9 @@ see. So Kairos keeps the automations (`kairos.db`), decides them with one tested
 "Ask Kairos" through Hermes, as a normal request in a `kairos-` conversation: the rules, approval
 cards, idempotency and D-032 all hold, and an automation never approves anything. Crashes come from
 the Application event log through the `Win32_System_EventLog` feature of the `windows-sys` crate
-already used. Taken from Herald OS on 2026-10-30.
+already used. Taken from Herald OS on 2026-10-30. Accepted by the product owner on 2026-10-30
+with the recommended answers (M17 §7): "Ask Kairos" may start without a click, the crash offer is on
+by default, the limits as written, and the `Win32_System_EventLog` feature.
 
 ## D-032 — Kairos's PC tools work only in Kairos's own conversations — Accepted
 
