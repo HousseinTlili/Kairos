@@ -204,6 +204,47 @@ class BrowserScriptCardTest(HooksTestBase):
         self.assertIn("on a.example", self.ask("press_key('Enter')", session="one")["message"])
 
 
+class OwnToolsTest(HooksTestBase):
+    """Kairos's PC tools work only in conversations started in Kairos (Herald OS's lesson)."""
+
+    def test_a_telegram_chat_cant_use_them(self):
+        result = self.hooks.pre_tool_call(
+            tool_name="screen_capture", args={}, session_id="20261030_101500_abc123"
+        )
+        self.assertEqual(result["action"], "block")
+        self.assertIn("kairos-own-tools", result["message"])
+        self.assertEqual(self.rows("tool_event")[-1]["rule_id"], "kairos-own-tools")
+
+    def test_kairos_own_conversations_go_through_the_rules_as_before(self):
+        # The starter rules ask before a screen capture (D-021) and let list_running_apps run.
+        asked = self.hooks.pre_tool_call(tool_name="screen_capture", args={}, session_id="kairos-01abc")
+        self.assertEqual(asked["action"], "approve")
+        self.assertIsNone(self.hooks.pre_tool_call(tool_name="list_running_apps", args={}, session_id="kairos-01abc"))
+
+    def test_other_tools_are_not_affected(self):
+        self.assertIsNone(self.hooks.pre_tool_call(tool_name="read_file", args={"path": "a.txt"}, session_id="cli-1"))
+
+    def test_the_list_is_exactly_the_tools_the_plugin_registers(self):
+        from kairos import notifications, pctools, screen, sessions
+
+        registered = {
+            pctools.LIST_RUNNING_APPS["name"],
+            pctools.OPEN_APP["name"],
+            pctools.CLOSE_APP["name"],
+            notifications.RECENT_NOTIFICATIONS["name"],
+            screen.SCREEN_CAPTURE["name"],
+        }
+        self.assertEqual(sessions.KAIROS_TOOLS, registered)
+
+    def test_the_hints_about_them_are_only_given_in_kairos(self):
+        from kairos.sessions import only_in_kairos
+
+        hint = only_in_kairos(lambda **_: {"context": "use open_app"})
+        self.assertEqual(hint(session_id="kairos-01abc", user_message="open notepad"), {"context": "use open_app"})
+        self.assertIsNone(hint(session_id="20261030_telegram", user_message="open notepad"))
+        self.assertIsNone(hint(user_message="open notepad"))
+
+
 class StyleTest(unittest.TestCase):
     """M13 §4: the note on tables, diagrams and pictures goes only to Kairos's conversations."""
 

@@ -108,7 +108,8 @@ class RegisterNotificationsTest(unittest.TestCase):
 
         tools, hooks = registered("win32")
         self.assertEqual([(n, ts) for n, ts, _ in tools], [("recent_notifications", "kairos")])
-        self.assertEqual(hooks, [("pre_llm_call", steering)])
+        # Wrapped so it is said only in Kairos's own conversations (sessions.py).
+        self.assertEqual([(n, getattr(f, "__wrapped__", f)) for n, f in hooks], [("pre_llm_call", steering)])
         tools, hooks = registered("linux")
         self.assertEqual(len(tools), 1, "registered, but hidden by its check off Windows")
         self.assertEqual(hooks, [])

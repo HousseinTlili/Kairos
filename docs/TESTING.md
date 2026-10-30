@@ -208,3 +208,7 @@ Spec: `docs/milestones/M16.md`; details: `docs/milestones/M16-acceptance.md`. Ab
 - [ ] Settings ▸ Kairos ▸ Appearance: each theme changes every window, the title bar and the island at once.
 - [ ] Light, Dark, Follow Windows: every theme stays readable.
 - [ ] Patterns: faint, never in the way.
+
+## D-032 — Kairos's PC tools only in Kairos
+
+- [ ] From Telegram or the Hermes CLI, ask "which apps are open?": refused (`kairos-own-tools`). In Kairos: answered.

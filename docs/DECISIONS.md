@@ -360,6 +360,16 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
+## D-032 — Kairos's PC tools work only in Kairos's own conversations — Accepted
+
+`list_running_apps`, `open_app`, `close_app`, `recent_notifications` and `screen_capture` act on
+the Master's PC, so the plugin refuses them in any session not started by Kairos (`kairos-…`): a
+Telegram chat, the Hermes CLI, a scheduled job. Its `pre_tool_call` hook decides it (rule id
+`kairos-own-tools`, recorded in the audit), within the plugin contract; the notes that point the
+model at those tools are given only in Kairos's conversations too. Taken from Herald OS, another
+project on Hermes, which scopes its tools the same way. Checked live 2026-10-30: refused from the
+Hermes CLI, used normally in Kairos. Asked for by the product owner on 2026-10-30.
+
 ## D-031 — Themes are sets of the nine base tokens, chosen on `<html>`; patterns are tiled images — Accepted
 
 For M16 (`docs/milestones/M16.md`). Charter, Carthage, Midnight and Ember, each dark and light:

@@ -9,9 +9,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-log = logging.getLogger("kairos.style")
+from .sessions import KAIROS_SESSION
 
-KAIROS_SESSION = "kairos-"
+log = logging.getLogger("kairos.style")
 
 STYLE = (
     "Format for Kairos's screen. Default to plain sentences; a short answer stays short. "

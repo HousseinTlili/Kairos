@@ -17,6 +17,7 @@ from urllib.parse import urlsplit
 from .audit import AuditStore
 from .policy import Decision, PolicyFile, decide
 from .redact import redact, redact_text
+from .sessions import KAIROS_TOOLS, is_kairos
 
 log = logging.getLogger("kairos.hooks")
 
@@ -145,6 +146,13 @@ def hook_result(
     return None  # allow, inherit
 
 
+OWN_TOOLS = Decision(
+    "deny",
+    "kairos-own-tools",
+    "This tool acts on the Master's PC and works only in conversations started in Kairos.",
+)
+
+
 class KairosHooks:
     def __init__(self, policy_file: PolicyFile, audit: AuditStore):
         self.policy_file = policy_file
@@ -173,7 +181,11 @@ class KairosHooks:
         **_: Any,
     ) -> dict | None:
         try:
-            decision = decide(self.policy_file.current(), tool_name, args)
+            if tool_name in KAIROS_TOOLS and not is_kairos(session_id):
+                # Kairos's PC tools work only in Kairos's own conversations (sessions.py).
+                decision = OWN_TOOLS
+            else:
+                decision = decide(self.policy_file.current(), tool_name, args)
         except Exception as err:  # noqa: BLE001 — fail closed: a broken check never lets a call through
             log.exception("kairos: rules check failed for %s", tool_name)
             decision = Decision("invalid_rules", None, f"Kairos couldn't check its rules ({type(err).__name__}).")

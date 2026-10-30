@@ -312,7 +312,11 @@ class RegisterToolsTest(unittest.TestCase):
                 kairos.register_tools(FakeCtx())
             return hooks
 
-        self.assertEqual(hooks_registered("win32"), [("pre_llm_call", steering)])
+        # Wrapped so it is said only in Kairos's own conversations (sessions.py).
+        self.assertEqual(
+            [(n, getattr(f, "__wrapped__", f)) for n, f in hooks_registered("win32")],
+            [("pre_llm_call", steering)],
+        )
         self.assertEqual(hooks_registered("linux"), [])
 
     def test_a_hermes_without_tool_registration_keeps_the_hooks(self):

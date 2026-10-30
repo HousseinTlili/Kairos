@@ -17,6 +17,7 @@ from pathlib import Path
 
 from .audit import AuditStore
 from . import notifications, screen, style
+from .sessions import only_in_kairos
 from .hooks import KairosHooks
 from .pctools import CLOSE_APP, LIST_RUNNING_APPS, OPEN_APP, PcTools, steering
 from .policy import PolicyFile
@@ -57,7 +58,7 @@ def register_tools(ctx) -> None:
             register_tool(name=schema["name"], toolset="kairos", schema=schema, handler=handler, check_fn=on_windows)
         # Only where the tools exist: pointing the model at tools it can't see would mislead it.
         if on_windows():
-            ctx.register_hook("pre_llm_call", steering)
+            ctx.register_hook("pre_llm_call", only_in_kairos(steering))
     except Exception:  # noqa: BLE001
         log.exception("kairos: couldn't register the PC control tools")
 
@@ -76,7 +77,7 @@ def register_notifications(ctx, home: Path) -> None:
             name=schema["name"], toolset="kairos", schema=schema, handler=reader.recent_notifications, check_fn=on_windows
         )
         if on_windows():
-            ctx.register_hook("pre_llm_call", notifications.steering)
+            ctx.register_hook("pre_llm_call", only_in_kairos(notifications.steering))
     except Exception:  # noqa: BLE001
         log.exception("kairos: couldn't register recent_notifications")
 
@@ -98,7 +99,7 @@ def register_screen(ctx, home: Path) -> None:
         schema = screen.SCREEN_CAPTURE
         register_tool(name=schema["name"], toolset="kairos", schema=schema, handler=tool.screen_capture, check_fn=on_windows)
         if on_windows():
-            ctx.register_hook("pre_llm_call", screen.steering)
+            ctx.register_hook("pre_llm_call", only_in_kairos(screen.steering))
     except Exception:  # noqa: BLE001
         log.exception("kairos: couldn't register screen_capture")
 
