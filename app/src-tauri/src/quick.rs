@@ -75,7 +75,7 @@ pub fn register_ptt<R: Runtime>(
     })
 }
 
-fn replace<R: Runtime>(
+pub(crate) fn replace<R: Runtime>(
     app: &AppHandle<R>,
     old: Option<&str>,
     new: &str,
@@ -107,12 +107,26 @@ mod tests {
         for text in [
             DEFAULT_HOTKEY,
             crate::voice::DEFAULT_PTT,
+            crate::island::DEFAULT_HOTKEY,
             "Alt+Space",
             "Ctrl+Shift+K",
             "Super+J",
         ] {
             assert!(parse_hotkey(text).is_ok(), "{text}");
         }
+    }
+
+    #[test]
+    fn the_three_default_keys_are_different_and_side_by_side() {
+        let keys = [
+            DEFAULT_HOTKEY,
+            crate::voice::DEFAULT_PTT,
+            crate::island::DEFAULT_HOTKEY,
+        ];
+        let parsed: Vec<_> = keys.iter().map(|k| parse_hotkey(k).unwrap()).collect();
+        assert!(parsed[0] != parsed[1] && parsed[1] != parsed[2] && parsed[0] != parsed[2]);
+        // J, K, L: one hand, one row, the same Ctrl+Alt.
+        assert!(keys.iter().all(|k| k.starts_with("Ctrl+Alt+")));
     }
 
     #[test]

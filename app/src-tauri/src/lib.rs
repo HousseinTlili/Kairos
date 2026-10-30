@@ -99,6 +99,12 @@ pub fn run() {
             // full-screen apps.
             island::refresh(app.handle(), commands::island_enabled(app.handle()));
             island::watch(app.handle().clone(), commands::island_enabled);
+            let island_key = commands::stored_island_hotkey(&app.state::<commands::AppState>());
+            if let Err(err) =
+                island::register_hotkey(app.handle(), None, &island_key, commands::toggle_island)
+            {
+                eprintln!("kairos: the island's hotkey: {err}");
+            }
             if let Err(err) = island_panel::setup(app.handle()) {
                 eprintln!("kairos: the island's panel: {err}");
             }
@@ -253,6 +259,7 @@ pub fn run() {
             commands::hide_presence_panel,
             commands::show_main_window,
             commands::island_expand,
+            commands::set_island_hotkey,
             commands::appearance_state,
             commands::save_appearance,
             commands::paint_titlebar,

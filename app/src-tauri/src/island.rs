@@ -15,6 +15,10 @@ pub const ISLAND_WINDOW: &str = "island";
 pub const PANEL_WINDOW: &str = "presence-panel";
 pub const ENABLED_SETTING: &str = "island_enabled";
 pub const PANEL_SETTING: &str = "island_panel";
+pub const HOTKEY_SETTING: &str = "island_hotkey";
+/// Hides and shows the island. Next to the quick box's Ctrl+Alt+K and push-to-talk's Ctrl+Alt+J,
+/// so the three sit under one hand (asked for 2026-10-30).
+pub const DEFAULT_HOTKEY: &str = "Ctrl+Alt+L";
 
 /// Logical sizes; tauri.conf.json creates the windows with the same numbers.
 pub const PILL_W: f64 = 300.0;
@@ -165,6 +169,20 @@ pub fn refresh<R: Runtime>(app: &AppHandle<R>, enabled: bool) {
     } else {
         let _ = window.hide();
     }
+}
+
+/// Registers the hide/show key; on failure the old one stays. `toggle` flips the setting.
+pub fn register_hotkey<R: Runtime>(
+    app: &AppHandle<R>,
+    old: Option<&str>,
+    new: &str,
+    toggle: impl Fn(&AppHandle<R>) + Send + Sync + 'static,
+) -> Result<(), String> {
+    crate::quick::replace(app, old, new, move |app, state| {
+        if state == tauri_plugin_global_shortcut::ShortcutState::Pressed {
+            toggle(app);
+        }
+    })
 }
 
 /// The full-screen watch: hides the pill while a full-screen app is in front, shows it after.

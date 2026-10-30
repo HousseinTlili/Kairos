@@ -2351,10 +2351,12 @@ pub async fn wake_feed(
 
 // --- The island (M14, D-029) ---------------------------------------------------------------------
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct IslandSettings {
     /// The pill at the top of the screen; on unless the Master switched it off.
     pub enabled: bool,
+    /// The key that hides and shows it.
+    pub hotkey: String,
     /// The standing Kairos sliding in on the wake word.
     pub panel: bool,
 }
@@ -2363,9 +2365,15 @@ fn setting_flag(state: &AppState, key: &str) -> bool {
     setting_or(state, key).is_none_or(|v| v != "false")
 }
 
+pub fn stored_island_hotkey(state: &AppState) -> String {
+    setting_or(state, crate::island::HOTKEY_SETTING)
+        .unwrap_or_else(|| crate::island::DEFAULT_HOTKEY.to_string())
+}
+
 pub fn island_settings(state: &AppState) -> IslandSettings {
     IslandSettings {
         enabled: setting_flag(state, crate::island::ENABLED_SETTING),
+        hotkey: stored_island_hotkey(state),
         panel: setting_flag(state, crate::island::PANEL_SETTING),
     }
 }
@@ -2402,6 +2410,53 @@ pub async fn save_island_settings(
     if !panel {
         crate::island::hide_panel(&app);
     }
+    Ok(island_settings(&state))
+}
+
+/// The island's hotkey: hide it if shown, show it if hidden, and say so to the Settings page.
+pub fn toggle_island<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    let state = app.state::<AppState>();
+    let enabled = !island_settings(&state).enabled;
+    let _ = state.with_store(|store| {
+        store.set_setting(
+            crate::island::ENABLED_SETTING,
+            if enabled { "true" } else { "false" },
+        )
+    });
+    if !enabled {
+        crate::island::set_expanded(app, false);
+    }
+    crate::island::refresh(app, enabled);
+    let _ = app.emit("island-settings", island_settings(&state));
+}
+
+/// Changes the island's hotkey; keeps the old one if Windows refuses the new one.
+#[tauri::command]
+pub async fn set_island_hotkey(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    hotkey: String,
+) -> Result<IslandSettings, CommandError> {
+    let wanted = crate::quick::parse_hotkey(&hotkey).ok();
+    for (taken, by) in [
+        (stored_hotkey(&state), "the quick box's"),
+        (stored_ptt_hotkey(&state), "push-to-talk's"),
+    ] {
+        if wanted.is_some() && wanted == crate::quick::parse_hotkey(&taken).ok() {
+            return Err(CommandError {
+                kind: "hotkey",
+                message: format!("That's {by} key; the island needs its own."),
+            });
+        }
+    }
+    let old = stored_island_hotkey(&state);
+    crate::island::register_hotkey(&app, Some(&old), &hotkey, toggle_island).map_err(
+        |message| CommandError {
+            kind: "hotkey",
+            message,
+        },
+    )?;
+    state.with_store(|store| store.set_setting(crate::island::HOTKEY_SETTING, hotkey.trim()))?;
     Ok(island_settings(&state))
 }
 

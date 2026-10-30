@@ -191,6 +191,7 @@ Spec: `docs/milestones/M14.md`; details: `docs/milestones/M14-acceptance.md`. A 
 - [ ] A full-screen game or film: the pill steps aside, and returns after.
 - [ ] A second screen, or 150 % scaling: still at the top-centre of the main screen.
 - [ ] Settings ▸ Kairos ▸ Island: switching it off hides it at once.
+- [ ] Ctrl+Alt+L hides the island, again shows it (the switch in Settings follows). Ctrl+Alt+J, K, L sit side by side. A new key in "Hide and show" works at once; the quick box's or push-to-talk's key is refused.
 
 ## M15 — The island's panel (`m15/island-panel`)
 

@@ -753,6 +753,8 @@ export async function saveImage(bytes: Uint8Array, name: string): Promise<string
 
 export interface IslandSettings {
   enabled: boolean;
+  /** The key that hides and shows it ("Ctrl+Alt+L"). */
+  hotkey: string;
   panel: boolean;
 }
 
@@ -760,6 +762,12 @@ export const islandState = () => call<IslandSettings>("island_state");
 export const saveIslandSettings = (enabled: boolean, panel: boolean) =>
   call<IslandSettings>("save_island_settings", { enabled, panel });
 export const islandOpenQuick = () => call<null>("island_open_quick");
+export const setIslandHotkey = (hotkey: string) =>
+  call<IslandSettings>("set_island_hotkey", { hotkey });
+/** The hotkey hid or showed the island. */
+export function onIslandSettings(handler: (settings: IslandSettings) => void): Promise<UnlistenFn> {
+  return listen<IslandSettings>("island-settings", (event) => handler(event.payload));
+}
 /** The pill expands into its panel, or folds back (M15). */
 export const islandExpand = (expanded: boolean) => call<null>("island_expand", { expanded });
 /** Sent by Rust when the island expanded or folded. */
