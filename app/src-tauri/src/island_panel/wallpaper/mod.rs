@@ -145,7 +145,16 @@ impl Module for Wallpaper {
             }
             "thumbnail" => {
                 let path = str_arg(&args, "path").ok_or("path is required")?;
-                check_in_folder(app, path)?;
+                // The picture Windows shows now may be read from anywhere (it's on screen already:
+                // Home shows it behind the hour); anything else only from the folder.
+                let on_screen = self
+                    .worker()?
+                    .monitors()?
+                    .iter()
+                    .any(|m| images::same_path(&m.current, path));
+                if !(on_screen && images::is_image(Path::new(path))) {
+                    check_in_folder(app, path)?;
+                }
                 Ok(json!(self.worker()?.thumbnail(path)?))
             }
             "set" => {

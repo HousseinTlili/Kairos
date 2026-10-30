@@ -125,3 +125,63 @@ export const SidebarIcon = () => (
     <path d="M9 4v16" />
   </Icon>
 );
+
+// The island's tabs and media controls (M15).
+
+export const HomeIcon = () => (
+  <Icon>
+    <path d="M4 11l8-7 8 7v9H14v-6h-4v6H4z" />
+  </Icon>
+);
+
+export const MusicIcon = () => (
+  <Icon>
+    <path d="M9 18V6l11-2v12" />
+    <circle cx="6.5" cy="18" r="2.5" />
+    <circle cx="17.5" cy="16" r="2.5" />
+  </Icon>
+);
+
+export const ImageIcon = () => (
+  <Icon>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <circle cx="9" cy="10" r="2" />
+    <path d="M21 16l-5-5-9 9" />
+  </Icon>
+);
+
+export const GridIcon = () => (
+  <Icon>
+    <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+    <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+    <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+    <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+  </Icon>
+);
+
+export const PlayIcon = () => (
+  <Icon fill="currentColor" stroke="none">
+    <path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" />
+  </Icon>
+);
+
+export const PauseIcon = () => (
+  <Icon fill="currentColor" stroke="none">
+    <rect x="6" y="5" width="4" height="14" rx="1.2" />
+    <rect x="14" y="5" width="4" height="14" rx="1.2" />
+  </Icon>
+);
+
+export const NextIcon = () => (
+  <Icon fill="currentColor" stroke="none">
+    <path d="M5 6.2v11.6a.8.8 0 0 0 1.25.66L14.5 12.7a.8.8 0 0 0 0-1.4L6.25 5.54A.8.8 0 0 0 5 6.2z" />
+    <rect x="16.5" y="5" width="2.5" height="14" rx="1" />
+  </Icon>
+);
+
+export const PreviousIcon = () => (
+  <Icon fill="currentColor" stroke="none" style={{ transform: "scaleX(-1)" }}>
+    <path d="M5 6.2v11.6a.8.8 0 0 0 1.25.66L14.5 12.7a.8.8 0 0 0 0-1.4L6.25 5.54A.8.8 0 0 0 5 6.2z" />
+    <rect x="16.5" y="5" width="2.5" height="14" rx="1" />
+  </Icon>
+);

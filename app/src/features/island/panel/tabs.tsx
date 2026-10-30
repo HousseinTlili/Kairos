@@ -1,5 +1,14 @@
 import { listen } from "@tauri-apps/api/event";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  GridIcon,
+  ImageIcon,
+  MusicIcon,
+  NextIcon,
+  PauseIcon,
+  PlayIcon,
+  PreviousIcon,
+} from "../../shell/icons";
 import {
   appLabel,
   callModule,
@@ -8,6 +17,7 @@ import {
   positionNow,
   samePath,
   type AppEntry,
+  type MediaState,
   type MediaUpdate,
   type OpenApp,
   type Pin,
@@ -25,14 +35,17 @@ function messageOf(err: unknown): string {
  * and a click on it asks the app to close (it can still ask to save): Elissa's deliberate two-step.
  */
 export function OpenApps() {
-  const [apps, setApps] = useState<OpenApp[]>([]);
+  // null until the first scan: the list is empty before it, which isn't "no apps open".
+  const [apps, setApps] = useState<OpenApp[] | null>(null);
   const [armed, setArmed] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // The scan runs only while this row is on screen.
     void callModule("openapps", "set_visible", { visible: true });
-    void callModule<OpenApp[]>("openapps", "list").then(setApps);
+    void callModule<OpenApp[]>("openapps", "list").then((list) => {
+      if (list.length) setApps(list);
+    });
     const stop = listen<OpenApp[]>("openapps://list", (e) => setApps(e.payload));
     return () => {
       void callModule("openapps", "set_visible", { visible: false });
@@ -45,6 +58,7 @@ export function OpenApps() {
       .then(() => setError(null))
       .catch((err) => setError(messageOf(err)));
 
+  if (!apps) return <p className="muted small">Looking at your windows…</p>;
   if (apps.length === 0) return <p className="muted small">No app windows open.</p>;
   return (
     <div className="open-apps">
@@ -84,8 +98,8 @@ export function OpenApps() {
 
 // --- Media ----------------------------------------------------------------------------------------
 
-/** What is playing in any app; subscribed to Windows only while this tab is on screen. */
-export function MediaTab() {
+/** What is playing in any app; subscribed to Windows only while a media view is on screen. */
+function useMedia() {
   const [update, setUpdate] = useState<{ value: MediaUpdate; at: number } | null>(null);
   const [cover, setCover] = useState<{ key: string; url: string | null } | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -122,25 +136,84 @@ export function MediaTab() {
     return () => clearInterval(timer);
   }, [playing]);
 
-  if (!update) return <p className="muted small">Looking for something playing…</p>;
-  if (update.value.error) return <p className="muted small">{update.value.error}</p>;
-  if (!state?.has_session) {
-    return <p className="muted small">Nothing is playing. Start music or a video in any app.</p>;
-  }
-  const t = state.timeline;
-  const at = positionNow(state, update.at, now);
+  return {
+    update,
+    state: update?.value.state ?? null,
+    coverUrl: cover?.key === key ? cover.url : null,
+    at: state && update ? positionNow(state, update.at, now) : 0,
+    playing,
+  };
+}
+
+function MediaControls({ state, playing }: { state: MediaState; playing: boolean }) {
   const act = (command: string) => void callModule("media", command).catch(() => {});
   return (
+    <div className="media-controls">
+      <button
+        disabled={!state.controls.previous}
+        onClick={() => act("previous")}
+        aria-label="Previous"
+        title="Previous"
+      >
+        <PreviousIcon />
+      </button>
+      <button
+        className="media-play"
+        disabled={!state.controls.toggle}
+        onClick={() => act("toggle")}
+        aria-label={playing ? "Pause" : "Play"}
+        title={playing ? "Pause" : "Play"}
+      >
+        {playing ? <PauseIcon /> : <PlayIcon />}
+      </button>
+      <button
+        disabled={!state.controls.next}
+        onClick={() => act("next")}
+        aria-label="Next"
+        title="Next"
+      >
+        <NextIcon />
+      </button>
+    </div>
+  );
+}
+
+function Cover({ url }: { url: string | null }) {
+  return (
+    <div className="media-cover">
+      {url ? (
+        <img src={url} alt="" />
+      ) : (
+        <span>
+          <MusicIcon />
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** The Media tab: the cover large, over a blur of itself. */
+export function MediaTab() {
+  const { update, state, coverUrl, at, playing } = useMedia();
+  if (!update) return <Empty icon={<MusicIcon />} text="Looking for something playing…" />;
+  if (update.value.error) return <Empty icon={<MusicIcon />} text={update.value.error} />;
+  if (!state?.has_session) {
+    return (
+      <Empty icon={<MusicIcon />} text="Nothing is playing. Start music or a video in any app." />
+    );
+  }
+  const t = state.timeline;
+  return (
     <div className="media-tab">
-      <div className="media-cover">
-        {cover?.key === key && cover?.url ? <img src={cover.url} alt="" /> : <span>♪</span>}
-      </div>
+      {coverUrl && <img className="media-backdrop" src={coverUrl} alt="" />}
+      <Cover url={coverUrl} />
       <div className="media-body">
+        <p className="eyebrow">{playing ? "Now playing" : "Paused"}</p>
         <p className="media-title">{state.title || "Untitled"}</p>
         <p className="media-artist muted">
           {[state.artist, state.album].filter(Boolean).join(" · ")}
-          {state.app ? ` — ${appLabel(state.app)}` : ""}
         </p>
+        {state.app && <p className="media-app small muted">{appLabel(state.app)}</p>}
         {t && t.duration_ms > 0 && (
           <div className="media-progress" aria-label="Progress">
             <span className="small muted">{clock(at)}</span>
@@ -150,27 +223,54 @@ export function MediaTab() {
             <span className="small muted">{clock(t.duration_ms)}</span>
           </div>
         )}
-        <div className="media-controls">
-          <button
-            disabled={!state.controls.previous}
-            onClick={() => act("previous")}
-            aria-label="Previous"
-          >
-            ⏮
-          </button>
-          <button
-            className="primary"
-            disabled={!state.controls.toggle}
-            onClick={() => act("toggle")}
-            aria-label={playing ? "Pause" : "Play"}
-          >
-            {playing ? "⏸" : "▶"}
-          </button>
-          <button disabled={!state.controls.next} onClick={() => act("next")} aria-label="Next">
-            ⏭
-          </button>
+        <MediaControls state={state} playing={playing} />
+      </div>
+    </div>
+  );
+}
+
+/** Home's small player: the track and its controls, or a quiet note when nothing plays. */
+export function NowPlayingCard() {
+  const { state, coverUrl, at, playing } = useMedia();
+  if (!state?.has_session) {
+    return (
+      <div className="card now-card idle">
+        <p className="eyebrow">Music</p>
+        <div className="now-idle">
+          <MusicIcon />
+          <span className="small muted">Nothing playing</span>
         </div>
       </div>
+    );
+  }
+  const t = state.timeline;
+  return (
+    <div className="card now-card">
+      {coverUrl && <img className="media-backdrop" src={coverUrl} alt="" />}
+      <p className="eyebrow">{playing ? "Now playing" : "Paused"}</p>
+      <div className="now-track">
+        <Cover url={coverUrl} />
+        <div className="now-words">
+          <p className="now-title">{state.title || "Untitled"}</p>
+          <p className="small muted">{state.artist || (state.app ? appLabel(state.app) : "")}</p>
+        </div>
+      </div>
+      {t && t.duration_ms > 0 && (
+        <span className="media-bar thin">
+          <span style={{ transform: `scaleX(${at / t.duration_ms})` }} />
+        </span>
+      )}
+      <MediaControls state={state} playing={playing} />
+    </div>
+  );
+}
+
+/** A tab with nothing to show yet: a large faint glyph and a line, not a lone sentence. */
+export function Empty({ icon, text }: { icon: ReactNode; text: string }) {
+  return (
+    <div className="island-empty">
+      <span className="island-empty-icon">{icon}</span>
+      <p className="small muted">{text}</p>
     </div>
   );
 }
@@ -286,7 +386,10 @@ export function WallpaperTab() {
       </div>
       {error && <p className="bad-text small">{error}</p>}
       {data.images.length === 0 ? (
-        <p className="muted small">{data.error ?? "No jpg, png or bmp images in this folder."}</p>
+        <Empty
+          icon={<ImageIcon />}
+          text={data.error ?? "No jpg, png or bmp images in this folder."}
+        />
       ) : (
         <div className="wall-grid">
           {data.images.map((img) => (
@@ -304,7 +407,97 @@ export function WallpaperTab() {
   );
 }
 
+/**
+ * Home's picture: the current wallpaper (of the main monitor) and a step either way. The thumbnail
+ * comes from the same cache as the Wallpaper tab's.
+ */
+function useWallpaper() {
+  const [current, setCurrent] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState<{ path: string; url: string | null } | null>(null);
+
+  const take = (monitors: WallpaperState["monitors"]) =>
+    setCurrent((monitors.find((m) => m.primary) ?? monitors[0])?.current || null);
+  useEffect(() => {
+    void callModule<WallpaperState>("wallpaper", "state")
+      .then((s) => take(s.monitors))
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (!current || thumbs.has(current)) return;
+    let live = true;
+    void callModule<string | null>("wallpaper", "thumbnail", { path: current })
+      .catch(() => null)
+      .then((u) => {
+        thumbs.set(current, u);
+        if (live) setLoaded({ path: current, url: u });
+      });
+    return () => {
+      live = false;
+    };
+  }, [current]);
+  const url = !current
+    ? null
+    : thumbs.has(current)
+      ? (thumbs.get(current) ?? null)
+      : loaded?.path === current
+        ? loaded.url
+        : null;
+
+  const step = (command: "next" | "previous") =>
+    void callModule<{ monitors: WallpaperState["monitors"] }>("wallpaper", command, {
+      monitor: null,
+    })
+      .then((r) => take(r.monitors))
+      .catch(() => {});
+  return { url, step };
+}
+
+/** The wallpaper behind Home's hour, with a step either way in the corner. */
+export function WallpaperBackdrop() {
+  const { url, step } = useWallpaper();
+  return (
+    <>
+      {url && <img className="hero-picture" src={url} alt="" />}
+      <span className="hero-steps">
+        <button onClick={() => step("previous")} title="Previous wallpaper">
+          ‹
+        </button>
+        <button onClick={() => step("next")} title="Next wallpaper">
+          ›
+        </button>
+      </span>
+    </>
+  );
+}
+
 // --- Apps -----------------------------------------------------------------------------------------
+
+/** Home's dock: the pinned apps as icons, one click to start each. */
+export function PinnedStrip({ onEmpty }: { onEmpty: ReactNode }) {
+  const [pins, setPins] = useState<Pin[] | null>(null);
+  useEffect(() => {
+    void callModule<Pin[]>("pinned", "list")
+      .then(setPins)
+      .catch(() => setPins([]));
+  }, []);
+  if (!pins) return null;
+  if (pins.length === 0) return <>{onEmpty}</>;
+  return (
+    <div className="open-apps">
+      {pins.map((pin) => (
+        <button
+          key={pin.id}
+          className="app-icon"
+          title={`Start ${pin.name}`}
+          aria-label={`Start ${pin.name}`}
+          onClick={() => void callModule("pinned", "launch", { id: pin.id }).catch(() => {})}
+        >
+          {pin.icon ? <img src={pin.icon} alt="" /> : <span>{pin.name.slice(0, 1)}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 /** Pinned apps launched with one click, and a picker over the Start menu and Store apps. */
 export function AppsTab() {
@@ -371,7 +564,7 @@ export function AppsTab() {
           {!catalog && <p className="muted small">Reading the Start menu…</p>}
         </div>
       ) : pins.length === 0 ? (
-        <p className="muted small">Pin the apps you open most; one click starts them.</p>
+        <Empty icon={<GridIcon />} text="Pin the apps you open most; one click starts them." />
       ) : (
         <div className="pin-grid">
           {pins.map((pin) => (

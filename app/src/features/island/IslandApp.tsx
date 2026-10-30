@@ -10,20 +10,29 @@ import {
   onKairosState,
   onRunEvent,
   openInMain,
+  quickHotkey,
   showMainWindow,
 } from "../../lib/tauri";
 import { hidesForCapture } from "../quick/model";
 import { SealMark } from "../shell/SealMark";
-import { MicIcon } from "../shell/icons";
+import { GridIcon, HomeIcon, ImageIcon, MicIcon, MusicIcon } from "../shell/icons";
 import { DONE_MS, mergeStates, type KairosState } from "./model";
-import { AppsTab, MediaTab, OpenApps, WallpaperTab } from "./panel/tabs";
+import {
+  AppsTab,
+  MediaTab,
+  NowPlayingCard,
+  OpenApps,
+  PinnedStrip,
+  WallpaperBackdrop,
+  WallpaperTab,
+} from "./panel/tabs";
 
 type Tab = "home" | "media" | "wallpaper" | "apps";
-const TABS: { id: Tab; label: string }[] = [
-  { id: "home", label: "Home" },
-  { id: "media", label: "Media" },
-  { id: "wallpaper", label: "Wallpaper" },
-  { id: "apps", label: "Apps" },
+const TABS: { id: Tab; label: string; icon: () => React.ReactElement }[] = [
+  { id: "home", label: "Home", icon: HomeIcon },
+  { id: "media", label: "Media", icon: MusicIcon },
+  { id: "wallpaper", label: "Wallpaper", icon: ImageIcon },
+  { id: "apps", label: "Apps", icon: GridIcon },
 ];
 const TAB_KEY = "kairos.island.tab";
 
@@ -148,13 +157,34 @@ export function IslandApp() {
       <button
         className="island-main"
         onClick={open}
-        title={shown?.approval ? "Open the approval" : "Ask Kairos"}
+        title={
+          shown?.approval ? "Open the approval" : expanded ? "Fold the island" : "Open the island"
+        }
       >
         <SealMark size={26} state={mood} level={0} />
         <span className="island-text" aria-live="polite">
           {text}
         </span>
       </button>
+      {expanded ? (
+        <nav className="island-tabs" role="tablist">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={tab === t.id}
+              className={tab === t.id ? "active" : ""}
+              onClick={() => pickTab(t.id)}
+              title={t.label}
+            >
+              <t.icon />
+              <span>{t.label}</span>
+            </button>
+          ))}
+        </nav>
+      ) : (
+        <Clock className="island-clock" />
+      )}
       <button
         className="island-mic"
         title="Hold to speak"
@@ -186,22 +216,9 @@ export function IslandApp() {
       onContextMenu={(e) => void menu(e)}
     >
       {bar}
-      <nav className="island-tabs" role="tablist">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            className={tab === t.id ? "active" : ""}
-            onClick={() => pickTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-      <section className="island-body">
+      <section className={`island-body ${tab}`}>
         {tab === "home" ? (
-          <HomeTab text={text} onAsk={ask} />
+          <HomeTab status={shown?.text} onAsk={ask} />
         ) : tab === "media" ? (
           <MediaTab />
         ) : tab === "wallpaper" ? (
@@ -214,29 +231,71 @@ export function IslandApp() {
   );
 }
 
-/** Home: the time, what Kairos is doing, a way to ask, and the open apps. */
-function HomeTab({ text, onAsk }: { text: string; onAsk: () => void }) {
+/** The time now, re-read every 15 s: one text change a minute, no animation. */
+function useNow() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(timer);
   }, []);
+  return now;
+}
+
+const time = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+function Clock({ className }: { className: string }) {
+  return <span className={className}>{time(useNow())}</span>;
+}
+
+function greeting(hour: number): string {
+  if (hour < 5) return "You keep late hours, Master";
+  if (hour < 12) return "Good morning, Master";
+  if (hour < 18) return "Good afternoon, Master";
+  return "Good evening, Master";
+}
+
+/**
+ * Home: the hour over the Master's wallpaper, what's playing, a way to ask, and a dock of the open
+ * and pinned apps. Everything on it is live; each piece also has its own tab.
+ */
+function HomeTab({ status, onAsk }: { status?: string; onAsk: () => void }) {
+  const now = useNow();
+  const [key, setKey] = useState<string | null>(null);
+  useEffect(() => {
+    void quickHotkey()
+      .then(setKey)
+      .catch(() => {});
+  }, []);
   return (
     <div className="home-tab">
-      <div className="home-time">
-        <p className="home-clock">
-          {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        </p>
-        <p className="muted">
+      <div className="card hero-card">
+        <WallpaperBackdrop />
+        <p className="eyebrow">{greeting(now.getHours())}</p>
+        <p className="home-clock">{time(now)}</p>
+        <p className="home-date">
           {now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
+      <NowPlayingCard />
       <button className="home-ask" onClick={onAsk}>
-        <span className="muted">{text}</span>
-        <span>Ask Kairos…</span>
+        <SealMark size={22} state="idle" level={0} />
+        <span className="home-ask-words">
+          <span>Ask Kairos…</span>
+          {status && <span className="small muted">{status}</span>}
+        </span>
+        {key && <kbd>{key.replace(/\+/g, " ")}</kbd>}
       </button>
-      <p className="apps-label">Open now</p>
-      <OpenApps />
+      <div className="card dock">
+        <div className="dock-part">
+          <p className="eyebrow">Open now</p>
+          <OpenApps />
+        </div>
+        <span className="dock-rule" aria-hidden="true" />
+        <div className="dock-part">
+          <p className="eyebrow">Pinned</p>
+          <PinnedStrip onEmpty={<p className="small muted">Pin apps in the Apps tab.</p>} />
+        </div>
+      </div>
     </div>
   );
 }

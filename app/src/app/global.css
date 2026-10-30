@@ -2825,14 +2825,23 @@ html.panel-window body {
   box-sizing: border-box;
   padding: 0 4px 0 6px;
   border-radius: 20px;
-  border: 1px solid color-mix(in srgb, var(--gilt) 55%, transparent);
-  background: color-mix(in srgb, var(--sidebar-bg) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gilt) 60%, transparent);
+  /* A second, fainter rule inside the first (the charter's double frame), and a sheen on top. */
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--sidebar-bg) 94%, transparent),
+    inset 0 0 0 3px color-mix(in srgb, var(--gilt) 16%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sidebar-fg) 7%, transparent), transparent 55%),
+    color-mix(in srgb, var(--sidebar-bg) 95%, transparent);
   color: var(--fg);
   user-select: none;
 }
 
 .island.asking {
   border-color: var(--oxblood);
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--sidebar-bg) 94%, transparent),
+    inset 0 0 0 3px color-mix(in srgb, var(--oxblood) 35%, transparent);
 }
 
 .island-main {
@@ -2982,105 +2991,386 @@ html.panel-window body {
   flex: none;
 }
 
+/* The time at the pill's end, set off by a hairline. */
+.island-clock {
+  flex: none;
+  padding: 0 8px 0 10px;
+  border-left: 1px solid color-mix(in srgb, var(--gilt) 28%, transparent);
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 18px;
+}
+
+/* Dark panelling with the theme's pattern and a glow of gilt from the top, framed by a double rule
+   like an illuminated page: the panel is never a flat black box. */
 .island.expanded {
   flex-direction: column;
   align-items: stretch;
   width: 600px;
   height: 380px;
   padding: 0 12px 12px;
-  border-radius: 18px;
+  border-radius: 20px;
   gap: 0;
+  background:
+    radial-gradient(
+      120% 70% at 50% -10%,
+      color-mix(in srgb, var(--gilt) 13%, transparent),
+      transparent 65%
+    ),
+    var(--pattern), var(--sidebar-bg);
 }
 
 .island.expanded .island-bar {
-  padding: 0 0 0 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--gilt) 25%, transparent);
+  position: relative;
+  padding: 0 0 0 2px;
 }
 
+/* A gilt rule under the header that fades at both ends. */
+.island.expanded .island-bar::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--gilt) 45%, transparent),
+    transparent
+  );
+}
+
+/* The tabs sit in the header: icons, and the name of the one that's open. */
 .island-tabs {
   display: flex;
-  gap: 4px;
-  padding: 8px 0;
+  flex: none;
+  gap: 2px;
+  margin-right: 2px;
 }
 
 .island-tabs button {
-  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 9px;
   border: 1px solid transparent;
   border-radius: 999px;
   background: none;
   color: var(--muted);
   font-size: 0.8125rem;
   cursor: pointer;
+  transition:
+    color 120ms,
+    background 120ms;
+}
+
+.island-tabs button span {
+  display: none;
+}
+
+.island-tabs button:hover {
+  color: var(--fg);
+  background: var(--surface);
 }
 
 .island-tabs button.active {
-  border-color: color-mix(in srgb, var(--gilt) 50%, transparent);
+  padding: 0 12px 0 10px;
+  border-color: color-mix(in srgb, var(--gilt) 45%, transparent);
   color: var(--gilt);
   background: var(--gilt-soft);
 }
 
+.island-tabs button.active span {
+  display: inline;
+}
+
 .island-body {
+  position: relative;
   flex: 1;
   min-height: 0;
+  padding-top: 12px;
   overflow-y: auto;
   font-size: 0.875rem;
+  scrollbar-width: thin;
 }
 
 .island-body p {
   margin: 0;
 }
 
-.apps-label {
-  margin: 10px 0 6px !important;
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--gilt);
 }
+
+.apps-label {
+  margin: 12px 0 8px !important;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--gilt);
+}
+
+.apps-tab > .apps-label:first-child {
+  margin-top: 0 !important;
+}
+
+/* A raised tile on the panel: faintly lighter, a hairline edge, a highlight along the top. */
+.card {
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--sidebar-fg) 4%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sidebar-fg) 6%, transparent);
+}
+
+.card > *:not(.media-backdrop, .hero-picture) {
+  position: relative;
+}
+
+/* --- Home -- */
 
 .home-tab {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  grid-template-rows: 148px 46px auto;
+  gap: 10px;
 }
 
-.home-time {
+.hero-card {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+/* The Master's own wallpaper behind the hour, darkened towards the words. */
+.hero-picture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.75;
+}
+
+.hero-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--sidebar-bg) 92%, transparent) 25%,
+    color-mix(in srgb, var(--sidebar-bg) 35%, transparent)
+  );
+}
+
+.hero-card .eyebrow {
+  margin-bottom: auto !important;
 }
 
 .home-clock {
   font-family: var(--font-display);
-  font-size: 2.75rem;
-  line-height: 1.1;
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--fg);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.home-date {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.hero-steps {
+  position: absolute !important;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 4px;
+  opacity: 0.55;
+  transition: opacity 120ms;
+}
+
+.hero-card:hover .hero-steps {
+  opacity: 1;
+}
+
+.hero-steps button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--sidebar-fg) 20%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sidebar-bg) 70%, transparent);
+  color: var(--fg);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.hero-steps button:hover {
+  border-color: var(--gilt);
+  color: var(--gilt);
+}
+
+.now-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.now-card.idle {
+  justify-content: space-between;
+}
+
+.now-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  color: color-mix(in srgb, var(--gilt) 55%, transparent);
+}
+
+.now-idle svg {
+  width: 30px;
+  height: 30px;
+}
+
+.now-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.now-track .media-cover {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+}
+
+.now-words {
+  min-width: 0;
+}
+
+.now-words p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.now-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
   color: var(--fg);
 }
 
+.now-card .media-controls {
+  justify-content: center;
+  margin-top: auto;
+}
+
 .home-ask {
+  grid-column: 1 / -1;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  margin-top: 10px;
-  padding: 10px 14px;
-  border: 1px solid var(--border);
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--gilt) 30%, var(--border));
   border-radius: 12px;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--sidebar-fg) 5%, transparent);
   color: var(--fg);
   text-align: left;
   cursor: text;
+  transition:
+    border-color 120ms,
+    background 120ms;
+}
+
+.home-ask:hover {
+  border-color: var(--gilt);
+  background: color-mix(in srgb, var(--sidebar-fg) 8%, transparent);
+}
+
+.home-ask-words {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.home-ask-words > span:first-child {
+  flex: none;
   font-family: var(--font-display);
   font-size: 1rem;
 }
 
-.home-ask:hover {
-  border-color: color-mix(in srgb, var(--gilt) 50%, var(--border));
+.home-ask-words .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.home-ask .muted {
+.home-ask kbd {
+  flex: none;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
   font-family: var(--font-ui);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
 }
+
+.dock {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 14px;
+  padding: 10px 14px 12px;
+}
+
+.dock-part {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.dock-part:first-child {
+  flex: 1.4;
+}
+
+.dock .open-apps {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dock-rule {
+  width: 1px;
+  align-self: stretch;
+  background: linear-gradient(
+    transparent,
+    color-mix(in srgb, var(--gilt) 35%, transparent),
+    transparent
+  );
+}
+
+/* --- Apps -- */
 
 .open-apps,
 .pin-grid {
@@ -3096,34 +3386,45 @@ html.panel-window body {
 .app-icon {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
+  flex: none;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--sidebar-fg) 6%, transparent);
   color: var(--fg);
   cursor: pointer;
+  transition:
+    transform 120ms,
+    border-color 120ms;
 }
 
 .app-icon img {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 
 .app-icon:hover {
-  border-color: color-mix(in srgb, var(--gilt) 50%, var(--border));
+  border-color: color-mix(in srgb, var(--gilt) 60%, var(--border));
+  transform: translateY(-1px);
 }
 
 .app-icon.large {
-  width: 76px;
-  height: 64px;
+  width: 80px;
+  height: 68px;
   gap: 4px;
   align-content: center;
+  border-radius: 12px;
+}
+
+.app-icon.large img {
+  width: 26px;
+  height: 26px;
 }
 
 .pin-name {
-  max-width: 68px;
+  max-width: 70px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3185,24 +3486,53 @@ html.panel-window body {
   background: var(--raised);
 }
 
+/* --- Media -- */
+
+/* The cover again, blurred, as the light behind the player. */
+.media-backdrop {
+  position: absolute;
+  inset: -30px;
+  width: calc(100% + 60px);
+  height: calc(100% + 60px);
+  object-fit: cover;
+  filter: blur(26px) saturate(1.3);
+  opacity: 0.32;
+  pointer-events: none;
+}
+
 .media-tab {
+  position: relative;
   display: flex;
-  gap: 16px;
-  padding-top: 6px;
+  align-items: center;
+  gap: 20px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 8px;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.media-tab > *:not(.media-backdrop) {
+  position: relative;
 }
 
 .media-cover {
   display: grid;
   place-items: center;
-  width: 150px;
-  height: 150px;
+  width: 176px;
+  height: 176px;
   flex: none;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--surface);
-  color: var(--gilt);
-  font-size: 2.5rem;
+  color: color-mix(in srgb, var(--gilt) 70%, transparent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.media-cover svg {
+  width: 40%;
+  height: 40%;
 }
 
 .media-cover img {
@@ -3220,25 +3550,37 @@ html.panel-window body {
 }
 
 .media-title {
+  margin-top: 4px !important;
   font-family: var(--font-display);
-  font-size: 1.25rem;
-  line-height: 1.25;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .media-progress {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 .media-bar {
   position: relative;
+  display: block;
   flex: 1;
   height: 4px;
   overflow: hidden;
   border-radius: 2px;
-  background: var(--raised);
+  background: color-mix(in srgb, var(--sidebar-fg) 14%, transparent);
+}
+
+.media-bar.thin {
+  flex: none;
+  height: 3px;
 }
 
 .media-bar span {
@@ -3250,27 +3592,122 @@ html.panel-window body {
 
 .media-controls {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
   margin-top: 12px;
 }
 
 .media-controls button {
-  width: 44px;
-  height: 36px;
-  font-size: 1rem;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
 }
+
+.media-controls button:hover:not(:disabled) {
+  background: var(--surface);
+}
+
+.media-controls button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.media-controls .media-play {
+  width: 40px;
+  height: 40px;
+  background: var(--gilt);
+  color: var(--sidebar-bg);
+}
+
+.media-controls .media-play:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--gilt) 85%, white);
+}
+
+.media-controls .media-play svg {
+  width: 18px;
+  height: 18px;
+}
+
+.now-card .media-controls {
+  gap: 4px;
+}
+
+.now-card .media-controls button {
+  width: 30px;
+  height: 30px;
+}
+
+.now-card .media-controls .media-play {
+  width: 34px;
+  height: 34px;
+}
+
+/* --- Empty tabs -- */
+
+.island-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  min-height: 160px;
+  text-align: center;
+}
+
+/* A medallion: the glyph in a ring inside a fainter ring. */
+.island-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 1px solid color-mix(in srgb, var(--gilt) 45%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--gilt) 8%, transparent);
+  color: color-mix(in srgb, var(--gilt) 80%, transparent);
+}
+
+.island-empty-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.island-empty p {
+  max-width: 280px;
+}
+
+/* --- Wallpaper -- */
 
 .wall-bar {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .wall-bar > button {
-  width: 34px;
+  width: 30px;
   height: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sidebar-fg) 5%, transparent);
+  color: var(--fg);
   font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.wall-bar > button:hover {
+  border-color: var(--gilt);
+  color: var(--gilt);
 }
 
 .wall-folder {
@@ -3285,17 +3722,25 @@ html.panel-window body {
 .wall-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  gap: 8px;
 }
 
 .wall-thumb {
   aspect-ratio: 16 / 10;
   padding: 0;
   overflow: hidden;
-  border: 2px solid transparent;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
   background: var(--surface);
   cursor: pointer;
+  transition:
+    transform 120ms,
+    box-shadow 120ms;
+}
+
+.wall-thumb:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 .wall-thumb img {
@@ -3306,6 +3751,20 @@ html.panel-window body {
 
 .wall-thumb.active {
   border-color: var(--gilt);
+  box-shadow:
+    0 0 0 2px var(--sidebar-bg),
+    0 0 0 3px var(--gilt);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-icon,
+  .wall-thumb {
+    transition: none;
+  }
+  .app-icon:hover,
+  .wall-thumb:hover {
+    transform: none;
+  }
 }
 
 /* --- M16: Settings ▸ Appearance ---------------------------------------------------------------- */

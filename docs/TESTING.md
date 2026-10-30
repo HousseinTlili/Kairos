@@ -201,6 +201,7 @@ Spec: `docs/milestones/M15.md`; details: `docs/milestones/M15-acceptance.md`. Ab
 - [ ] Media with music playing: cover, progress, play/pause, next, previous.
 - [ ] Wallpaper: next, previous, a click on a thumbnail (and one monitor or all, with two).
 - [ ] Apps: pin and launch apps; right-click an open app then ×: it closes politely.
+- [ ] Home (redesigned 2026-10-30): the hour over your current wallpaper (‹ › change it), the small player with music on, the ask field (opens the quick box), the dock of open and pinned apps. In each theme, light and dark: readable, no flat empty space. The folded pill shows the time.
 
 ## M16 — Themes (`m16/themes`)
 
