@@ -211,6 +211,19 @@ Spec: `docs/milestones/M16.md`; details: `docs/milestones/M16-acceptance.md`. Ab
 - [ ] Light, Dark, Follow Windows: every theme stays readable.
 - [ ] Patterns: faint, never in the way.
 
+## M17 — Automations (`m17/automations`)
+
+Spec: `docs/milestones/M17.md`; details: `docs/milestones/M17-acceptance.md`. About 15 minutes.
+
+- [ ] Settings ▸ Kairos ▸ Automations: three starters, the crash offer on.
+- [ ] Charger unplugged → a notification with `{battery}`: once per unplug, in Recent runs.
+- [ ] Test now with "Say it" and "Show it on the island": spoken, on the pill ~10 s, marked test.
+- [ ] A program crashes: a toast and a card; "Ask Kairos" explains without changing anything.
+- [ ] An "Ask Kairos" that hits an asking rule: the approval card waits for you.
+- [ ] An "Ask Kairos" while a chat request runs: it waits, then starts in a new conversation.
+- [ ] Quiet hours skip automations unless "Also during quiet hours"; the main switch stops them all.
+- [ ] At login (installed build): a "When I log in" automation runs once.
+
 ## D-032 — Kairos's PC tools only in Kairos
 
 - [ ] From Telegram or the Hermes CLI, ask "which apps are open?": refused (`kairos-own-tools`). In Kairos: answered.

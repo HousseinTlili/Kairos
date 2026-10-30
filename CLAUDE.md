@@ -32,8 +32,9 @@ the ported Rust is in `src-tauri/src/island_panel/` behind one `island_module` c
 **M16** (themes and patterns, `m16/themes`): Steps 2–4 built; the palettes are data in
 `features/appearance/palettes.ts` (a contrast test guards them), applied on `<html>` by every window.
 Step 5 waits for the product owner's pattern images.
-**M17** (automations on events, `m17/automations`): `docs/milestones/M17.md`; D-033 accepted
+**M17** (automations on events, `m17/automations`): Steps 2–7 built, `docs/milestones/M17.md`; D-033 accepted
 (Ask Kairos may start by itself under the rules; crash offer on; 6 AI requests/h, 30/day).
+The decision is `automations::rules::decide` in the core; voice, island and Ask run in the main window.
 
 ## Roles
 
