@@ -10,6 +10,7 @@ import { useConnection } from "../connection/store";
 import { LockIcon, SendIcon, StopIcon, TerminalIcon } from "../shell/icons";
 import { useShell } from "../shell/store";
 import { BriefingCard } from "../briefing/BriefingCard";
+import { OfferCards } from "../automations/OfferCards";
 import { Illuminated } from "../shell/Illuminated";
 import { ApprovalCard } from "./ApprovalCard";
 import { MarkdownView } from "./MarkdownView";
@@ -282,6 +283,7 @@ export function ChatView() {
         <div className="chat-column">
           {/* Kairos speaks first when you come back: the briefing opens the conversation. */}
           <BriefingCard />
+          <OfferCards />
           {turns.length === 0 ? (
             <EmptyState onPick={(text) => void send(text)} />
           ) : (

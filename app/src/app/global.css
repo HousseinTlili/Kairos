@@ -3830,3 +3830,230 @@ html.panel-window body {
   border-radius: 999px;
   font-size: 0.6875rem;
 }
+
+/* --- M17: automations ------------------------------------------------------------------------- */
+
+/* An automation's offer above the chat, beside the briefing card and in its manner. */
+.offer-card {
+  margin: 0 0 12px;
+  padding: 14px 18px;
+  border: 1px solid color-mix(in srgb, var(--gilt) 45%, var(--border));
+  border-left: 3px solid var(--gilt);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.offer-card header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.offer-card h2 {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.125rem;
+}
+
+.offer-card p {
+  margin: 0 0 6px;
+}
+
+.automation-list {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.automation-list.all-off {
+  opacity: 0.55;
+}
+
+.automation-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.automation-row + .automation-row {
+  border-top: 1px solid var(--border);
+}
+
+.automation-row > input[type="checkbox"] {
+  margin-top: 4px;
+}
+
+.automation-words {
+  flex: 1;
+  min-width: 0;
+}
+
+.automation-words p {
+  margin: 0;
+}
+
+.automation-name {
+  font-weight: 600;
+}
+
+.automation-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.run-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.run-row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr minmax(8rem, auto);
+  gap: 12px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.run-what {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.run-test {
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.run-outcome {
+  text-align: right;
+  color: var(--muted);
+}
+
+.run-row.done .run-outcome {
+  color: var(--lume);
+}
+
+.run-row.failed .run-outcome {
+  color: var(--garnet);
+}
+
+.editor-step {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.125rem;
+  color: var(--gilt);
+}
+
+.automation-name-field,
+.automation-fields label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.automation-name-field input {
+  max-width: 24rem;
+}
+
+.automation-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+  margin: 6px 0 10px;
+}
+
+.automation-fields label.wide {
+  flex: 1;
+  min-width: 16rem;
+}
+
+.automation-fields label.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg);
+}
+
+.automation-fields input,
+.automation-fields select,
+.automation-name-field input,
+.action-row select,
+.action-row textarea {
+  font: inherit;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.automation-fields input[type="number"] {
+  width: 7rem;
+}
+
+.day-picks {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0 10px;
+}
+
+.day-picks .day {
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.day-picks .day.on {
+  border-color: color-mix(in srgb, var(--gilt) 55%, transparent);
+  background: var(--gilt-soft);
+  color: var(--gilt);
+}
+
+.action-list {
+  margin: 8px 0 10px;
+  padding-left: 22px;
+}
+
+.action-row {
+  margin-bottom: 12px;
+}
+
+.action-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.action-head .spacer {
+  flex: 1;
+}
+
+.action-row textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.app-chosen {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+}

@@ -9,7 +9,8 @@ export type IslandMood = "idle" | "listening" | "working" | "speaking";
 
 /** What one window reports, sent on the `kairos-state` event. */
 export interface KairosState {
-  source: "main" | "quick";
+  /** "automation": a line an automation shows on the pill (M17). */
+  source: "main" | "quick" | "automation";
   mood: IslandMood;
   text: string;
   /** An approval waits: a click on the pill opens it. */
@@ -20,6 +21,8 @@ export interface KairosState {
   answer: string | null;
   /** When the answer ended (ms), so "Done" can fade. */
   doneAt: number | null;
+  /** How long a line stays after `doneAt` (default DONE_MS). */
+  holdMs?: number;
 }
 
 /** How long "Done — …" stays on the pill after an answer. */
@@ -74,7 +77,10 @@ const RANK: Record<IslandMood, number> = { idle: 0, working: 1, speaking: 2, lis
 /** The pill shows the most important of the windows' states: an approval first, then the voice. */
 export function mergeStates(states: KairosState[], now: number): KairosState | null {
   const live = states.filter(
-    (s) => s.mood !== "idle" || s.approval || (s.doneAt !== null && now - s.doneAt < DONE_MS),
+    (s) =>
+      s.mood !== "idle" ||
+      s.approval ||
+      (s.doneAt !== null && now - s.doneAt < (s.holdMs ?? DONE_MS)),
   );
   const pool = live.length > 0 ? live : states;
   return (

@@ -15,7 +15,8 @@ export type SettingsTab =
   | "memory"
   | "island"
   | "appearance"
-  | "startup";
+  | "startup"
+  | "automations";
 
 interface ShellState {
   view: View;

@@ -83,13 +83,16 @@ export function IslandApp() {
     };
   }, []);
 
-  // "Done" fades by itself: one re-check when it should be gone.
-  const doneAt = Math.max(0, ...Object.values(states).map((s) => s?.doneAt ?? 0));
+  // "Done" (and an automation's line) fades by itself: one re-check when it should be gone.
+  const fadeAt = Math.max(
+    0,
+    ...Object.values(states).map((s) => (s?.doneAt ? s.doneAt + (s.holdMs ?? DONE_MS) : 0)),
+  );
   useEffect(() => {
-    if (!doneAt || now - doneAt >= DONE_MS) return;
-    const timer = setTimeout(() => setNow(Date.now()), DONE_MS - (now - doneAt) + 50);
+    if (!fadeAt || now >= fadeAt) return;
+    const timer = setTimeout(() => setNow(Date.now()), fadeAt - now + 50);
     return () => clearTimeout(timer);
-  }, [doneAt, now]);
+  }, [fadeAt, now]);
 
   const shown = mergeStates(
     Object.values(states).filter((s): s is KairosState => !!s),

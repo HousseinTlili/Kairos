@@ -793,3 +793,97 @@ export function onPanelShown(handler: () => void): Promise<UnlistenFn> {
 /** The main window, optionally on a page ("settings:island"). */
 export const showMainWindow = (view?: string) =>
   call<null>("show_main_window", { view: view ?? null });
+
+// --- Automations (M17). Shapes mirror src-tauri/src/automations/. -------------------------------
+
+export type Trigger =
+  | { kind: "login" }
+  | { kind: "back"; away_min: number }
+  | { kind: "battery_low"; below: number }
+  | { kind: "charger"; plugged: boolean }
+  | { kind: "wifi_joined"; network: string }
+  | { kind: "wifi_lost" }
+  | { kind: "disk_full" }
+  | { kind: "crash"; programs: string[] };
+
+export interface Conditions {
+  from_min: number | null;
+  to_min: number | null;
+  days: number[];
+  power: "battery" | "plugged" | null;
+  during_quiet_hours: boolean;
+}
+
+export type AutomationAction =
+  | { kind: "notify"; text: string }
+  | { kind: "say"; text: string }
+  | { kind: "island"; text: string }
+  | { kind: "open_app"; app_id: string; name: string }
+  | { kind: "offer"; text: string }
+  | { kind: "ask"; text: string };
+
+export interface Automation {
+  id: string;
+  name: string;
+  enabled: boolean;
+  trigger: Trigger;
+  only_if: Conditions;
+  actions: AutomationAction[];
+  cooldown_min: number;
+}
+
+export type RunOutcome = "done" | "waiting" | "skipped" | "failed";
+
+export interface AutomationRun {
+  id: number;
+  automation_id: string;
+  name: string;
+  at: number;
+  event: string;
+  outcome: RunOutcome;
+  reason: string | null;
+  asked: boolean;
+  test: boolean;
+}
+
+export interface AutomationsState {
+  enabled: boolean;
+  automations: Automation[];
+  runs: AutomationRun[];
+  crash_ignore: string[];
+}
+
+/** What the main window does for a run: voice, island, offers and "Ask Kairos". */
+export interface AutomationFired {
+  run_id: number;
+  automation_id: string;
+  name: string;
+  event: string;
+  test: boolean;
+  actions: AutomationAction[];
+}
+
+export const automationsState = () => call<AutomationsState>("automations_state");
+export const saveAutomation = (automation: Automation) =>
+  call<AutomationsState>("save_automation", { automation });
+export const deleteAutomation = (id: string) => call<AutomationsState>("delete_automation", { id });
+export const setAutomationsEnabled = (enabled: boolean) =>
+  call<AutomationsState>("set_automations_enabled", { enabled });
+export const setCrashIgnore = (names: string[]) =>
+  call<AutomationsState>("set_crash_ignore", { names });
+export const testAutomation = (automation: Automation) =>
+  call<null>("test_automation", { automation });
+export const automationOutcome = (
+  runId: number,
+  outcome: RunOutcome,
+  reason: string | null,
+  asked: boolean,
+) => call<null>("automation_outcome", { runId, outcome, reason, asked });
+
+export function onAutomationFired(handler: (fired: AutomationFired) => void): Promise<UnlistenFn> {
+  return listen<AutomationFired>("automation-fired", (event) => handler(event.payload));
+}
+
+export function onAutomationsChanged(handler: () => void): Promise<UnlistenFn> {
+  return listen<null>("automations-changed", () => handler());
+}

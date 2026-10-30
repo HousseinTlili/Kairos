@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useAutomations } from "../features/automations/store";
 import { useBriefing } from "../features/briefing/store";
 import { ChatView } from "../features/chat/ChatView";
 import { startChatEvents, useChat } from "../features/chat/store";
@@ -27,6 +28,7 @@ export default function App() {
   const startStartup = useStartup((state) => state.start);
   const startNotifications = useNotifications((state) => state.start);
   const startBriefing = useBriefing((state) => state.start);
+  const startAutomations = useAutomations((state) => state.start);
   const show = useShell((state) => state.show);
   // The main window keeps the wake-word microphone; it lives as long as Kairos runs (M9 Step 9).
   useWakeWord();
@@ -54,6 +56,8 @@ export default function App() {
       startStartup(),
       startNotifications(),
       startBriefing(),
+      // Automations' voice, island, offers and "Ask Kairos" are done here (M17).
+      startAutomations(),
       // The tray menu's "System" item.
       onNavigate((target) => {
         if (target === "system") show("system");
@@ -69,7 +73,7 @@ export default function App() {
     return () => {
       for (const stop of stops) void stop.then((unlisten) => unlisten());
     };
-  }, [startStartup, startNotifications, startBriefing, show]);
+  }, [startStartup, startNotifications, startBriefing, startAutomations, show]);
 
   useEffect(() => {
     // M1 §9 rule 6: once connected, settle or re-follow requests from before a restart.
