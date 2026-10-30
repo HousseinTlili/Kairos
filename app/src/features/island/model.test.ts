@@ -67,4 +67,16 @@ describe("merging the windows", () => {
   it("has nothing to show before any window reported", () => {
     expect(mergeStates([], 0)).toBeNull();
   });
+
+  it("shows an automation's line for its time, then goes back to the window", () => {
+    const line: KairosState = {
+      ...idle,
+      source: "automation",
+      text: "Joined Home",
+      doneAt: 1000,
+      holdMs: 10_000,
+    };
+    expect(mergeStates([idle, line], 5000)?.text).toBe("Joined Home");
+    expect(mergeStates([idle, line], 12_000)?.text).toBe("At your service");
+  });
 });

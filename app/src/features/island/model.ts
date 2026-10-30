@@ -82,7 +82,8 @@ export function mergeStates(states: KairosState[], now: number): KairosState | n
       s.approval ||
       (s.doneAt !== null && now - s.doneAt < (s.holdMs ?? DONE_MS)),
   );
-  const pool = live.length > 0 ? live : states;
+  // An automation's line is only shown while it lasts; at rest, a window speaks.
+  const pool = live.length > 0 ? live : states.filter((s) => s.source !== "automation");
   return (
     [...pool].sort(
       (a, b) =>

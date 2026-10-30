@@ -255,12 +255,15 @@ impl Happening {
                     "crashed"
                 };
                 let mut line = format!("{} {} {what}", c.program, c.version);
-                if let Some(module) = &c.module {
-                    line.push_str(&format!(" (in {module}"));
-                    if let Some(code) = &c.code {
-                        line.push_str(&format!(", exception 0x{code}"));
-                    }
-                    line.push(')');
+                let details: Vec<String> = [
+                    c.module.as_ref().map(|m| format!("in {m}")),
+                    c.code.as_ref().map(|code| format!("exception 0x{code}")),
+                ]
+                .into_iter()
+                .flatten()
+                .collect();
+                if !details.is_empty() {
+                    line.push_str(&format!(" ({})", details.join(", ")));
                 }
                 line
             }

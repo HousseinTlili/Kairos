@@ -59,7 +59,12 @@ pub fn parse_event(xml: &str) -> Option<CrashInfo> {
         record: element(xml, "EventRecordID")?.trim().parse().ok()?,
         program: data(xml, "AppName")?,
         version: data(xml, "AppVersion").unwrap_or_default(),
-        module: if hang { None } else { data(xml, "ModuleName") },
+        // Windows writes "unknown" when it can't tell (a fail-fast exit, seen 2026-10-30).
+        module: if hang {
+            None
+        } else {
+            data(xml, "ModuleName").filter(|m| !m.eq_ignore_ascii_case("unknown"))
+        },
         code: if hang {
             None
         } else {
@@ -265,6 +270,20 @@ mod tests {
         assert_eq!(hang.program, "claude.exe");
         assert_eq!(hang.record, 19553);
         assert_eq!(hang.module, None);
+    }
+
+    #[test]
+    fn an_unknown_module_is_left_out_but_the_exception_code_kept() {
+        let crash = parse_event(&CRASH.replace(
+            ">ntdll.dll</Data><Data Name='ModuleVersion'",
+            ">unknown</Data><Data Name='ModuleVersion'",
+        ))
+        .expect("a crash");
+        assert_eq!(crash.module, None);
+        assert_eq!(
+            crate::automations::Happening::Crash(crash).describe(),
+            "RuntimeBroker.exe 10.0.26100.9278 crashed (exception 0xc0000409)"
+        );
     }
 
     #[test]

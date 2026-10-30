@@ -15,7 +15,8 @@ export function OfferCards() {
             {fired.test && <span className="muted small">test</span>}
           </header>
           <p>{text}</p>
-          <p className="muted small">{fired.event}</p>
+          {/* What happened, unless the Master's text already says it (as with {crash}). */}
+          {!text.includes(fired.event) && <p className="muted small">{fired.event}</p>}
           <div className="actions">
             <button
               className="primary"
