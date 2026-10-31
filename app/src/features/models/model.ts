@@ -94,6 +94,9 @@ const GROUP_NAMES: Record<string, string> = {
   "openai-api": "OpenAI",
   "openai-codex": "ChatGPT (Codex)",
   llamacpp: "On this PC",
+  // The Providers page's ready-made local endpoints (M18), named as their slugs come out.
+  ollama: "Ollama (this PC)",
+  "lm-studio": "LM Studio (this PC)",
 };
 
 export function groupName(slug: string, name: string): string {

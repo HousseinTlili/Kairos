@@ -17,6 +17,7 @@ import {
   choiceKey,
   costLabel,
   usageLine,
+  groupName,
   isOffered,
   modelGroups,
   openAtFirst,
@@ -145,5 +146,11 @@ describe("the model menu's groups", () => {
     const groups = modelGroups(catalog, "");
     expect(openAtFirst(groups, { provider: "gemini", model: "gemini-3-pro" })).toEqual(["gemini"]);
     expect(openAtFirst(groups, { provider: null, model: null })).toEqual(["nous"]);
+  });
+
+  it("names the local endpoints added from the Providers page for this PC", () => {
+    expect(groupName("ollama", "ollama")).toBe("Ollama (this PC)");
+    expect(groupName("lm-studio", "lm-studio")).toBe("LM Studio (this PC)");
+    expect(groupName("my-gateway", "my-gateway")).toBe("my-gateway");
   });
 });
