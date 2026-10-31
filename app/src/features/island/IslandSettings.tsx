@@ -8,7 +8,7 @@ import {
   type IslandSettings as Settings,
 } from "../../lib/tauri";
 
-/** Settings ▸ Kairos ▸ Island (M14): the pill at the top of the screen, and the wake panel. */
+/** Settings ▸ Kairos ▸ Island (M14, D-034): the bar at the top of the screen, and the wake panel. */
 export function IslandSettings() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +38,7 @@ export function IslandSettings() {
       .catch((err: CommandError) => setHotkeyError(err.message ?? String(err)));
 
   const save = (next: Settings) =>
-    void saveIslandSettings(next.enabled, next.panel)
+    void saveIslandSettings(next.enabled, next.panel, next.autohide)
       .then(setSettings)
       .catch((err: CommandError) => setError(err.message ?? String(err)));
 
@@ -46,9 +46,9 @@ export function IslandSettings() {
     <div className="settings-section">
       <h2>Island</h2>
       <p className="muted small">
-        A small pill at the top of the screen shows what Kairos is doing: at rest, listening, at
-        work, speaking, or waiting for your leave. Click it to ask something, hold its microphone to
-        speak, right-click it for more. It steps aside for full-screen games, films and
+        A bar across the top of the screen: your pinned apps, a field to ask Kairos (it shows what
+        Kairos is doing), push-to-talk, notifications, Wi-Fi, battery and the time. Click the seal
+        for its panel, right-click for more. It steps aside for full-screen games, films and
         presentations.
       </p>
       {settings && (
@@ -60,6 +60,17 @@ export function IslandSettings() {
               onChange={(e) => save({ ...settings, enabled: e.target.checked })}
             />
             <span>Show the island</span>
+          </label>
+          <label className="switch-row">
+            <input
+              type="checkbox"
+              checked={settings.autohide}
+              onChange={(e) => save({ ...settings, autohide: e.target.checked })}
+            />
+            <span>
+              Hide it while a window is maximized; touch the top of the screen with the mouse to
+              bring it back
+            </span>
           </label>
           <label className="switch-row">
             <input

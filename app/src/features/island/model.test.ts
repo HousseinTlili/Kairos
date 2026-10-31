@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { newTurn, type Turn } from "../chat/turn";
-import { DONE_MS, mergeStates, stateOf, type KairosState } from "./model";
+import { DONE_MS, batteryWords, mergeStates, stateOf, wifiBars, type KairosState } from "./model";
 
 const quiet = { phase: "idle" as const, speaking: false };
 
@@ -78,5 +78,17 @@ describe("merging the windows", () => {
     };
     expect(mergeStates([idle, line], 5000)?.text).toBe("Joined Home");
     expect(mergeStates([idle, line], 12_000)?.text).toBe("At your service");
+  });
+});
+
+describe("the top bar's status", () => {
+  it("shows Wi-Fi in three steps, and full bars when the signal isn't known", () => {
+    expect([90, 55, 20, 5, null].map(wifiBars)).toEqual([3, 2, 1, 0, 3]);
+  });
+
+  it("says the battery's time left only while it runs on battery", () => {
+    expect(batteryWords(64.4, "discharging", 7800)).toBe("64 %, 2 h 10 min left");
+    expect(batteryWords(64, "charging", null)).toBe("64 %, charging");
+    expect(batteryWords(100, "full", null)).toBe("100 %, plugged in");
   });
 });

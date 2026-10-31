@@ -193,6 +193,15 @@ Spec: `docs/milestones/M14.md`; details: `docs/milestones/M14-acceptance.md`. A 
 - [ ] Settings ▸ Kairos ▸ Island: switching it off hides it at once.
 - [ ] Ctrl+Alt+L hides the island, again shows it (the switch in Settings follows). Ctrl+Alt+J, K, L sit side by side. A new key in "Hide and show" works at once; the quick box's or push-to-talk's key is refused.
 
+## D-034 — The top bar
+
+- [ ] At sign-in: no console window and no "can't reach this page" box (the dev build's login entry was removed from the real registry on 2026-10-31).
+- [ ] Nothing maximized: the bar across the top, in the theme's colours; in Ember it glows red as in your picture.
+- [ ] Maximize a window: the bar goes. Touch the top edge with the mouse: it slides down; it stays while the mouse is on it and goes half a second after.
+- [ ] The ask field opens the quick box under it; while Kairos works it shows what it's doing; an approval shows there and a click opens it.
+- [ ] A pinned app starts with one click; the bell opens Notifications; hold the wave button to speak; the seal or the clock opens the panel.
+- [ ] Settings ▸ Island: switching "Hide it while a window is maximized" off keeps it always there.
+
 ## M15 — The island's panel (`m15/island-panel`)
 
 Spec: `docs/milestones/M15.md`; details: `docs/milestones/M15-acceptance.md`. About 10 minutes.

@@ -360,6 +360,20 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
+## D-034 — The island becomes a top bar that hides behind maximized windows — Accepted
+
+Replaces D-029's pill (the shape, and its rule that the window is never larger than what shows,
+which kept the cursor from being read). The island is now a bar across the top of the main screen,
+in the style of the product owner's picture of 2026-10-31: the seal and the pinned apps on the
+left, the ask field in the centre (it shows what Kairos is doing, and opens the quick box or the
+waiting approval), push-to-talk, notifications, Wi-Fi, sound, battery and the time on the right; its
+lower edge glows in the theme's accent. It **hides while any window on that screen is maximized**
+and comes back when the mouse touches the top edge, staying while the mouse is on it and 0.6 s
+after (a switch in Settings ▸ Island turns the hiding off). For that the core reads the cursor every
+100 ms and lists the windows (`IsZoomed`, skipping cloaked ones) every 300 ms, which costs next to
+nothing; full-screen apps and screen captures still hide it as before. The seal or the clock opens
+the M15 panel under the bar. Asked for by the product owner on 2026-10-31.
+
 ## D-033 — Automations are Kairos's own: events from the PC, decided in the core, AI requests under the usual rules — Accepted
 
 For M17 (`docs/milestones/M17.md`). Hermes's scheduled jobs only know the time; login, return,

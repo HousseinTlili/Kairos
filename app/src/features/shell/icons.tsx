@@ -185,3 +185,46 @@ export const PreviousIcon = () => (
     <rect x="16.5" y="5" width="2.5" height="14" rx="1" />
   </Icon>
 );
+
+// The top bar (D-034).
+
+export const SparkleIcon = () => (
+  <Icon fill="currentColor" stroke="none">
+    <path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z" />
+    <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" />
+  </Icon>
+);
+
+export const WaveIcon = () => (
+  <Icon>
+    <path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" />
+  </Icon>
+);
+
+/** Wi-Fi by signal: three arcs, the ones above the strength drawn faint. */
+export const WifiIcon = ({ bars }: { bars: 0 | 1 | 2 | 3 }) => (
+  <Icon>
+    <path d="M2.5 9a14 14 0 0 1 19 0" opacity={bars >= 3 ? 1 : 0.3} />
+    <path d="M5.5 12.5a9.5 9.5 0 0 1 13 0" opacity={bars >= 2 ? 1 : 0.3} />
+    <path d="M8.5 16a5 5 0 0 1 7 0" opacity={bars >= 1 ? 1 : 0.3} />
+    <circle cx="12" cy="19.2" r="1" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
+/** The battery filled to its level, with a bolt while charging. */
+export const BatteryIcon = ({ percent, charging }: { percent: number; charging: boolean }) => (
+  <Icon width="20" height="16">
+    <rect x="2" y="7" width="17" height="10" rx="2.2" />
+    <path d="M21.5 10.5v3" />
+    <rect
+      x="4"
+      y="9"
+      width={Math.max(1, Math.round((13 * Math.min(100, Math.max(0, percent))) / 100))}
+      height="6"
+      rx="1"
+      fill="currentColor"
+      stroke="none"
+    />
+    {charging && <path d="M11.5 8.5l-2 4h3l-2 3.5" strokeWidth="1.4" stroke="var(--bg, #111)" />}
+  </Icon>
+);

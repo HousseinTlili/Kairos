@@ -93,3 +93,24 @@ export function mergeStates(states: KairosState[], now: number): KairosState | n
     )[0] ?? null
   );
 }
+
+/** Wi-Fi bars on the top bar from the signal (D-034): Windows's own steps, roughly. */
+export function wifiBars(signal: number | null): 0 | 1 | 2 | 3 {
+  if (signal === null) return 3;
+  if (signal >= 70) return 3;
+  if (signal >= 40) return 2;
+  if (signal >= 15) return 1;
+  return 0;
+}
+
+/** "64 %, 2 h 10 min left" for the battery's tooltip. */
+export function batteryWords(percent: number, state: string, emptyS: number | null): string {
+  const level = `${Math.round(percent)} %`;
+  if (state === "charging") return `${level}, charging`;
+  if (state === "full") return `${level}, plugged in`;
+  if (emptyS === null || state !== "discharging") return level;
+  const minutes = Math.round(emptyS / 60);
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${level}, ${h > 0 ? `${h} h ` : ""}${m} min left`;
+}

@@ -61,6 +61,8 @@ export default function App() {
       // The tray menu's "System" item.
       onNavigate((target) => {
         if (target === "system") show("system");
+        // The top bar's bell (D-034).
+        if (target === "notifications") show("notifications");
         // The island's menu (M14).
         if (target === "settings:island") useShell.getState().showSettings("island");
       }),

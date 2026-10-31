@@ -112,6 +112,9 @@ pub fn run() {
             }
             // The island (M14): shown from the start unless switched off, out of the way of
             // full-screen apps.
+            app.state::<island::IslandState>().set_autohide(
+                commands::island_settings(&app.state::<commands::AppState>()).autohide,
+            );
             island::refresh(app.handle(), commands::island_enabled(app.handle()));
             island::watch(app.handle().clone(), commands::island_enabled);
             let island_key = commands::stored_island_hotkey(&app.state::<commands::AppState>());

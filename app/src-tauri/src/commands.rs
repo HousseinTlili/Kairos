@@ -2359,6 +2359,8 @@ pub struct IslandSettings {
     pub hotkey: String,
     /// The standing Kairos sliding in on the wake word.
     pub panel: bool,
+    /// The bar hides while a window is maximized, until the mouse touches the top (D-034).
+    pub autohide: bool,
 }
 
 fn setting_flag(state: &AppState, key: &str) -> bool {
@@ -2375,6 +2377,7 @@ pub fn island_settings(state: &AppState) -> IslandSettings {
         enabled: setting_flag(state, crate::island::ENABLED_SETTING),
         hotkey: stored_island_hotkey(state),
         panel: setting_flag(state, crate::island::PANEL_SETTING),
+        autohide: setting_flag(state, crate::island::AUTOHIDE_SETTING),
     }
 }
 
@@ -2395,17 +2398,16 @@ pub async fn save_island_settings(
     state: tauri::State<'_, AppState>,
     enabled: bool,
     panel: bool,
+    autohide: bool,
 ) -> Result<IslandSettings, CommandError> {
+    let flag = |on: bool| if on { "true" } else { "false" };
     state.with_store(|store| {
-        store.set_setting(
-            crate::island::ENABLED_SETTING,
-            if enabled { "true" } else { "false" },
-        )?;
-        store.set_setting(
-            crate::island::PANEL_SETTING,
-            if panel { "true" } else { "false" },
-        )
+        store.set_setting(crate::island::ENABLED_SETTING, flag(enabled))?;
+        store.set_setting(crate::island::PANEL_SETTING, flag(panel))?;
+        store.set_setting(crate::island::AUTOHIDE_SETTING, flag(autohide))
     })?;
+    app.state::<crate::island::IslandState>()
+        .set_autohide(autohide);
     crate::island::refresh(&app, enabled);
     if !panel {
         crate::island::hide_panel(&app);

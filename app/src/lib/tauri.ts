@@ -756,11 +756,18 @@ export interface IslandSettings {
   /** The key that hides and shows it ("Ctrl+Alt+L"). */
   hotkey: string;
   panel: boolean;
+  /** Hidden while a window is maximized, until the mouse touches the top (D-034). */
+  autohide: boolean;
 }
 
 export const islandState = () => call<IslandSettings>("island_state");
-export const saveIslandSettings = (enabled: boolean, panel: boolean) =>
-  call<IslandSettings>("save_island_settings", { enabled, panel });
+export const saveIslandSettings = (enabled: boolean, panel: boolean, autohide: boolean) =>
+  call<IslandSettings>("save_island_settings", { enabled, panel, autohide });
+
+/** The island window was shown again (from the top edge, or after a maximized window). */
+export function onIslandShown(handler: () => void): Promise<UnlistenFn> {
+  return listen<null>("island-shown", () => handler());
+}
 export const islandOpenQuick = () => call<null>("island_open_quick");
 export const setIslandHotkey = (hotkey: string) =>
   call<IslandSettings>("set_island_hotkey", { hotkey });

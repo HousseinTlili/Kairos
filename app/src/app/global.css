@@ -2801,7 +2801,7 @@ html.panel-window body {
 
 /* The island and the wake panel are dark panelling in every mode, like the sidebar: they take
    its colours, so a light theme can't put dark text on them (M16). */
-.island,
+.topbar,
 .presence-panel {
   --fg: var(--sidebar-fg);
   --muted: var(--sidebar-muted);
@@ -2816,78 +2816,372 @@ html.panel-window body {
   color-scheme: dark;
 }
 
-.island {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  height: 40px;
-  width: 300px;
-  box-sizing: border-box;
-  padding: 0 4px 0 6px;
-  border-radius: 20px;
-  border: 1px solid color-mix(in srgb, var(--gilt) 60%, transparent);
-  /* A second, fainter rule inside the first (the charter's double frame), and a sheen on top. */
-  box-shadow:
-    inset 0 0 0 2px color-mix(in srgb, var(--sidebar-bg) 94%, transparent),
-    inset 0 0 0 3px color-mix(in srgb, var(--gilt) 16%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--sidebar-fg) 7%, transparent), transparent 55%),
-    color-mix(in srgb, var(--sidebar-bg) 95%, transparent);
+/* --- D-034: the top bar ------------------------------------------------------------------------ */
+
+/* The window is the full width of the screen; the bar hangs from its top edge and flares into the
+   screen's corners, its lower edge lit in the theme's accent (gold in Charter, red in Ember). */
+.topbar {
+  --bar-h: 52px;
+  --flare: 30px;
+  /* Opaque: a transparent window shows even a little transparency far more than its value says
+     (93 % read as about half over a browser's tabs, 2026-10-31). */
+  --glass: var(--sidebar-bg);
+  --edge: color-mix(in srgb, var(--gilt) 70%, transparent);
+  position: relative;
+  width: 100vw;
+  height: 100vh;
   color: var(--fg);
   user-select: none;
 }
 
-.island.asking {
-  border-color: var(--oxblood);
-  box-shadow:
-    inset 0 0 0 2px color-mix(in srgb, var(--sidebar-bg) 94%, transparent),
-    inset 0 0 0 3px color-mix(in srgb, var(--oxblood) 35%, transparent);
+.topbar.asking {
+  --edge: color-mix(in srgb, var(--oxblood) 85%, transparent);
 }
 
-.island-main {
+.topbar-bar {
+  position: absolute;
+  top: 0;
+  left: var(--flare);
+  right: var(--flare);
+  height: var(--bar-h);
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex: 1;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--edge);
+  border-top: none;
+  border-radius: 0 0 26px 26px;
+  background:
+    linear-gradient(180deg, transparent 40%, color-mix(in srgb, var(--gilt) 7%, transparent)),
+    var(--glass);
+  box-shadow:
+    0 6px 14px -8px var(--edge),
+    0 12px 26px -14px var(--edge);
+}
+
+/* The flares: the bar's sides curve up into the top edge of the screen. Each is a corner of glass
+   with a quarter circle cut away, its rim drawn in the accent. */
+.topbar-bar::before,
+.topbar-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: var(--flare);
+  height: var(--flare);
+  pointer-events: none;
+}
+
+.topbar-bar::before {
+  left: calc(-1 * var(--flare) - 1px);
+  background: radial-gradient(
+    circle at 0 100%,
+    transparent calc(var(--flare) - 1px),
+    var(--edge) calc(var(--flare) - 0.5px),
+    var(--edge) var(--flare),
+    var(--glass) calc(var(--flare) + 0.5px)
+  );
+}
+
+.topbar-bar::after {
+  right: calc(-1 * var(--flare) - 1px);
+  background: radial-gradient(
+    circle at 100% 100%,
+    transparent calc(var(--flare) - 1px),
+    var(--edge) calc(var(--flare) - 0.5px),
+    var(--edge) var(--flare),
+    var(--glass) calc(var(--flare) + 0.5px)
+  );
+}
+
+.topbar.arriving .topbar-bar {
+  animation: topbar-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes topbar-in {
+  from {
+    transform: translateY(-100%);
+  }
+}
+
+.topbar-left,
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
-  height: 100%;
-  padding: 0 4px;
-  border: none;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
 }
 
-.island-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-display);
-  font-size: 0.9375rem;
+.topbar-left {
+  flex: 1;
 }
 
-.island.asking .island-text {
-  color: var(--gilt);
+.topbar-right {
+  flex: 1;
+  justify-content: flex-end;
 }
 
-.island-mic {
+.topbar-rule {
+  width: 1px;
+  height: 24px;
+  flex: none;
+  background: color-mix(in srgb, var(--sidebar-fg) 18%, transparent);
+}
+
+.topbar-seal {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
   flex: none;
+  padding: 2px;
   border: none;
   border-radius: 50%;
   background: none;
-  color: var(--muted);
   cursor: pointer;
 }
 
-.island-mic:hover,
-.island-mic:active {
+.topbar-seal:hover {
+  filter: drop-shadow(0 0 6px var(--edge));
+}
+
+/* The pinned apps as bare icons, as on a dock. */
+.topbar-apps {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.topbar-apps .open-apps {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.topbar-apps .app-icon {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+}
+
+.topbar-apps .app-icon:hover {
+  background: color-mix(in srgb, var(--sidebar-fg) 9%, transparent);
+  transform: none;
+}
+
+.topbar-apps .app-icon img {
+  width: 24px;
+  height: 24px;
+}
+
+.topbar-pin-hint {
+  padding: 4px 10px;
+  border: 1px dashed color-mix(in srgb, var(--sidebar-fg) 25%, transparent);
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+/* The ask field, at the true centre of the screen whatever the sides hold. */
+.topbar-ask {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(390px, 30vw);
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 6px 0 14px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sidebar-bg) 70%, black);
+  color: var(--muted);
+  font-size: 0.9375rem;
+  text-align: left;
+  cursor: text;
+  box-shadow:
+    0 0 12px -4px var(--edge),
+    inset 0 1px 0 color-mix(in srgb, var(--sidebar-fg) 6%, transparent);
+  transition:
+    box-shadow 150ms,
+    border-color 150ms;
+}
+
+/* The glow under the field, like light from beneath it. */
+.topbar-ask::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -13px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--edge);
+  filter: blur(2px);
+  opacity: 0.85;
+}
+
+.topbar-ask:hover {
+  box-shadow:
+    0 0 18px -3px var(--edge),
+    inset 0 1px 0 color-mix(in srgb, var(--sidebar-fg) 6%, transparent);
+}
+
+.topbar-ask.busy {
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.topbar-spark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--gilt);
+}
+
+.topbar.working .topbar-spark,
+.topbar.listening .topbar-spark,
+.topbar.speaking .topbar-spark {
+  animation: topbar-spark 1.4s ease-in-out infinite;
+}
+
+@keyframes topbar-spark {
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+.topbar-ask-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-ask kbd {
+  flex: none;
+  padding: 3px 9px;
+  border: 1px solid color-mix(in srgb, var(--sidebar-fg) 16%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sidebar-fg) 7%, transparent);
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+}
+
+.topbar-voice {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--edge);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sidebar-bg) 70%, black);
+  color: var(--fg);
+  cursor: pointer;
+  box-shadow: 0 0 10px -4px var(--edge);
+}
+
+.topbar-voice:hover,
+.topbar-voice:active,
+.topbar.listening .topbar-voice {
   color: var(--lume);
-  background: var(--raised);
+  box-shadow: 0 0 14px -2px var(--edge);
+}
+
+.topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topbar-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--fg);
+}
+
+.topbar-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.topbar-icon.battery svg {
+  width: 22px;
+}
+
+.topbar-icon.battery.low {
+  color: var(--garnet);
+}
+
+.topbar-icon.bell {
+  cursor: pointer;
+}
+
+.topbar-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 15px;
+  height: 15px;
+  box-sizing: border-box;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--garnet);
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
+
+.topbar-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  color: var(--fg);
+  line-height: 1.15;
+  cursor: pointer;
+}
+
+.topbar-time {
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar-date {
+  color: var(--muted);
+  font-size: 0.6875rem;
+}
+
+@media (max-width: 1100px) {
+  .topbar-date,
+  .topbar-ask kbd {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar.arriving .topbar-bar,
+  .topbar .topbar-spark {
+    animation: none;
+  }
 }
 
 .presence-panel {
@@ -2980,38 +3274,27 @@ html.panel-window body {
   }
 }
 
-/* --- M15: the island expanded into its panel ------------------------------------------------- */
+/* --- M15: the bar's panel ---------------------------------------------------------------------- */
 
-.island-bar {
+/* Hangs under the bar's centre: dark panelling with the theme's pattern and a glow of the accent
+   from the top, framed by a double rule like an illuminated page. */
+.topbar-panel {
+  position: absolute;
+  top: calc(var(--bar-h) + 6px);
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  align-items: center;
-  gap: 2px;
-  width: 100%;
-  height: 40px;
-  flex: none;
-}
-
-/* The time at the pill's end, set off by a hairline. */
-.island-clock {
-  flex: none;
-  padding: 0 8px 0 10px;
-  border-left: 1px solid color-mix(in srgb, var(--gilt) 28%, transparent);
-  color: var(--muted);
-  font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
-  line-height: 18px;
-}
-
-/* Dark panelling with the theme's pattern and a glow of gilt from the top, framed by a double rule
-   like an illuminated page: the panel is never a flat black box. */
-.island.expanded {
   flex-direction: column;
-  align-items: stretch;
   width: 600px;
   height: 380px;
+  box-sizing: border-box;
   padding: 0 12px 12px;
+  border: 1px solid var(--edge);
   border-radius: 20px;
-  gap: 0;
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--sidebar-bg) 94%, transparent),
+    inset 0 0 0 3px color-mix(in srgb, var(--gilt) 16%, transparent),
+    0 14px 30px -12px rgba(0, 0, 0, 0.6);
   background:
     radial-gradient(
       120% 70% at 50% -10%,
@@ -3019,15 +3302,30 @@ html.panel-window body {
       transparent 65%
     ),
     var(--pattern), var(--sidebar-bg);
+  animation: topbar-panel-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.island.expanded .island-bar {
+@keyframes topbar-panel-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar-panel {
+    animation: none;
+  }
+}
+
+/* The tabs head the panel, over a gilt rule that fades at both ends. */
+.topbar-panel .island-tabs {
   position: relative;
-  padding: 0 0 0 2px;
+  justify-content: center;
+  padding: 10px 0;
 }
 
-/* A gilt rule under the header that fades at both ends. */
-.island.expanded .island-bar::after {
+.topbar-panel .island-tabs::after {
   content: "";
   position: absolute;
   left: 8%;
@@ -3042,7 +3340,6 @@ html.panel-window body {
   );
 }
 
-/* The tabs sit in the header: icons, and the name of the one that's open. */
 .island-tabs {
   display: flex;
   flex: none;
