@@ -2417,26 +2417,174 @@ code {
 /* ---------------------------------------------------------------- Models (M7 Step 4) */
 
 .model-picker {
+  position: relative;
   min-width: 0;
 }
 
 /* A quiet chip: it reads as part of the box until the pointer is on it. */
-.model-picker select {
-  font: inherit;
-  font-size: 0.8125rem;
-  max-width: 340px;
+.model-picker-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 380px;
   padding: 3px 8px;
   border: 1px solid transparent;
   border-radius: var(--radius-chip);
   background: transparent;
   color: var(--muted);
-  text-overflow: ellipsis;
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
 }
 
-.model-picker select:hover:not(:disabled),
-.model-picker select:focus {
+.model-picker-button:hover:not(:disabled),
+.model-picker-button[aria-expanded="true"] {
   border-color: var(--border);
   color: var(--fg);
+}
+
+.model-picker-button svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  transform: rotate(-90deg);
+}
+
+.model-picker-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The menu opens upwards, above the message box. */
+.model-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  max-height: min(480px, 70vh);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--raised);
+  box-shadow: 0 14px 34px -10px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.model-search {
+  margin: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.model-menu-scroll {
+  overflow-y: auto;
+  padding: 0 6px 8px;
+  scrollbar-width: thin;
+}
+
+.model-group + .model-group,
+.model-menu-scroll > .model-option + .model-group {
+  margin-top: 2px;
+}
+
+/* A source's header: folds its models open and shut. */
+.model-group-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: 8px;
+  background: var(--raised);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.model-group-head:hover {
+  background: var(--surface);
+}
+
+.model-group-head svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  color: var(--muted);
+}
+
+.model-group-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-group-tag {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--gilt-soft);
+  color: var(--gilt);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.model-option {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px 6px 29px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.model-menu-scroll > .model-option {
+  padding-left: 8px;
+}
+
+.model-option > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-option:hover {
+  background: var(--surface);
+}
+
+.model-option.chosen {
+  background: var(--gilt-soft);
+  color: var(--gilt);
+  font-weight: 600;
+}
+
+.model-none {
+  padding: 8px;
 }
 
 /* For screen readers only. */

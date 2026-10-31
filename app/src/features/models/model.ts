@@ -84,3 +84,57 @@ export function isOffered(catalog: Catalog | null, choice: ModelChoice): boolean
     ) ?? false
   );
 }
+
+/** What a source is called in the model menu: its group's name. */
+const GROUP_NAMES: Record<string, string> = {
+  nous: "Nous Portal (Hermes's own)",
+  gemini: "Google AI Studio (Gemini)",
+  copilot: "GitHub Copilot",
+  "copilot-acp": "GitHub Copilot (CLI)",
+  "openai-api": "OpenAI",
+  "openai-codex": "ChatGPT (Codex)",
+  llamacpp: "On this PC",
+};
+
+export function groupName(slug: string, name: string): string {
+  return GROUP_NAMES[slug] ?? name;
+}
+
+export interface ModelGroup {
+  slug: string;
+  name: string;
+  /** The models shown (all of them, or the ones matching the search). */
+  models: { id: string; price: Price | null }[];
+  /** How many the source has, whatever the search. */
+  total: number;
+  /** Hermes's own default comes from this source. */
+  isDefault: boolean;
+}
+
+/**
+ * The menu's groups, one per source, in Hermes's order; with a search, only the models whose name
+ * holds every word of it (and sources whose name matches keep all their models), empty groups out.
+ */
+export function modelGroups(catalog: Catalog | null, query: string): ModelGroup[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const hit = (text: string) => words.every((w) => text.toLowerCase().includes(w));
+  return (catalog?.providers ?? [])
+    .map((p) => {
+      const name = groupName(p.slug, p.name);
+      const all = words.length === 0 || hit(`${name} ${p.slug}`);
+      return {
+        slug: p.slug,
+        name,
+        models: all ? p.models : p.models.filter((m) => hit(m.id)),
+        total: p.models.length,
+        isDefault: p.is_current,
+      };
+    })
+    .filter((g) => g.models.length > 0 || (words.length === 0 && g.total === 0));
+}
+
+/** Which groups start open: the one the chosen model is in, else the one Hermes's default is in. */
+export function openAtFirst(groups: ModelGroup[], choice: ModelChoice): string[] {
+  const chosen = choice.provider ?? groups.find((g) => g.isDefault)?.slug;
+  return chosen ? [chosen] : [];
+}

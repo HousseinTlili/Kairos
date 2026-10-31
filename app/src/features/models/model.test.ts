@@ -18,6 +18,8 @@ import {
   costLabel,
   usageLine,
   isOffered,
+  modelGroups,
+  openAtFirst,
   parseChoiceKey,
   priceLabel,
   tokens,
@@ -90,5 +92,58 @@ describe("the line under an answer", () => {
     expect(usageLine({ input: 900, output: 40, cost: null, provider: null, model: null })).toBe(
       "900 tokens in, 40 out",
     );
+  });
+});
+
+describe("the model menu's groups", () => {
+  const catalog: Catalog = {
+    current_provider: "nous",
+    current_model: "solar",
+    providers: [
+      {
+        slug: "nous",
+        name: "Nous Portal",
+        is_current: true,
+        models: [
+          { id: "upstage/solar-mini4:free", price: null },
+          { id: "anthropic/claude-sonnet-5-5", price: null },
+        ],
+      },
+      {
+        slug: "gemini",
+        name: "gemini",
+        is_current: false,
+        models: [{ id: "gemini-3-pro", price: null }],
+      },
+      {
+        slug: "copilot-acp",
+        name: "GitHub Copilot ACP",
+        is_current: false,
+        models: [{ id: "gpt-5.4", price: null }],
+      },
+    ],
+  };
+
+  it("makes one group per source, named for where the key came from", () => {
+    expect(modelGroups(catalog, "").map((g) => g.name)).toEqual([
+      "Nous Portal (Hermes's own)",
+      "Google AI Studio (Gemini)",
+      "GitHub Copilot (CLI)",
+    ]);
+  });
+
+  it("a search keeps the matching models, and a whole source when its name matches", () => {
+    const sonnet = modelGroups(catalog, "sonnet");
+    expect(sonnet.map((g) => g.slug)).toEqual(["nous"]);
+    expect(sonnet[0].models.map((m) => m.id)).toEqual(["anthropic/claude-sonnet-5-5"]);
+    expect(sonnet[0].total).toBe(2);
+    expect(modelGroups(catalog, "google")[0].models).toHaveLength(1);
+    expect(modelGroups(catalog, "nothing like this")).toEqual([]);
+  });
+
+  it("opens the chosen model's group first, else the default's", () => {
+    const groups = modelGroups(catalog, "");
+    expect(openAtFirst(groups, { provider: "gemini", model: "gemini-3-pro" })).toEqual(["gemini"]);
+    expect(openAtFirst(groups, { provider: null, model: null })).toEqual(["nous"]);
   });
 });

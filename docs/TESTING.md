@@ -200,6 +200,7 @@ Spec: `docs/milestones/M18.md`; details: `docs/milestones/M18-acceptance.md`. Ab
 - [ ] Settings ▸ AI providers: add a known provider's key; its models appear in the model menu (or after "Restart Hermes").
 - [ ] A conversation on one of them answers, and names that model under the answer.
 - [ ] Add your own endpoint (Groq, Mistral, a local LM Studio…); its models appear. Remove each: gone, and keys you set up yourself untouched.
+- [ ] The model menu: one group per source (Nous Portal, Google AI Studio, GitHub Copilot, your endpoints…), each folding open and shut and remembered; the search opens every group with a match.
 
 ## D-037 — The bar's Wi-Fi and Bluetooth menus
 
