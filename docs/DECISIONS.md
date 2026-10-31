@@ -360,14 +360,19 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
-## D-038 — Kairos adds AI providers through Hermes's own commands; keys live only in Hermes — Proposed
+## D-038 — Kairos adds AI providers through Hermes's own commands; keys live only in Hermes — Accepted
 
 For M18 (`docs/milestones/M18.md`). Settings ▸ Providers adds a known provider's API key
-(`hermes auth add … --type api-key`), an OpenAI-compatible endpoint (`hermes config set
+as its line in Hermes's `.env` (e.g. `OPENAI_API_KEY`; Hermes's own primary setup, and no key on
+any command line: `hermes auth add` only reads a key from a console prompt or an argument), an
+OpenAI-compatible endpoint (`hermes config set
 providers.<name>` with `key_env`, its key as one `KAIROS_<NAME>_API_KEY` line in Hermes's `.env`),
-or a GitHub Copilot sign-in (`hermes auth add copilot --type oauth`, device code). Kairos keeps no
-key and never shows one again; the M7 model menu lists the new models from `/api/model/options`.
-A change to Hermes's configuration, made each time from the Master's click. Proposed 2026-10-31.
+or a GitHub Copilot fine-grained token (`COPILOT_GITHUB_TOKEN`; Copilot has no `hermes auth add`
+sign-in). Every `.env` line Kairos writes follows a `# kairos:` marker, and it removes only those.
+Kairos keeps no key and never shows one again; the M7 model menu lists the new models from `/api/model/options`.
+A change to Hermes's configuration, made each time from the Master's click. Accepted by the product owner on 2026-10-31 with the
+recommended answers (M18 §6). Hermes lists a new endpoint at once, without a restart (checked
+live); the page still offers one when a provider isn't listed.
 
 ## D-037 — The bar has its own Wi-Fi and Bluetooth menus — Accepted
 

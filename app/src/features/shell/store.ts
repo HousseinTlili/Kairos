@@ -8,6 +8,7 @@ export type SettingsTab =
   | "notifications"
   | "briefing"
   | "accounts"
+  | "providers"
   | "models"
   | "quick"
   | "voice"

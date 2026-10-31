@@ -142,6 +142,55 @@ fn config_word(home: &Path, key: &str) -> Option<String> {
     parse_mode(&String::from_utf8_lossy(&output.stdout))
 }
 
+/// Runs a short Hermes command (`config set`, `config unset`, `gateway stop`) hidden, and returns
+/// its output, or why it failed. Never given a secret: keys go into `.env` directly (D-038), so
+/// none is ever on a command line. Blocking, up to `CLI_TIMEOUT`.
+pub fn run_cli(home: &Path, args: &[&str]) -> Result<String, String> {
+    let mut command = Command::new(hermes_cli(home));
+    command
+        .args(args)
+        .env("HERMES_HOME", home)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    }
+    let mut child = command
+        .spawn()
+        .map_err(|err| format!("couldn't run the Hermes command line: {err}"))?;
+    let started = Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) if started.elapsed() < CLI_TIMEOUT => {
+                std::thread::sleep(Duration::from_millis(50))
+            }
+            _ => {
+                let _ = child.kill();
+                return Err("Hermes's command line didn't answer in time".into());
+            }
+        }
+    }
+    let output = child.wait_with_output().map_err(|err| err.to_string())?;
+    let text = String::from_utf8_lossy(&output.stdout).into_owned();
+    if output.status.success() {
+        Ok(text)
+    } else {
+        let err = String::from_utf8_lossy(&output.stderr);
+        let said = err
+            .lines()
+            .chain(text.lines())
+            .rfind(|l| !l.trim().is_empty());
+        Err(said
+            .unwrap_or("Hermes refused the change")
+            .trim()
+            .to_string())
+    }
+}
+
 /// How long `hermes gateway ensure` may take: its own deadline, plus a margin for the CLI.
 const ENSURE_DEADLINE_S: u64 = 60;
 const ENSURE_TIMEOUT: Duration = Duration::from_secs(ENSURE_DEADLINE_S + 15);

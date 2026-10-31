@@ -16,6 +16,7 @@ mod models;
 mod notifications;
 mod persona;
 mod presence;
+mod providers;
 mod quick;
 mod rules;
 mod store;
@@ -332,6 +333,11 @@ pub fn run() {
             commands::bar_set_volume,
             commands::bar_set_muted,
             commands::bar_open,
+            commands::providers_state,
+            commands::add_provider_key,
+            commands::add_provider_endpoint,
+            commands::remove_provider,
+            commands::restart_hermes,
             commands::wifi_state,
             commands::wifi_set,
             commands::wifi_connect,

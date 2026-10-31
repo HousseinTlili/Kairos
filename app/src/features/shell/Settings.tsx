@@ -2,6 +2,7 @@ import { approvalWarning, useConnection } from "../connection/store";
 import { AccountsSettings } from "../accounts/AccountsSettings";
 import { BriefingSettings } from "../briefing/BriefingSettings";
 import { ModelsSettings } from "../models/ModelsSettings";
+import { ProvidersSettings } from "../providers/ProvidersSettings";
 import { QuickSettings } from "../quick/QuickSettings";
 import { NotificationSettings } from "../notifications/NotificationSettings";
 import { RulesPage } from "../rules/RulesPage";
@@ -49,6 +50,7 @@ const GROUPS: { label: string; tabs: { id: SettingsTab; label: string }[] }[] = 
     label: "Accounts and models",
     tabs: [
       { id: "accounts", label: "Accounts" },
+      { id: "providers", label: "AI providers" },
       { id: "models", label: "Models and sandbox" },
     ],
   },
@@ -92,6 +94,8 @@ export function Settings() {
           <NotificationSettings />
         ) : settingsTab === "briefing" ? (
           <BriefingSettings />
+        ) : settingsTab === "providers" ? (
+          <ProvidersSettings />
         ) : settingsTab === "accounts" ? (
           <AccountsSettings />
         ) : settingsTab === "models" ? (

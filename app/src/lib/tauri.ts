@@ -455,6 +455,52 @@ export interface Catalog {
 }
 
 export const modelCatalog = () => call<Catalog>("model_catalog");
+
+// --- Your own AI providers (M18, D-038). Shapes mirror src-tauri/src/providers.rs. --------------
+
+export interface KnownProvider {
+  id: string;
+  name: string;
+  /** The `.env` name Hermes reads its key from. */
+  env: string;
+  keys_at: string;
+  has_key: boolean;
+  /** Kairos wrote that key, so it may remove it. */
+  by_kairos: boolean;
+}
+
+export interface EndpointPreset {
+  name: string;
+  api: string;
+  needs_key: boolean;
+}
+
+export interface AddedEndpoint {
+  id: string;
+  endpoint: boolean;
+  api: string;
+  env: string;
+}
+
+export interface ProvidersState {
+  known: KnownProvider[];
+  presets: EndpointPreset[];
+  endpoints: AddedEndpoint[];
+}
+
+export const providersState = () => call<ProvidersState>("providers_state");
+/** The key goes into Hermes's .env; Kairos never sends it back. */
+export const addProviderKey = (id: string, key: string) =>
+  call<ProvidersState>("add_provider_key", { id, key });
+export const addProviderEndpoint = (
+  name: string,
+  api: string,
+  key: string | null,
+  models: string[],
+) => call<ProvidersState>("add_provider_endpoint", { name, api, key, models });
+export const removeProvider = (id: string, endpoint: boolean) =>
+  call<ProvidersState>("remove_provider", { id, endpoint });
+export const restartHermes = () => call<null>("restart_hermes");
 export const conversationModel = (sessionId: string) =>
   call<ModelChoice>("conversation_model", { sessionId });
 

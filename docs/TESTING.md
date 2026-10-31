@@ -193,6 +193,14 @@ Spec: `docs/milestones/M14.md`; details: `docs/milestones/M14-acceptance.md`. A 
 - [ ] Settings ▸ Kairos ▸ Island: switching it off hides it at once.
 - [ ] Ctrl+Alt+L hides the island, again shows it (the switch in Settings follows). Ctrl+Alt+J, K, L sit side by side. A new key in "Hide and show" works at once; the quick box's or push-to-talk's key is refused.
 
+## M18 — Your own AI providers (`m18/providers`)
+
+Spec: `docs/milestones/M18.md`; details: `docs/milestones/M18-acceptance.md`. About 10 minutes, with a real key.
+
+- [ ] Settings ▸ AI providers: add a known provider's key; its models appear in the model menu (or after "Restart Hermes").
+- [ ] A conversation on one of them answers, and names that model under the answer.
+- [ ] Add your own endpoint (Groq, Mistral, a local LM Studio…); its models appear. Remove each: gone, and keys you set up yourself untouched.
+
 ## D-037 — The bar's Wi-Fi and Bluetooth menus
 
 - [ ] Wi-Fi: the menu shows your network (Connected), the nearby ones by signal, locks and "Saved"; Disconnect, then a click on it joins again; the switch turns Wi-Fi off and on.

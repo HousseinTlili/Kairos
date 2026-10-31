@@ -2602,6 +2602,80 @@ pub async fn bar_open(which: String) -> Result<(), CommandError> {
     on_windows(move || crate::desk::open_panel(&which)).await
 }
 
+// --- Your own AI providers (M18, D-038) --------------------------------------------------------
+
+fn providers_error(message: String) -> CommandError {
+    CommandError {
+        kind: "providers",
+        message,
+    }
+}
+
+async fn with_home<T: Send + 'static>(
+    work: impl FnOnce(&std::path::Path) -> Result<T, String> + Send + 'static,
+) -> Result<T, CommandError> {
+    let home = local::hermes_home()?;
+    tauri::async_runtime::spawn_blocking(move || work(&home))
+        .await
+        .map_err(|err| providers_error(err.to_string()))?
+        .map_err(providers_error)
+}
+
+#[tauri::command]
+pub async fn providers_state() -> Result<crate::providers::ProvidersState, CommandError> {
+    with_home(crate::providers::state).await
+}
+
+/// A known provider's key, written to Hermes's `.env` (never logged, never sent back).
+#[tauri::command]
+pub async fn add_provider_key(
+    id: String,
+    key: String,
+) -> Result<crate::providers::ProvidersState, CommandError> {
+    with_home(move |home| {
+        crate::providers::add_key(home, &id, &key)?;
+        crate::providers::state(home)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn add_provider_endpoint(
+    name: String,
+    api: String,
+    key: Option<String>,
+    models: Vec<String>,
+) -> Result<crate::providers::ProvidersState, CommandError> {
+    with_home(move |home| {
+        crate::providers::add_endpoint(home, &name, &api, key.as_deref(), &models)?;
+        crate::providers::state(home)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn remove_provider(
+    id: String,
+    endpoint: bool,
+) -> Result<crate::providers::ProvidersState, CommandError> {
+    with_home(move |home| {
+        crate::providers::remove(home, &id, endpoint)?;
+        crate::providers::state(home)
+    })
+    .await
+}
+
+/// Restarts Hermes's gateway so it sees a new provider (M18 §2): stopped, then started again with
+/// `hermes gateway ensure` (D-035). The page offers it; Kairos never does it by itself.
+#[tauri::command]
+pub async fn restart_hermes() -> Result<(), CommandError> {
+    with_home(|home| {
+        let _ = local::run_cli(home, &["gateway", "stop"]);
+        local::ensure_gateway(home)
+    })
+    .await
+}
+
 // --- The bar's own Wi-Fi and Bluetooth menus (D-037) -------------------------------------------
 
 /// `scan`: ask the adapter to look again first (the menu was just opened).

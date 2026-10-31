@@ -4611,3 +4611,87 @@ button.net-row:hover:not(:disabled) {
   gap: 10px;
   margin: 0;
 }
+
+/* --- M18: your own AI providers ---------------------------------------------------------------- */
+
+.provider-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.provider-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 14px;
+}
+
+.provider-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.provider-list .provider-name {
+  font-weight: 600;
+}
+
+.provider-list .spacer {
+  flex: 1;
+}
+
+/* Three ways to add one, as one control. */
+.segmented {
+  display: inline-flex;
+  margin: 4px 0 14px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.segmented button {
+  padding: 5px 14px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.segmented button.active {
+  background: var(--gilt-soft);
+  color: var(--gilt);
+  font-weight: 600;
+}
+
+.provider-form {
+  display: grid;
+  gap: 10px;
+  max-width: 34rem;
+}
+
+.provider-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.provider-form input,
+.provider-form select {
+  font: inherit;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.provider-form p {
+  margin: 0;
+}
+
+.provider-form a {
+  color: var(--gilt);
+}
