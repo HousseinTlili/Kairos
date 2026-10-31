@@ -796,10 +796,52 @@ export interface Volume {
 export interface BarState {
   desktops: Desktops;
   volume: Volume | null;
+  /** The Wi-Fi network in use and its bars (0–4). */
+  wifi: [string, number] | null;
 }
 
+// --- The bar's own Wi-Fi and Bluetooth menus (D-037). Shapes mirror src-tauri/src/net.rs. -----
+
+export interface WifiNetwork {
+  ssid: string;
+  bars: number;
+  secured: boolean;
+  saved: boolean;
+  connected: boolean;
+}
+
+export interface WifiState {
+  adapter: boolean;
+  on: boolean | null;
+  connected: [string, number] | null;
+  saved: string[];
+  /** Null while Windows hides nearby networks (location off). */
+  nearby: WifiNetwork[] | null;
+}
+
+export interface BluetoothDevice {
+  name: string;
+  connected: boolean;
+}
+
+export interface BluetoothState {
+  adapter: boolean;
+  on: boolean | null;
+  devices: BluetoothDevice[];
+}
+
+export const wifiState = (scan: boolean) => call<WifiState>("wifi_state", { scan });
+export const wifiSet = (on: boolean) => call<WifiState>("wifi_set", { on });
+/** The password goes to Windows's profile; Kairos keeps nothing. */
+export const wifiConnect = (ssid: string, password: string | null) =>
+  call<null>("wifi_connect", { ssid, password });
+export const wifiDisconnect = () => call<null>("wifi_disconnect");
+export const bluetoothState = () => call<BluetoothState>("bluetooth_state");
+export const bluetoothSet = (on: boolean) => call<BluetoothState>("bluetooth_set", { on });
+
 /** The Windows panels the modules open; names only (`desk::panel_uri`). */
-export type WindowsPanel = "wifi" | "bluetooth" | "sound" | "mixer" | "power" | "battery" | "date";
+export type WindowsPanel =
+  "wifi" | "bluetooth" | "sound" | "mixer" | "power" | "battery" | "date" | "location";
 
 export const barState = () => call<BarState>("bar_state");
 export const barSwitchDesktop = (index: number) => call<Desktops>("bar_switch_desktop", { index });

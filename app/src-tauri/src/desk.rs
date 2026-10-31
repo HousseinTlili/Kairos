@@ -43,6 +43,8 @@ pub fn panel_uri(which: &str) -> Option<&'static str> {
         "power" => "ms-settings:powersleep",
         "battery" => "ms-settings:batterysaver",
         "date" => "ms-settings:dateandtime",
+        // The Wi-Fi menu's way to nearby networks' names (D-037).
+        "location" => "ms-settings:privacy-location",
         _ => return None,
     })
 }

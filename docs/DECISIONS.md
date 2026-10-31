@@ -360,6 +360,22 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
+## D-037 — The bar has its own Wi-Fi and Bluetooth menus — Accepted
+
+Asked for by the product owner on 2026-10-31. **Wi-Fi:** the radio's switch, the network in use
+(with Disconnect), and the nearby networks by signal, with locks and "Saved" marks; a click joins a
+saved or open network, and a new secured one after its password, which goes straight into a
+Windows profile (WPA2-Personal) and is never kept by Kairos. Native Wi-Fi (`wlanapi`) for the
+networks, WinRT for the radio and for the network in use (its connection profile, which also feeds
+the bar's Wi-Fi icon: `netsh`, used before, is blocked while Windows location is off). Should
+Windows hide nearby networks (location off, Windows 11 24H2), the menu lists the saved networks
+and links to the location setting; Kairos never changes that setting. **Bluetooth:** the radio's
+switch and the paired devices (classic and Low Energy), connected or not. Windows has no public
+API for an app to connect a paired device, so connecting and pairing stay in Windows's settings,
+one click away. New features of the `windows` crate already used: `Devices_Radios`,
+`Devices_Bluetooth`, `Devices_Enumeration`, `Networking_Connectivity`,
+`Win32_NetworkManagement_WiFi`, `Win32_NetworkManagement_Ndis`.
+
 ## D-036 — The top bar works like Omarchy's — Accepted
 
 The bar's content and behaviour follow Omarchy's top bar (Waybar), as the product owner asked on

@@ -2602,6 +2602,55 @@ pub async fn bar_open(which: String) -> Result<(), CommandError> {
     on_windows(move || crate::desk::open_panel(&which)).await
 }
 
+// --- The bar's own Wi-Fi and Bluetooth menus (D-037) -------------------------------------------
+
+/// `scan`: ask the adapter to look again first (the menu was just opened).
+#[cfg(windows)]
+#[tauri::command]
+pub async fn wifi_state(scan: bool) -> Result<crate::net::WifiState, CommandError> {
+    on_windows(move || Ok(crate::net::wifi_state(scan))).await
+}
+
+#[cfg(windows)]
+#[tauri::command]
+pub async fn wifi_set(on: bool) -> Result<crate::net::WifiState, CommandError> {
+    on_windows(move || {
+        crate::net::set_wifi(on)?;
+        Ok(crate::net::wifi_state(false))
+    })
+    .await
+}
+
+/// A saved network by name, or a new one with its password (`None` for an open network). The
+/// password goes straight into Windows's profile; Kairos never stores or logs it.
+#[cfg(windows)]
+#[tauri::command]
+pub async fn wifi_connect(ssid: String, password: Option<String>) -> Result<(), CommandError> {
+    on_windows(move || crate::net::wifi_connect(&ssid, password.as_deref())).await
+}
+
+#[cfg(windows)]
+#[tauri::command]
+pub async fn wifi_disconnect() -> Result<(), CommandError> {
+    on_windows(crate::net::wifi_disconnect).await
+}
+
+#[cfg(windows)]
+#[tauri::command]
+pub async fn bluetooth_state() -> Result<crate::net::BluetoothState, CommandError> {
+    on_windows(|| Ok(crate::net::bluetooth_state())).await
+}
+
+#[cfg(windows)]
+#[tauri::command]
+pub async fn bluetooth_set(on: bool) -> Result<crate::net::BluetoothState, CommandError> {
+    on_windows(move || {
+        crate::net::set_bluetooth(on)?;
+        Ok(crate::net::bluetooth_state())
+    })
+    .await
+}
+
 /// The top bar's page measured the width it needs (logical px); the window fits it (D-034).
 #[tauri::command]
 pub async fn island_fit(app: tauri::AppHandle, width: u32) -> Result<(), CommandError> {

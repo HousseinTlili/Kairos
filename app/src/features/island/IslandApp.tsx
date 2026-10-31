@@ -29,10 +29,12 @@ import { SealMark } from "../shell/SealMark";
 import { GridIcon, HomeIcon, ImageIcon, MusicIcon, SparkleIcon, WaveIcon } from "../shell/icons";
 import {
   BatteryPopover,
+  BluetoothPopover,
   CalendarPopover,
   CentreClock,
   SystemModules,
   VolumePopover,
+  WifiPopover,
   Workspaces,
   type Pop,
 } from "./BarModules";
@@ -319,6 +321,7 @@ export function IslandApp() {
           <span className="topbar-rule" aria-hidden="true" />
           <SystemModules
             snapshot={snapshot}
+            wifi={bar?.wifi ?? null}
             unread={unread}
             volume={bar?.volume ?? null}
             onVolume={(volume) => setBar((b) => (b ? { ...b, volume } : b))}
@@ -336,6 +339,16 @@ export function IslandApp() {
       )}
       {expanded && view === "battery" && <BatteryPopover snapshot={snapshot} />}
       {expanded && view === "calendar" && <CalendarPopover />}
+      {expanded && view === "wifi" && (
+        <WifiPopover
+          onChanged={() =>
+            void barState()
+              .then(setBar)
+              .catch(() => {})
+          }
+        />
+      )}
+      {expanded && view === "bluetooth" && <BluetoothPopover />}
       {expanded && view === "panel" && (
         <section className="topbar-panel">
           <nav className="island-tabs" role="tablist">

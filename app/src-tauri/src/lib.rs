@@ -4,6 +4,7 @@ mod automations;
 mod briefing;
 mod commands;
 mod desk;
+mod net;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
 mod island;
@@ -331,6 +332,12 @@ pub fn run() {
             commands::bar_set_volume,
             commands::bar_set_muted,
             commands::bar_open,
+            commands::wifi_state,
+            commands::wifi_set,
+            commands::wifi_connect,
+            commands::wifi_disconnect,
+            commands::bluetooth_state,
+            commands::bluetooth_set,
             commands::set_island_hotkey,
             commands::appearance_state,
             commands::save_appearance,

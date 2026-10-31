@@ -3284,6 +3284,154 @@ html.panel-window body {
   font-weight: 700;
 }
 
+/* --- D-037: the bar's own Wi-Fi and Bluetooth menus --------------------------------------------- */
+
+.bar-pop.wide {
+  width: 320px;
+}
+
+/* A radio's switch, in its menu's header. */
+.bar-switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.bar-switch input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.bar-switch > span[aria-hidden] {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sidebar-fg) 20%, transparent);
+  transition: background 150ms;
+  pointer-events: none;
+}
+
+.bar-switch > span[aria-hidden]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--fg);
+  transition: transform 150ms;
+}
+
+.bar-switch input:checked + span[aria-hidden] {
+  background: var(--gilt);
+}
+
+.bar-switch input:checked + span[aria-hidden]::after {
+  transform: translateX(16px);
+  background: var(--sidebar-bg);
+}
+
+.bar-switch input:focus-visible + span[aria-hidden] {
+  outline: 2px solid var(--gilt);
+  outline-offset: 2px;
+}
+
+.net-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 210px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.net-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: none;
+  color: var(--fg);
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+button.net-row {
+  cursor: pointer;
+}
+
+button.net-row:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sidebar-fg) 8%, transparent);
+}
+
+.net-row.connected {
+  margin-bottom: 6px;
+  border-color: var(--edge);
+  background: color-mix(in srgb, var(--gilt) 10%, transparent);
+}
+
+.net-row svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.net-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.net-lock {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.net-tag {
+  flex: none;
+  color: var(--gilt);
+  font-size: 0.75rem;
+}
+
+.net-tag.muted {
+  color: var(--muted);
+}
+
+.net-password {
+  display: flex;
+  gap: 6px;
+  padding: 4px 8px 8px 34px;
+}
+
+.net-password input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+}
+
+.net-note {
+  margin: 10px 0 0;
+  line-height: 1.45;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .topbar.arriving .topbar-bar,
   .topbar.leaving .topbar-bar,

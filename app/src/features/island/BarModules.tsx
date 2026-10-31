@@ -4,10 +4,18 @@ import {
   barSetMuted,
   barSetVolume,
   barSwitchDesktop,
+  bluetoothSet,
+  bluetoothState,
   showMainWindow,
+  wifiConnect,
+  wifiDisconnect,
+  wifiSet,
+  wifiState,
+  type BluetoothState,
   type Desktops,
   type SystemSnapshot,
   type Volume,
+  type WifiState,
 } from "../../lib/tauri";
 import {
   BatteryIcon,
@@ -17,7 +25,7 @@ import {
   VolumeIcon,
   WifiIcon,
 } from "../shell/icons";
-import { batteryWords, clockText, monthWeeks, wheelVolume, wifiBars } from "./model";
+import { batteryWords, clockText, monthWeeks, wheelVolume } from "./model";
 
 // The top bar's modules, after Omarchy's (D-036): each shows one thing and does one thing on a
 // click, as its Waybar module does there.
@@ -101,15 +109,17 @@ function Module({
   );
 }
 
-export type Pop = "volume" | "battery" | "calendar";
+export type Pop = "volume" | "battery" | "calendar" | "wifi" | "bluetooth";
 
 /**
  * Omarchy's right side: Bluetooth, the network, audio, the CPU and the battery, with Kairos's bell
- * before them. Audio: a click opens the slider, the wheel turns it 5 % a notch, a right-click
- * mutes. The CPU opens Kairos's System page, as Omarchy's opens btop.
+ * before them. Bluetooth and Wi-Fi open Kairos's own menus (D-037). Audio: a click opens the
+ * slider, the wheel turns it 5 % a notch, a right-click mutes. The CPU opens Kairos's System page,
+ * as Omarchy's opens btop.
  */
 export function SystemModules({
   snapshot,
+  wifi,
   unread,
   volume,
   onVolume,
@@ -117,13 +127,14 @@ export function SystemModules({
   onPop,
 }: {
   snapshot: SystemSnapshot | null;
+  /** The network in use and its bars, from the bar's state (it works with location off). */
+  wifi: [string, number] | null;
   unread: number;
   volume: Volume | null;
   onVolume: (v: Volume) => void;
   open: Pop | null;
   onPop: (pop: Pop) => void;
 }) {
-  const wifi = snapshot?.wifi;
   const battery = snapshot?.battery;
   const cpu = snapshot?.cpu.total;
   return (
@@ -135,18 +146,15 @@ export function SystemModules({
         <BellIcon />
         {unread > 0 && <span className="topbar-badge">{unread > 99 ? "99+" : unread}</span>}
       </Module>
-      <Module title="Bluetooth" onClick={() => void barOpen("bluetooth").catch(() => {})}>
+      <Module title="Bluetooth" active={open === "bluetooth"} onClick={() => onPop("bluetooth")}>
         <BluetoothIcon />
       </Module>
       <Module
-        title={
-          wifi
-            ? `${wifi.ssid}${wifi.signal_percent !== null ? `, ${wifi.signal_percent} %` : ""}`
-            : "Network"
-        }
-        onClick={() => void barOpen("wifi").catch(() => {})}
+        title={wifi ? wifi[0] : "Wi-Fi"}
+        active={open === "wifi"}
+        onClick={() => onPop("wifi")}
       >
-        <WifiIcon bars={wifi ? wifiBars(wifi.signal_percent) : 0} />
+        <WifiIcon bars={wifi ? (Math.min(3, Math.max(1, wifi[1] - 1)) as 1 | 2 | 3) : 0} />
       </Module>
       {volume && (
         <Module
@@ -350,6 +358,324 @@ export function CalendarPopover() {
         </button>
         <button className="link" onClick={() => void barOpen("date").catch(() => {})}>
           Date and time settings
+        </button>
+      </div>
+    </section>
+  );
+}
+
+const messageOf = (err: unknown) =>
+  (err as { message?: string })?.message ?? (typeof err === "string" ? err : String(err));
+
+/** A switch in a menu's header, for a radio. */
+function RadioSwitch({
+  on,
+  label,
+  onChange,
+}: {
+  on: boolean | null;
+  label: string;
+  onChange: (on: boolean) => void;
+}) {
+  if (on === null) return null;
+  return (
+    <label className="bar-switch" title={`${label} ${on ? "on" : "off"}`}>
+      <input type="checkbox" checked={on} onChange={(e) => onChange(e.target.checked)} />
+      <span aria-hidden="true" />
+      <span className="sr-only">{label}</span>
+    </label>
+  );
+}
+
+/**
+ * Kairos's own Wi-Fi menu (D-037): the radio, the network in use, the saved networks and, when
+ * Windows shows them, the nearby ones; a click joins, with a password for a new secured network.
+ */
+export function WifiPopover({ onChanged }: { onChanged: () => void }) {
+  const [state, setState] = useState<WifiState | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [asking, setAsking] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [joining, setJoining] = useState<string | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    const read = (scan: boolean) =>
+      void wifiState(scan)
+        .then((s) => live && setState(s))
+        .catch((err: unknown) => live && setError(messageOf(err)));
+    read(true);
+    // A scan's results arrive a few seconds after it is asked for.
+    const timer = setInterval(() => read(false), 3000);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, []);
+
+  // Joining: Windows answers later; the menu watches for the network to come up.
+  useEffect(() => {
+    if (!joining) return;
+    const until = Date.now() + 20_000;
+    const timer = setInterval(() => {
+      void wifiState(false).then((s) => {
+        setState(s);
+        if (s.connected?.[0] === joining) {
+          setJoining(null);
+          onChanged();
+        } else if (Date.now() > until) {
+          setJoining(null);
+          setError(`Couldn't join ${joining}. Check the password, or try again.`);
+        }
+      });
+    }, 1500);
+    return () => clearInterval(timer);
+  }, [joining, onChanged]);
+
+  const join = (ssid: string, pass: string | null) => {
+    setError(null);
+    setAsking(null);
+    setPassword("");
+    void wifiConnect(ssid, pass)
+      .then(() => setJoining(ssid))
+      .catch((err: unknown) => setError(messageOf(err)));
+  };
+
+  if (!state) {
+    return (
+      <section className="bar-pop right wide" aria-label="Wi-Fi">
+        <p className="muted">{error ?? "Looking for networks…"}</p>
+      </section>
+    );
+  }
+  if (!state.adapter) {
+    return (
+      <section className="bar-pop right wide" aria-label="Wi-Fi">
+        <p className="muted">This PC has no Wi-Fi adapter.</p>
+      </section>
+    );
+  }
+
+  const current = state.connected?.[0] ?? null;
+  const nearby = state.nearby?.filter((n) => n.ssid !== current) ?? null;
+  // With location off, the saved networks stand in for the nearby ones.
+  const saved = state.saved.filter((s) => s !== current);
+
+  return (
+    <section className="bar-pop right wide" aria-label="Wi-Fi">
+      <header>
+        <WifiIcon bars={state.on === false ? 0 : 3} />
+        <strong>Wi-Fi</strong>
+        <RadioSwitch
+          on={state.on}
+          label="Wi-Fi"
+          onChange={(on) =>
+            void wifiSet(on)
+              .then((s) => {
+                setState(s);
+                onChanged();
+              })
+              .catch((err: unknown) => setError(messageOf(err)))
+          }
+        />
+      </header>
+
+      {state.on !== false && (
+        <>
+          {current && (
+            <div className="net-row connected">
+              <WifiIcon
+                bars={
+                  state.connected
+                    ? (Math.min(3, Math.max(1, state.connected[1] - 1)) as 1 | 2 | 3)
+                    : 0
+                }
+              />
+              <span className="net-name">{current}</span>
+              <span className="net-tag">Connected</span>
+              <button
+                className="link"
+                onClick={() =>
+                  void wifiDisconnect()
+                    .then(() => {
+                      setState({ ...state, connected: null });
+                      onChanged();
+                    })
+                    .catch((err: unknown) => setError(messageOf(err)))
+                }
+              >
+                Disconnect
+              </button>
+            </div>
+          )}
+
+          <div className="net-list">
+            {nearby
+              ? nearby.map((n) => (
+                  <div key={n.ssid} className="net-item">
+                    <button
+                      className="net-row"
+                      disabled={joining !== null}
+                      onClick={() =>
+                        n.saved || !n.secured ? join(n.ssid, null) : setAsking(n.ssid)
+                      }
+                    >
+                      <WifiIcon bars={Math.min(3, Math.max(1, n.bars - 1)) as 1 | 2 | 3} />
+                      <span className="net-name">{n.ssid}</span>
+                      {n.secured && (
+                        <span className="net-lock" title="Secured">
+                          🔒︎
+                        </span>
+                      )}
+                      {joining === n.ssid ? (
+                        <span className="net-tag">Joining…</span>
+                      ) : n.saved ? (
+                        <span className="net-tag muted">Saved</span>
+                      ) : null}
+                    </button>
+                    {asking === n.ssid && (
+                      <form
+                        className="net-password"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          join(n.ssid, password);
+                        }}
+                      >
+                        <input
+                          autoFocus
+                          type="password"
+                          placeholder="Password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          aria-label={`Password for ${n.ssid}`}
+                        />
+                        <button type="submit" className="primary" disabled={password.length < 8}>
+                          Join
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                ))
+              : saved.map((ssid) => (
+                  <button
+                    key={ssid}
+                    className="net-row"
+                    disabled={joining !== null}
+                    onClick={() => join(ssid, null)}
+                    title="Saved: join without a password if it's in range"
+                  >
+                    <WifiIcon bars={1} />
+                    <span className="net-name">{ssid}</span>
+                    {joining === ssid ? (
+                      <span className="net-tag">Joining…</span>
+                    ) : (
+                      <span className="net-tag muted">Saved</span>
+                    )}
+                  </button>
+                ))}
+          </div>
+
+          {nearby === null && (
+            <p className="net-note small muted">
+              Windows shows nearby networks to apps only while location is on. Your saved networks
+              are listed instead.{" "}
+              <button className="link" onClick={() => void barOpen("location").catch(() => {})}>
+                Location settings
+              </button>
+            </p>
+          )}
+        </>
+      )}
+      {error && <p className="bad-text small">{error}</p>}
+      <div className="bar-pop-actions">
+        <button className="link" onClick={() => void barOpen("wifi").catch(() => {})}>
+          Windows network list
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Kairos's own Bluetooth menu (D-037): the radio and the paired devices. Connecting a device and
+ * pairing a new one stay in Windows's settings (no public API for an app to connect one).
+ */
+export function BluetoothPopover() {
+  const [state, setState] = useState<BluetoothState | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    const read = () =>
+      void bluetoothState()
+        .then((s) => live && setState(s))
+        .catch((err: unknown) => live && setError(messageOf(err)));
+    read();
+    const timer = setInterval(read, 4000);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, []);
+
+  if (!state) {
+    return (
+      <section className="bar-pop right wide" aria-label="Bluetooth">
+        <p className="muted">{error ?? "Reading Bluetooth…"}</p>
+      </section>
+    );
+  }
+  if (!state.adapter) {
+    return (
+      <section className="bar-pop right wide" aria-label="Bluetooth">
+        <p className="muted">This PC has no Bluetooth.</p>
+      </section>
+    );
+  }
+  return (
+    <section className="bar-pop right wide" aria-label="Bluetooth">
+      <header>
+        <BluetoothIcon />
+        <strong>Bluetooth</strong>
+        <RadioSwitch
+          on={state.on}
+          label="Bluetooth"
+          onChange={(on) =>
+            void bluetoothSet(on)
+              .then(setState)
+              .catch((err: unknown) => setError(messageOf(err)))
+          }
+        />
+      </header>
+      {state.on === false && (
+        <p className="muted small">
+          Bluetooth is off
+          {state.devices.length > 0 &&
+            ` (${state.devices.length} paired device${state.devices.length > 1 ? "s" : ""})`}
+          .
+        </p>
+      )}
+      {state.on !== false &&
+        (state.devices.length === 0 ? (
+          <p className="muted small">No paired devices.</p>
+        ) : (
+          <div className="net-list">
+            {state.devices.map((d) => (
+              <div key={d.name} className={`net-row ${d.connected ? "connected" : ""}`}>
+                <BluetoothIcon />
+                <span className="net-name">{d.name}</span>
+                <span className={`net-tag ${d.connected ? "" : "muted"}`}>
+                  {d.connected ? "Connected" : "Paired"}
+                </span>
+              </div>
+            ))}
+          </div>
+        ))}
+      {error && <p className="bad-text small">{error}</p>}
+      <div className="bar-pop-actions">
+        <button onClick={() => void barOpen("bluetooth").catch(() => {})}>Add a device</button>
+        <button className="link" onClick={() => void barOpen("bluetooth").catch(() => {})}>
+          Connect in Windows
         </button>
       </div>
     </section>

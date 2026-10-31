@@ -193,6 +193,12 @@ Spec: `docs/milestones/M14.md`; details: `docs/milestones/M14-acceptance.md`. A 
 - [ ] Settings ▸ Kairos ▸ Island: switching it off hides it at once.
 - [ ] Ctrl+Alt+L hides the island, again shows it (the switch in Settings follows). Ctrl+Alt+J, K, L sit side by side. A new key in "Hide and show" works at once; the quick box's or push-to-talk's key is refused.
 
+## D-037 — The bar's Wi-Fi and Bluetooth menus
+
+- [ ] Wi-Fi: the menu shows your network (Connected), the nearby ones by signal, locks and "Saved"; Disconnect, then a click on it joins again; the switch turns Wi-Fi off and on.
+- [ ] Join a new secured network: the password field, Join, "Joining…", then Connected (a wrong password says so within 20 s).
+- [ ] Bluetooth: the switch turns it on; your paired devices show, "Connected" for the ones in use; Add a device opens Windows's pairing.
+
 ## D-035 — Kairos starts Hermes
 
 - [ ] Restart the PC (or `hermes gateway stop`), then open Kairos: "I am waking Hermes, Master." and, within about 10 s, the chat, with no console window.

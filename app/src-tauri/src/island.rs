@@ -463,6 +463,8 @@ pub struct BarState {
     pub desktops: crate::desk::Desktops,
     /// `None` with no speakers.
     pub volume: Option<crate::desk::Volume>,
+    /// The Wi-Fi network in use and its bars (D-037), read the way that works with location off.
+    pub wifi: Option<(String, u8)>,
 }
 
 #[cfg(windows)]
@@ -471,6 +473,7 @@ impl BarState {
         Self {
             desktops: crate::desk::desktops(),
             volume: crate::desk::volume().ok(),
+            wifi: crate::net::connected(),
         }
     }
 }
