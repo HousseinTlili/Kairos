@@ -38,6 +38,8 @@ Step 5 waits for the product owner's pattern images.
 **M17** (automations on events, `m17/automations`): Steps 2–7 built, `docs/milestones/M17.md`; D-033 accepted
 (Ask Kairos may start by itself under the rules; crash offer on; 6 AI requests/h, 30/day).
 The decision is `automations::rules::decide` in the core; voice, island and Ask run in the main window.
+**M18** (your own AI providers, `m18/providers`): spec only, `docs/milestones/M18.md`; D-038 Proposed.
+Its §6 questions come before building.
 
 ## Roles
 
