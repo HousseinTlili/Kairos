@@ -1,24 +1,41 @@
 import { useEffect, useRef, useState } from "react";
 import { Menu } from "@tauri-apps/api/menu";
 import {
+  barState,
   islandCapturing,
   islandExpand,
   islandFit,
   islandOpenQuick,
   islandPushToTalk,
   islandSnooze,
+  notificationsState,
+  onBarState,
   onIslandExpanded,
+  onIslandLeaving,
   onIslandShown,
   onKairosState,
+  onNotificationsChanged,
   onRunEvent,
+  onSystemSnapshot,
   openInMain,
   quickHotkey,
   showMainWindow,
+  systemSnapshot,
+  type BarState,
+  type SystemSnapshot,
 } from "../../lib/tauri";
 import { hidesForCapture } from "../quick/model";
 import { SealMark } from "../shell/SealMark";
 import { GridIcon, HomeIcon, ImageIcon, MusicIcon, SparkleIcon, WaveIcon } from "../shell/icons";
-import { BarStatus } from "./BarStatus";
+import {
+  BatteryPopover,
+  CalendarPopover,
+  CentreClock,
+  SystemModules,
+  VolumePopover,
+  Workspaces,
+  type Pop,
+} from "./BarModules";
 import { DONE_MS, mergeStates, type KairosState } from "./model";
 import {
   AppsTab,
@@ -49,11 +66,12 @@ function savedTab(): Tab {
 }
 
 /**
- * The top bar (M14, D-034): the Master's pinned apps, a field to ask Kairos that also shows what
- * Kairos is doing (a click opens the quick box, or the waiting approval), push-to-talk, and the
- * PC's status and time. The seal or the clock opens the panel (M15); right-click for the menu.
- * Still unless something changes: an always-on-top transparent window that animates all the time
- * costs a third of a core (Elissa's measurement).
+ * The top bar (M14, D-034, D-036), laid out as Omarchy's: the seal (Kairos's panel) and the virtual
+ * desktops on the left, the clock in the centre with what Kairos is doing beside it, and on the
+ * right Kairos (ask, push-to-talk, notifications) then Bluetooth, the network, audio, the CPU and
+ * the battery, each doing something on a click. Right-click for the menu. Still unless something
+ * changes: an always-on-top transparent window that animates all the time costs a third of a core
+ * (Elissa's measurement).
  */
 export function IslandApp() {
   const [states, setStates] = useState<Partial<Record<KairosState["source"], KairosState>>>({});
@@ -61,8 +79,14 @@ export function IslandApp() {
   // M15: a click expands the pill into a panel with tabs.
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>(savedTab);
-  // A short slide down each time the bar comes back (from the top edge, or after a maximized window).
+  // It slides down from the top each time it comes back, and back up into it when it goes.
   const [arriving, setArriving] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  // What the opened window shows under the bar: the panel, or one module's popover.
+  const [view, setView] = useState<"panel" | Pop | null>(null);
+  const [bar, setBar] = useState<BarState | null>(null);
+  const [snapshot, setSnapshot] = useState<SystemSnapshot | null>(null);
+  const [unread, setUnread] = useState(0);
   // Bumped when the panel folds, so the bar re-reads the pins changed in its Apps tab.
   const [pinsSeen, setPinsSeen] = useState(0);
   const [quickKey, setQuickKey] = useState<string | null>(null);
@@ -75,7 +99,10 @@ export function IslandApp() {
     if (!bar) return;
     const flares = 2 * 30 + 4;
     const report = () =>
-      void islandFit(Math.ceil(bar.getBoundingClientRect().width) + flares).catch(() => {});
+      void islandFit(
+        // Its content can run a little past its box (a badge, a wide figure): the larger of the two.
+        Math.ceil(Math.max(bar.getBoundingClientRect().width, bar.scrollWidth)) + flares,
+      ).catch(() => {});
     report();
     const observer = new ResizeObserver(report);
     observer.observe(bar);
@@ -90,12 +117,33 @@ export function IslandApp() {
     void quickHotkey()
       .then(setQuickKey)
       .catch(() => {});
+    void barState()
+      .then(setBar)
+      .catch(() => {});
+    void systemSnapshot()
+      .then((s) => s && setSnapshot(s))
+      .catch(() => {});
+    const readUnread = () =>
+      void notificationsState()
+        .then((s) => setUnread(s.enabled ? s.unread : 0))
+        .catch(() => {});
+    readUnread();
     const stops = [
       onIslandExpanded((open) => {
         setExpanded(open);
-        if (!open) setPinsSeen((n) => n + 1);
+        if (!open) {
+          setView(null);
+          setPinsSeen((n) => n + 1);
+        }
       }),
-      onIslandShown(() => setArriving(true)),
+      onIslandShown(() => {
+        setLeaving(false);
+        setArriving(true);
+      }),
+      onIslandLeaving(() => setLeaving(true)),
+      onBarState(setBar),
+      onSystemSnapshot(setSnapshot),
+      onNotificationsChanged(readUnread),
       onKairosState((state) => {
         setNow(Date.now());
         setStates((prev) => ({ ...prev, [state.source]: state }));
@@ -171,6 +219,16 @@ export function IslandApp() {
     void islandOpenQuick();
   }
 
+  /** Opens the panel or a popover under the bar; the same one again closes it. */
+  function show(next: "panel" | Pop) {
+    if (expanded && view === next) {
+      void islandExpand(false);
+      return;
+    }
+    setView(next);
+    if (!expanded) void islandExpand(true);
+  }
+
   async function menu(event: React.MouseEvent) {
     event.preventDefault();
     const items = await Menu.new({
@@ -187,14 +245,14 @@ export function IslandApp() {
     await items.popup();
   }
 
-  // Kairos is doing something worth showing in the ask field instead of its invitation.
+  // Kairos is doing something worth showing beside the clock.
   const busy = mood !== "idle" || !!shown?.approval || text !== "At your service";
 
   return (
     <div
-      className={`topbar ${mood} ${shown?.approval ? "asking" : ""} ${expanded ? "expanded" : ""} ${arriving ? "arriving" : ""}`}
+      className={`topbar ${mood} ${shown?.approval ? "asking" : ""} ${expanded ? "expanded" : ""} ${arriving ? "arriving" : ""} ${leaving ? "leaving" : ""}`}
       onContextMenu={(e) => void menu(e)}
-      // Opened, the window is full width: a click on its clear part folds the panel.
+      // Opened, the window is wider than the bar: a click on its clear part folds what's open.
       onMouseDown={(e) => {
         if (expanded && e.target === e.currentTarget) void islandExpand(false);
       }}
@@ -202,52 +260,52 @@ export function IslandApp() {
       <header className="topbar-bar" ref={barRef}>
         <div className="topbar-left">
           <button
-            className="topbar-seal"
-            onClick={() => void islandExpand(!expanded)}
-            title={expanded ? "Fold the panel" : "Open the panel"}
-            aria-label={expanded ? "Fold the panel" : "Open the panel"}
+            className={`topbar-seal ${view === "panel" ? "active" : ""}`}
+            onClick={() => show("panel")}
+            title="Kairos's panel"
+            aria-label="Kairos's panel"
           >
-            <SealMark size={30} state={mood} level={0} />
+            <SealMark size={28} state={mood} level={0} />
           </button>
-          <span className="topbar-rule" aria-hidden="true" />
+          <Workspaces
+            desktops={bar?.desktops ?? null}
+            onSwitched={(desktops) => setBar((b) => (b ? { ...b, desktops } : b))}
+          />
           <div className="topbar-apps">
-            <PinnedStrip
-              key={pinsSeen}
-              onEmpty={
-                <button
-                  className="topbar-pin-hint"
-                  onClick={() => {
-                    pickTab("apps");
-                    void islandExpand(true);
-                  }}
-                >
-                  Pin your apps
-                </button>
-              }
-            />
+            <PinnedStrip key={pinsSeen} onEmpty={null} />
           </div>
         </div>
 
-        <button
-          className={`topbar-ask ${busy ? "busy" : ""}`}
-          onClick={() => {
-            if (shown?.approval && shown.sessionId) void openInMain(shown.sessionId);
-            else ask();
-          }}
-          title={shown?.approval ? "Open the approval" : "Ask Kairos"}
-        >
-          <span className="topbar-spark">
-            <SparkleIcon />
-          </span>
-          <span className="topbar-ask-text" aria-live="polite">
-            {busy ? text : "Ask Kairos…"}
-          </span>
-          {quickKey && !busy && <kbd>{quickKey.replace(/\+/g, " + ")}</kbd>}
-        </button>
+        <div className="topbar-centre">
+          <CentreClock onOpen={() => show("calendar")} />
+          {busy && (
+            <button
+              className={`bar-status ${shown?.approval ? "asking" : ""}`}
+              onClick={() => {
+                if (shown?.approval && shown.sessionId) void openInMain(shown.sessionId);
+                else void showMainWindow();
+              }}
+              title={shown?.approval ? "Open the approval" : "Open Kairos"}
+            >
+              <span className="topbar-spark">
+                <SparkleIcon />
+              </span>
+              <span aria-live="polite">{text}</span>
+            </button>
+          )}
+        </div>
 
         <div className="topbar-right">
           <button
-            className="topbar-voice"
+            className="bar-module kairos"
+            onClick={ask}
+            title={quickKey ? `Ask Kairos (${quickKey})` : "Ask Kairos"}
+            aria-label="Ask Kairos"
+          >
+            <SparkleIcon />
+          </button>
+          <button
+            className="bar-module kairos"
             title="Hold to speak"
             aria-label="Hold to speak"
             onPointerDown={() => void islandPushToTalk(true)}
@@ -259,11 +317,26 @@ export function IslandApp() {
             <WaveIcon />
           </button>
           <span className="topbar-rule" aria-hidden="true" />
-          <BarStatus onClock={() => void islandExpand(!expanded)} />
+          <SystemModules
+            snapshot={snapshot}
+            unread={unread}
+            volume={bar?.volume ?? null}
+            onVolume={(volume) => setBar((b) => (b ? { ...b, volume } : b))}
+            open={expanded && view !== "panel" ? view : null}
+            onPop={show}
+          />
         </div>
       </header>
 
-      {expanded && (
+      {expanded && view === "volume" && (
+        <VolumePopover
+          volume={bar?.volume ?? null}
+          onVolume={(volume) => setBar((b) => (b ? { ...b, volume } : b))}
+        />
+      )}
+      {expanded && view === "battery" && <BatteryPopover snapshot={snapshot} />}
+      {expanded && view === "calendar" && <CalendarPopover />}
+      {expanded && view === "panel" && (
         <section className="topbar-panel">
           <nav className="island-tabs" role="tablist">
             {TABS.map((t) => (

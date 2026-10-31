@@ -774,6 +774,41 @@ export const saveIslandSettings = (enabled: boolean, panel: boolean, autohide: b
 export function onIslandShown(handler: () => void): Promise<UnlistenFn> {
   return listen<null>("island-shown", () => handler());
 }
+/** The bar is about to slide up and hide (D-036). */
+export function onIslandLeaving(handler: () => void): Promise<UnlistenFn> {
+  return listen<null>("island-leaving", () => handler());
+}
+
+// --- The top bar's modules (D-036). Shapes mirror src-tauri/src/desk.rs. ----------------------
+
+export interface Desktops {
+  count: number;
+  /** 0-based. */
+  current: number;
+}
+
+export interface Volume {
+  /** 0–100. */
+  level: number;
+  muted: boolean;
+}
+
+export interface BarState {
+  desktops: Desktops;
+  volume: Volume | null;
+}
+
+/** The Windows panels the modules open; names only (`desk::panel_uri`). */
+export type WindowsPanel = "wifi" | "bluetooth" | "sound" | "mixer" | "power" | "battery" | "date";
+
+export const barState = () => call<BarState>("bar_state");
+export const barSwitchDesktop = (index: number) => call<Desktops>("bar_switch_desktop", { index });
+export const barSetVolume = (level: number) => call<Volume>("bar_set_volume", { level });
+export const barSetMuted = (muted: boolean) => call<Volume>("bar_set_muted", { muted });
+export const barOpen = (which: WindowsPanel) => call<null>("bar_open", { which });
+export function onBarState(handler: (state: BarState) => void): Promise<UnlistenFn> {
+  return listen<BarState>("bar-state", (event) => handler(event.payload));
+}
 export const islandOpenQuick = () => call<null>("island_open_quick");
 export const setIslandHotkey = (hotkey: string) =>
   call<IslandSettings>("set_island_hotkey", { hotkey });

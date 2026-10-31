@@ -67,6 +67,13 @@ windows = { version = "=0.62.2", features = [
   "Win32_System_WinRT",
   "Media_Control",
   "Storage_Streams",
+  # D-036: the top bar's modules, as on Omarchy's bar. The volume (Core Audio), switching virtual
+  # desktops (the Ctrl+Win+arrow keys), and reading which desktop is current (the registry).
+  "Win32_Media_Audio",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_Media_Audio_Endpoints",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_System_Registry",
 ] }
 
 [profile.release]

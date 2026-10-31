@@ -3,8 +3,9 @@
 //! wake word.
 //!
 //! The bar stays out of the way: hidden while a window on its screen is maximized, until the mouse
-//! touches the top edge (D-034, asked for 2026-10-31), and while a full-screen app or a screen
-//! capture is in front. Neither window ever takes the focus when it appears.
+//! touches the left part of the top edge (D-034, D-036, asked for 2026-10-31), and while a
+//! full-screen app or a screen capture is in front. It slides down from the top and back up into
+//! it. Neither window ever takes the focus when it appears.
 
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
@@ -46,6 +47,14 @@ const FULL_SCREEN_EVERY: u32 = 20;
 pub const HIDE_DELAY: Duration = Duration::from_millis(600);
 /// The top edge, in physical pixels from the top of the work area.
 const EDGE_PX: i32 = 2;
+/// Only the left part of the top edge reveals the bar (asked for 2026-10-31): the rest of the edge
+/// stays free for the apps' own tabs and title bars.
+const REVEAL_SHARE: f64 = 0.25;
+/// How long the bar takes to slide back up before its window is hidden (the CSS matches it).
+const LEAVE: Duration = Duration::from_millis(240);
+/// Desktops and volume are re-read this often while the bar shows (every half second).
+#[cfg(windows)]
+const DESK_EVERY: u32 = 5;
 
 /// A monitor's work area (the screen without the taskbar), in physical pixels.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -103,6 +112,19 @@ pub fn quick_position(area: Area, quick_w: u32) -> (i32, i32) {
 /// in front: `QUNS_BUSY`, `QUNS_RUNNING_D3D_FULL_SCREEN`, `QUNS_PRESENTATION_MODE`.
 pub fn hides_for(notification_state: i32) -> bool {
     matches!(notification_state, 2..=4)
+}
+
+/// Where the cursor is, for the reveal: `(at_edge, on_bar)`. The bar is revealed from the top edge's
+/// left quarter, and stays while the cursor is in the top strip anywhere from the screen's left
+/// edge to the bar's right end, so the way from that corner to the bar keeps it.
+pub fn zones(area: Area, bar_w: u32, x: i32, y: i32) -> (bool, bool) {
+    if x < area.x || x >= area.x + area.w as i32 {
+        return (false, false);
+    }
+    let (bar_x, _, w, _) = island_rect(area, false, bar_w);
+    let at_edge = y <= area.y + EDGE_PX && f64::from(x - area.x) < f64::from(area.w) * REVEAL_SHARE;
+    let on_bar = y < area.y + px(BAR_WINDOW_H, area.scale) && x < bar_x + w as i32;
+    (at_edge, on_bar)
 }
 
 /// Whether the bar may show while a maximized window covers its screen (D-034): from the moment
@@ -250,6 +272,8 @@ pub struct IslandState {
     uncovered: AtomicBool,
     /// What the bar needs, in logical px, as the page last measured it.
     bar_w: AtomicU32,
+    /// The bar is sliding back up; its window hides when that ends, unless it is wanted again.
+    leaving: AtomicBool,
 }
 
 impl Default for IslandState {
@@ -262,6 +286,7 @@ impl Default for IslandState {
             autohide: AtomicBool::new(true),
             uncovered: AtomicBool::new(true),
             bar_w: AtomicU32::new(DEFAULT_BAR_W),
+            leaving: AtomicBool::new(false),
         }
     }
 }
@@ -324,9 +349,27 @@ pub fn refresh<R: Runtime>(app: &AppHandle<R>, enabled: bool) {
             let _ = window.set_focusable(false);
             let _ = window.show();
             let _ = app.emit_to(ISLAND_WINDOW, "island-shown", ());
+        } else if state.leaving.swap(false, Ordering::SeqCst) {
+            // Wanted again while sliding up: it slides back down.
+            let _ = app.emit_to(ISLAND_WINDOW, "island-shown", ());
         }
-    } else {
-        let _ = window.hide();
+    } else if window.is_visible().unwrap_or(false) && !state.leaving.swap(true, Ordering::SeqCst) {
+        // It slides up into the top of the screen, then the window goes.
+        let _ = app.emit_to(ISLAND_WINDOW, "island-leaving", ());
+        let app = app.clone();
+        let _ = std::thread::Builder::new()
+            .name("kairos-island-leave".into())
+            .spawn(move || {
+                std::thread::sleep(LEAVE);
+                if app
+                    .state::<IslandState>()
+                    .leaving
+                    .swap(false, Ordering::SeqCst)
+                    && let Some(window) = app.get_webview_window(ISLAND_WINDOW)
+                {
+                    let _ = window.hide();
+                }
+            });
     }
 }
 
@@ -358,6 +401,8 @@ pub fn watch<R: Runtime>(
             let mut covered = false;
             let mut area = None;
             let mut beat: u32 = 0;
+            #[cfg(windows)]
+            let mut last_bar: Option<BarState> = None;
             loop {
                 let state = app.state::<IslandState>();
                 let mut changed = false;
@@ -372,18 +417,8 @@ pub fn watch<R: Runtime>(
                     covered =
                         state.autohide.load(Ordering::SeqCst) && desktop::maximized_on_primary();
                 }
-                // The whole top edge reveals the bar; staying needs the cursor on the bar itself.
                 let (at_edge, over_bar) = match (area, desktop::cursor()) {
-                    (Some(a), Some((x, y))) if x >= a.x && x < a.x + a.w as i32 => {
-                        let (bar_x, _, bar_w, _) =
-                            island_rect(a, false, state.bar_w.load(Ordering::SeqCst));
-                        (
-                            y <= a.y + EDGE_PX,
-                            y < a.y + px(BAR_WINDOW_H, a.scale)
-                                && x >= bar_x
-                                && x < bar_x + bar_w as i32,
-                        )
-                    }
+                    (Some(a), Some((x, y))) => zones(a, state.bar_w.load(Ordering::SeqCst), x, y),
                     _ => (false, false),
                 };
                 let uncovered = reveal.tick(
@@ -403,10 +438,41 @@ pub fn watch<R: Runtime>(
                 if changed || snooze_over {
                     refresh(&app, enabled(&app));
                 }
+                // The workspaces and the volume (D-036), told to the bar when they change.
+                #[cfg(windows)]
+                if beat.is_multiple_of(DESK_EVERY)
+                    && app
+                        .get_webview_window(ISLAND_WINDOW)
+                        .is_some_and(|w| w.is_visible().unwrap_or(false))
+                {
+                    let now = BarState::read();
+                    if last_bar.as_ref() != Some(&now) {
+                        let _ = app.emit_to(ISLAND_WINDOW, "bar-state", &now);
+                        last_bar = Some(now);
+                    }
+                }
                 beat = beat.wrapping_add(1);
                 std::thread::sleep(TICK);
             }
         });
+}
+
+/// What the bar's workspaces and audio module show (D-036).
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct BarState {
+    pub desktops: crate::desk::Desktops,
+    /// `None` with no speakers.
+    pub volume: Option<crate::desk::Volume>,
+}
+
+#[cfg(windows)]
+impl BarState {
+    pub fn read() -> Self {
+        Self {
+            desktops: crate::desk::desktops(),
+            volume: crate::desk::volume().ok(),
+        }
+    }
 }
 
 /// "Hide for an hour" from the bar's menu.
@@ -554,6 +620,27 @@ mod tests {
         assert_eq!(quick_position(HD, 640), (960 - 320, 52 + 8));
         let tiny = Area { w: 500, ..HD };
         assert_eq!(quick_position(tiny, 640).0, 0);
+    }
+
+    #[test]
+    fn only_the_left_part_of_the_top_edge_reveals_it() {
+        assert!(zones(HD, 900, 100, 0).0);
+        assert!(zones(HD, 900, 479, 1).0, "just inside the left quarter");
+        assert!(!zones(HD, 900, 480, 0).0);
+        assert!(!zones(HD, 900, 1500, 0).0, "the right of the edge");
+        assert!(!zones(HD, 900, 100, 30).0, "below the edge");
+    }
+
+    #[test]
+    fn it_stays_on_the_way_from_the_corner_to_the_bar_and_on_the_bar() {
+        // The bar runs from 510 to 1410.
+        assert!(
+            zones(HD, 900, 50, 40).1,
+            "left of the bar, in the top strip"
+        );
+        assert!(zones(HD, 900, 1400, 40).1, "on the bar's right end");
+        assert!(!zones(HD, 900, 1410, 40).1, "past it");
+        assert!(!zones(HD, 900, 700, 80).1, "below the strip");
     }
 
     #[test]

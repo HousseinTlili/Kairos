@@ -228,3 +228,34 @@ export const BatteryIcon = ({ percent, charging }: { percent: number; charging: 
     {charging && <path d="M11.5 8.5l-2 4h3l-2 3.5" strokeWidth="1.4" stroke="var(--bg, #111)" />}
   </Icon>
 );
+
+// Omarchy's bar modules (D-036).
+
+export const BluetoothIcon = () => (
+  <Icon>
+    <path d="M7 7l10 10-5 4V3l5 4L7 17" />
+  </Icon>
+);
+
+export const CpuIcon = () => (
+  <Icon>
+    <rect x="6" y="6" width="12" height="12" rx="2" />
+    <rect x="9.5" y="9.5" width="5" height="5" rx="1" />
+    <path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3" />
+  </Icon>
+);
+
+/** The speaker with as many waves as the volume, or a cross when muted. */
+export const VolumeIcon = ({ level, muted }: { level: number; muted: boolean }) => (
+  <Icon>
+    <path d="M4 9v6h4l5 4V5L8 9H4z" />
+    {muted || level === 0 ? (
+      <path d="M17 9.5l5 5M22 9.5l-5 5" />
+    ) : (
+      <>
+        <path d="M16.5 9a4.5 4.5 0 0 1 0 6" />
+        {level > 33 && <path d="M18.8 6.6a8 8 0 0 1 0 10.8" opacity={level > 66 ? 1 : 0.9} />}
+      </>
+    )}
+  </Icon>
+);

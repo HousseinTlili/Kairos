@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { newTurn, type Turn } from "../chat/turn";
-import { DONE_MS, batteryWords, mergeStates, stateOf, wifiBars, type KairosState } from "./model";
+import {
+  DONE_MS,
+  batteryWords,
+  mergeStates,
+  monthWeeks,
+  stateOf,
+  wheelVolume,
+  wifiBars,
+  type KairosState,
+} from "./model";
 
 const quiet = { phase: "idle" as const, speaking: false };
 
@@ -90,5 +99,22 @@ describe("the top bar's status", () => {
     expect(batteryWords(64.4, "discharging", 7800)).toBe("64 %, 2 h 10 min left");
     expect(batteryWords(64, "charging", null)).toBe("64 %, charging");
     expect(batteryWords(100, "full", null)).toBe("100 %, plugged in");
+  });
+});
+
+describe("Omarchy's modules", () => {
+  it("lays a month out in weeks from Monday", () => {
+    // October 2026 starts on a Thursday and has 31 days.
+    const weeks = monthWeeks(2026, 9);
+    expect(weeks[0]).toEqual([null, null, null, 1, 2, 3, 4]);
+    expect(weeks[weeks.length - 1]).toEqual([26, 27, 28, 29, 30, 31, null]);
+    expect(weeks.every((w) => w.length === 7)).toBe(true);
+  });
+
+  it("turns the volume 5 % a notch of the wheel, within 0–100", () => {
+    expect(wheelVolume(42, -100)).toBe(45);
+    expect(wheelVolume(42, 100)).toBe(35);
+    expect(wheelVolume(98, -100)).toBe(100);
+    expect(wheelVolume(3, 100)).toBe(0);
   });
 });

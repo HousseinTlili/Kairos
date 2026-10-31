@@ -2548,6 +2548,60 @@ pub async fn show_main_window(
     Ok(())
 }
 
+// --- The top bar's modules (D-036) -------------------------------------------------------------
+
+fn bar_error(message: String) -> CommandError {
+    CommandError {
+        kind: "bar",
+        message,
+    }
+}
+
+/// Runs a Windows call off the async runtime (COM and key presses block for a moment).
+async fn on_windows<T: Send + 'static>(
+    work: impl FnOnce() -> Result<T, String> + Send + 'static,
+) -> Result<T, CommandError> {
+    tauri::async_runtime::spawn_blocking(work)
+        .await
+        .map_err(|err| bar_error(err.to_string()))?
+        .map_err(bar_error)
+}
+
+#[cfg(windows)]
+#[tauri::command]
+pub async fn bar_state() -> Result<crate::island::BarState, CommandError> {
+    on_windows(|| Ok(crate::island::BarState::read())).await
+}
+
+#[cfg(windows)]
+#[tauri::command]
+pub async fn bar_switch_desktop(index: usize) -> Result<crate::desk::Desktops, CommandError> {
+    on_windows(move || {
+        crate::desk::switch_desktop(index)?;
+        Ok(crate::desk::desktops())
+    })
+    .await
+}
+
+#[cfg(windows)]
+#[tauri::command]
+pub async fn bar_set_volume(level: u8) -> Result<crate::desk::Volume, CommandError> {
+    on_windows(move || crate::desk::set_volume(level)).await
+}
+
+#[cfg(windows)]
+#[tauri::command]
+pub async fn bar_set_muted(muted: bool) -> Result<crate::desk::Volume, CommandError> {
+    on_windows(move || crate::desk::set_muted(muted)).await
+}
+
+/// Opens one of the Windows panels the bar's modules lead to, by name (`desk::panel_uri`).
+#[cfg(windows)]
+#[tauri::command]
+pub async fn bar_open(which: String) -> Result<(), CommandError> {
+    on_windows(move || crate::desk::open_panel(&which)).await
+}
+
 /// The top bar's page measured the width it needs (logical px); the window fits it (D-034).
 #[tauri::command]
 pub async fn island_fit(app: tauri::AppHandle, width: u32) -> Result<(), CommandError> {

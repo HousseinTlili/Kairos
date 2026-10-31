@@ -3,6 +3,7 @@ mod audit;
 mod automations;
 mod briefing;
 mod commands;
+mod desk;
 // Public so the fixture tests in tests/ can drive it.
 pub mod hermes;
 mod island;
@@ -325,6 +326,11 @@ pub fn run() {
             commands::show_main_window,
             commands::island_expand,
             commands::island_fit,
+            commands::bar_state,
+            commands::bar_switch_desktop,
+            commands::bar_set_volume,
+            commands::bar_set_muted,
+            commands::bar_open,
             commands::set_island_hotkey,
             commands::appearance_state,
             commands::save_appearance,

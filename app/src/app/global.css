@@ -2897,13 +2897,26 @@ html.panel-window body {
   );
 }
 
+/* It comes down out of the top of the screen and goes back up into it (D-036); the core hides the
+   window when the slide up is over (`LEAVE` in island.rs, 240 ms). The glow under the bar goes
+   with it, hence the extra distance. */
 .topbar.arriving .topbar-bar {
   animation: topbar-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+.topbar.leaving .topbar-bar {
+  animation: topbar-out 230ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
 @keyframes topbar-in {
   from {
-    transform: translate(-50%, -100%);
+    transform: translate(-50%, -130%);
+  }
+}
+
+@keyframes topbar-out {
+  to {
+    transform: translate(-50%, -130%);
   }
 }
 
@@ -2976,66 +2989,92 @@ html.panel-window body {
   height: 24px;
 }
 
-.topbar-pin-hint {
-  padding: 4px 10px;
-  border: 1px dashed color-mix(in srgb, var(--sidebar-fg) 25%, transparent);
-  border-radius: 999px;
+/* --- D-036: the bar's modules, after Omarchy's ----------------------------------------------- */
+
+.topbar-seal.active {
+  filter: drop-shadow(0 0 6px var(--edge));
+}
+
+/* Omarchy's workspaces: the desktops' numbers, the one in front lit. */
+.bar-workspaces {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.bar-workspaces button {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   background: none;
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
 
-/* The ask field, between the two sides. */
-.topbar-ask {
-  position: relative;
-  flex: none;
+.bar-workspaces button:hover {
+  color: var(--fg);
+  background: color-mix(in srgb, var(--sidebar-fg) 8%, transparent);
+}
+
+.bar-workspaces button.active {
+  border-color: var(--edge);
+  color: var(--gilt);
+  background: color-mix(in srgb, var(--gilt) 14%, transparent);
+  font-weight: 700;
+}
+
+/* The centre: the clock, and what Kairos is doing beside it. */
+.topbar-centre {
   display: flex;
   align-items: center;
   gap: 10px;
-  /* A fixed width: the window follows the bar, so the bar can't size itself from the window. */
-  width: 340px;
-  height: 36px;
-  box-sizing: border-box;
-  padding: 0 6px 0 14px;
+  flex: none;
+}
+
+.bar-clock {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--fg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.bar-clock:hover {
+  background: color-mix(in srgb, var(--sidebar-fg) 8%, transparent);
+}
+
+.bar-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  height: 28px;
+  padding: 0 12px 0 8px;
   border: 1px solid var(--edge);
   border-radius: 999px;
   background: color-mix(in srgb, var(--sidebar-bg) 70%, black);
-  color: var(--muted);
-  font-size: 0.9375rem;
-  text-align: left;
-  cursor: text;
-  box-shadow:
-    0 0 12px -4px var(--edge),
-    inset 0 1px 0 color-mix(in srgb, var(--sidebar-fg) 6%, transparent);
-  transition:
-    box-shadow 150ms,
-    border-color 150ms;
-}
-
-/* The glow under the field, like light from beneath it. */
-.topbar-ask::after {
-  content: "";
-  position: absolute;
-  left: 18%;
-  right: 18%;
-  bottom: -13px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--edge);
-  filter: blur(2px);
-  opacity: 0.85;
-}
-
-.topbar-ask:hover {
-  box-shadow:
-    0 0 18px -3px var(--edge),
-    inset 0 1px 0 color-mix(in srgb, var(--sidebar-fg) 6%, transparent);
-}
-
-.topbar-ask.busy {
   color: var(--fg);
+  font-size: 0.8125rem;
   cursor: pointer;
+  box-shadow: 0 0 10px -4px var(--edge);
+}
+
+.bar-status span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-status.asking {
+  color: var(--gilt);
 }
 
 .topbar-spark {
@@ -3058,84 +3097,68 @@ html.panel-window body {
   }
 }
 
-.topbar-ask-text {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.topbar-ask kbd {
-  flex: none;
-  padding: 3px 9px;
-  border: 1px solid color-mix(in srgb, var(--sidebar-fg) 16%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--sidebar-fg) 7%, transparent);
-  color: var(--muted);
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-}
-
-.topbar-voice {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid var(--edge);
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--sidebar-bg) 70%, black);
-  color: var(--fg);
-  cursor: pointer;
-  box-shadow: 0 0 10px -4px var(--edge);
-}
-
-.topbar-voice:hover,
-.topbar-voice:active,
-.topbar.listening .topbar-voice {
-  color: var(--lume);
-  box-shadow: 0 0 14px -2px var(--edge);
-}
-
-.topbar-status {
+/* Omarchy's right side: an icon and a figure each, quiet until pointed at. */
+.bar-modules {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 2px;
 }
 
-.topbar-icon {
+.bar-module {
   position: relative;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   background: none;
   color: var(--fg);
-}
-
-.topbar-icon svg {
-  width: 18px;
-  height: 18px;
-}
-
-.topbar-icon.battery svg {
-  width: 22px;
-}
-
-.topbar-icon.battery.low {
-  color: var(--garnet);
-}
-
-.topbar-icon.bell {
+  font-size: 0.8125rem;
   cursor: pointer;
+}
+
+.bar-module:hover,
+.bar-module.active {
+  background: color-mix(in srgb, var(--sidebar-fg) 9%, transparent);
+}
+
+.bar-module.active {
+  border-color: var(--edge);
+}
+
+.bar-module.kairos {
+  color: var(--gilt);
+}
+
+.bar-module svg {
+  width: 17px;
+  height: 17px;
+}
+
+.bar-figure {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-battery {
+  display: grid;
+  place-items: center;
+}
+
+.bar-battery svg {
+  width: 21px;
+}
+
+.bar-battery.low {
+  color: var(--garnet);
 }
 
 .topbar-badge {
   position: absolute;
-  top: -6px;
-  right: -8px;
+  top: -2px;
+  right: -2px;
   min-width: 15px;
   height: 15px;
   box-sizing: border-box;
@@ -3149,32 +3172,123 @@ html.panel-window body {
   text-align: center;
 }
 
-.topbar-clock {
+/* A module's popover, hanging under the bar like the panel. */
+.bar-pop {
+  position: absolute;
+  top: calc(var(--bar-h) + 6px);
+  width: 280px;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border: 1px solid var(--edge);
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      120% 70% at 50% -10%,
+      color-mix(in srgb, var(--gilt) 12%, transparent),
+      transparent 65%
+    ),
+    var(--sidebar-bg);
+  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.6);
+  color: var(--fg);
+  font-size: 0.875rem;
+  animation: topbar-panel-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.bar-pop.right {
+  right: 36px;
+}
+
+.bar-pop.centre {
+  left: 50%;
+  margin-left: -140px;
+  width: 280px;
+}
+
+.bar-pop header {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  padding: 0 2px;
-  border: none;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.bar-pop header .muted {
+  margin-left: auto;
+  font-size: 0.8125rem;
+}
+
+.bar-pop.centre header {
+  justify-content: space-between;
+}
+
+.bar-pop input[type="range"] {
+  width: 100%;
+  accent-color: var(--gilt);
+}
+
+.bar-pop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.bar-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.bar-facts dt {
+  color: var(--muted);
+}
+
+.bar-facts dd {
+  margin: 0;
+}
+
+.bar-step {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
   background: none;
   color: var(--fg);
-  line-height: 1.15;
   cursor: pointer;
 }
 
-.topbar-time {
-  font-size: 0.875rem;
-  font-weight: 600;
+.bar-calendar {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 
-.topbar-date {
+.bar-calendar th {
+  padding-bottom: 4px;
   color: var(--muted);
   font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.bar-calendar td {
+  height: 28px;
+  border-radius: 8px;
+}
+
+.bar-calendar td.today {
+  background: var(--gilt);
+  color: var(--sidebar-bg);
+  font-weight: 700;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .topbar.arriving .topbar-bar,
-  .topbar .topbar-spark {
+  .topbar.leaving .topbar-bar,
+  .topbar .topbar-spark,
+  .bar-pop {
     animation: none;
   }
 }

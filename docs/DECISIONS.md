@@ -360,6 +360,22 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
+## D-036 — The top bar works like Omarchy's — Accepted
+
+The bar's content and behaviour follow Omarchy's top bar (Waybar), as the product owner asked on
+2026-10-31. Left: the seal (Kairos's panel) and the **virtual desktops** as numbered workspaces, the
+one in front lit, a click switching to it (Windows has no API for that: Kairos presses Ctrl+Win+←/→
+as many times as needed, and reads which desktop is current from the registry). Centre: the clock
+("Saturday 20:01", a click opens a calendar), with Kairos's status beside it while it works. Right:
+ask Kairos, push-to-talk, notifications, then **Bluetooth** (its settings), **Wi-Fi** (Windows's
+network list), **sound** (a slider and mute; the wheel turns it 5 % a notch, a right-click mutes;
+Core Audio), the **CPU** (Kairos's System page, as Omarchy's opens btop) and the **battery** (its
+details, power mode and battery saver). The modules open only the Windows panels named in
+`desk::panel_uri`. The bar is revealed only from the **left quarter of the top edge**, and **slides
+down out of the top of the screen and back up into it**. New features of the `windows` crate
+already used: `Win32_Media_Audio(_Endpoints)`, `Win32_System_Com_StructuredStorage`,
+`Win32_UI_Input_KeyboardAndMouse`, `Win32_System_Registry`.
+
 ## D-035 — Kairos starts Hermes's gateway when it isn't running — Accepted
 
 When Kairos finds nothing answering on Hermes's address, it runs `hermes gateway ensure` itself:

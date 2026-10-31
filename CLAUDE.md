@@ -28,7 +28,8 @@ D-028 and `mermaid` 11.17.2 accepted. Mermaid is loaded only when an answer hold
 **M14** (the Kairos island, `m14/island`): built, `docs/milestones/M14.md`; D-029 accepted. Four windows
 load the same page now (`main.tsx` picks by label): main, quick, island, presence-panel.
 Since D-034 (2026-10-31) the island is a full-width **top bar** that hides behind maximized windows
-and comes back at the top edge; `island.rs` reads the cursor for that (the `Reveal` state machine).
+and comes back at the left of the top edge, sliding down and up; `island.rs` reads the cursor for
+that (`zones`, `Reveal`). Its modules follow Omarchy's bar (D-036); their Windows calls are `desk.rs`.
 **M15** (the island's panel: wallpaper, media, apps, ported from Elissa, `m15/island-panel`): built;
 the ported Rust is in `src-tauri/src/island_panel/` behind one `island_module` command, as in Elissa.
 **M16** (themes and patterns, `m16/themes`): Steps 2–4 built; the palettes are data in

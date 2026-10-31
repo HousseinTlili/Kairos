@@ -114,3 +114,34 @@ export function batteryWords(percent: number, state: string, emptyS: number | nu
   const m = minutes % 60;
   return `${level}, ${h > 0 ? `${h} h ` : ""}${m} min left`;
 }
+
+/** Omarchy's clock: "Saturday 19:42" (its `%A %H:%M`), in the Master's own language and hours. */
+export function clockText(d: Date): string {
+  const day = d.toLocaleDateString([], { weekday: "long" });
+  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return `${day} ${time}`;
+}
+
+/**
+ * A month as weeks of day numbers, Monday first, `null` outside the month: the calendar under the
+ * clock.
+ */
+export function monthWeeks(year: number, month: number): (number | null)[][] {
+  const first = new Date(year, month, 1);
+  const days = new Date(year, month + 1, 0).getDate();
+  const lead = (first.getDay() + 6) % 7; // Monday = 0
+  const cells: (number | null)[] = [
+    ...Array<null>(lead).fill(null),
+    ...Array.from({ length: days }, (_, i) => i + 1),
+  ];
+  while (cells.length % 7) cells.push(null);
+  const weeks: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
+
+/** The volume after one turn of the mouse wheel on the audio module: 5 % a notch, as Omarchy. */
+export function wheelVolume(level: number, deltaY: number): number {
+  const step = deltaY < 0 ? 5 : -5;
+  return Math.max(0, Math.min(100, Math.round((level + step) / 5) * 5));
+}
