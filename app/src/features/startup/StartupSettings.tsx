@@ -3,7 +3,7 @@ import { describePresence, hermesAtLogin } from "./format";
 import { useStartup } from "./store";
 
 export function StartupSettings() {
-  const { state, busy, error, load, setKairosAtLogin } = useStartup();
+  const { state, busy, error, load, setKairosAtLogin, setStartHermes } = useStartup();
 
   useEffect(() => {
     void load();
@@ -34,6 +34,19 @@ export function StartupSettings() {
 
       <div className="settings-section">
         <h2>Hermes</h2>
+        <label className="switch-row">
+          <input
+            type="checkbox"
+            checked={state.start_hermes}
+            onChange={(e) => void setStartHermes(e.target.checked)}
+          />
+          <span>Start Hermes myself when Kairos finds it not running</span>
+        </label>
+        <p className="muted small">
+          With Hermes&apos;s own command (<code>hermes gateway ensure</code>), hidden, once each
+          time Kairos starts; Hermes then keeps running on its own. The Start Hermes button does the
+          same whenever you ask.
+        </p>
         <p className={`setting-value ${hermes.ok === false ? "warn-text" : ""}`}>{hermes.text}</p>
         {hermes.ok === false && (
           <>

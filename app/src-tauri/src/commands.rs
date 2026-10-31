@@ -282,6 +282,45 @@ pub async fn reload_key(state: tauri::State<'_, AppState>) -> Result<ConnectInfo
     check(&state, home, key).await
 }
 
+/// On unless the Master switched it off in Settings ▸ Startup (D-035).
+const START_HERMES_SETTING: &str = "start_hermes";
+
+/// Starts Hermes's gateway with `hermes gateway ensure` (D-035). `automatic`: Kairos found Hermes
+/// not running by itself, which it acts on only while the setting is on; the Master's button
+/// always goes ahead. `false` when it didn't try. Up to a minute.
+#[tauri::command]
+pub async fn start_hermes(
+    state: tauri::State<'_, AppState>,
+    automatic: bool,
+) -> Result<bool, CommandError> {
+    if automatic && !setting_flag(&state, START_HERMES_SETTING) {
+        return Ok(false);
+    }
+    let home = local::hermes_home()?;
+    tauri::async_runtime::spawn_blocking(move || local::ensure_gateway(&home))
+        .await
+        .map_err(|err| CommandError {
+            kind: "hermes_start",
+            message: format!("starting Hermes stopped: {err}"),
+        })?
+        .map_err(|message| CommandError {
+            kind: "hermes_start",
+            message,
+        })?;
+    Ok(true)
+}
+
+#[tauri::command]
+pub async fn set_start_hermes(
+    state: tauri::State<'_, AppState>,
+    enabled: bool,
+) -> Result<bool, CommandError> {
+    state.with_store(|store| {
+        store.set_setting(START_HERMES_SETTING, if enabled { "true" } else { "false" })
+    })?;
+    Ok(setting_flag(&state, START_HERMES_SETTING))
+}
+
 // --- Runs ---------------------------------------------------------------------------------------
 
 const CREATE_ATTEMPTS: u32 = 3;
@@ -992,6 +1031,8 @@ pub struct StartupState {
     /// Hermes's login start; `None` off Windows or when Task Scheduler didn't answer.
     pub hermes_at_login: Option<local::GatewayAutostart>,
     pub launched_at_login: bool,
+    /// Kairos starts Hermes's gateway itself when it finds it not running (D-035).
+    pub start_hermes: bool,
     /// Newest first.
     pub recent: Vec<PresenceEvent>,
 }
@@ -1010,6 +1051,7 @@ pub async fn startup_state(
         kairos_at_login: app.autolaunch().is_enabled().ok(),
         hermes_at_login,
         launched_at_login: LAUNCHED_AT_LOGIN.load(std::sync::atomic::Ordering::Relaxed),
+        start_hermes: setting_flag(&state, START_HERMES_SETTING),
         recent: state.with_store(|store| store.recent_presence(8))?,
     })
 }
@@ -2503,6 +2545,13 @@ pub async fn show_main_window(
     if let Some(view) = view {
         let _ = app.emit_to(crate::tray::MAIN_WINDOW, "navigate", view);
     }
+    Ok(())
+}
+
+/// The top bar's page measured the width it needs (logical px); the window fits it (D-034).
+#[tauri::command]
+pub async fn island_fit(app: tauri::AppHandle, width: u32) -> Result<(), CommandError> {
+    crate::island::fit(&app, width);
     Ok(())
 }
 

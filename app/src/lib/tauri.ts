@@ -49,6 +49,10 @@ export interface TaskRef {
 
 export const connect = () => call<ConnectInfo>("connect");
 export const reloadKey = () => call<ConnectInfo>("reload_key");
+/** `hermes gateway ensure` (D-035). `automatic`: only if Settings ▸ Startup allows it. False when
+ *  it didn't try. Takes up to a minute. */
+export const startHermes = (automatic: boolean) => call<boolean>("start_hermes", { automatic });
+export const setStartHermes = (enabled: boolean) => call<boolean>("set_start_hermes", { enabled });
 
 // Tauri maps camelCase argument names here to the snake_case Rust parameters.
 /** A conversation's model (M7); both null = Hermes's own choice. */
@@ -306,6 +310,8 @@ export interface StartupState {
   kairos_at_login: boolean | null;
   hermes_at_login: { scheduled_task: boolean; startup_entry: boolean } | null;
   launched_at_login: boolean;
+  /** Kairos starts Hermes itself when it isn't running (D-035). */
+  start_hermes: boolean;
   recent: PresenceEvent[];
 }
 
@@ -777,6 +783,8 @@ export function onIslandSettings(handler: (settings: IslandSettings) => void): P
 }
 /** The pill expands into its panel, or folds back (M15). */
 export const islandExpand = (expanded: boolean) => call<null>("island_expand", { expanded });
+/** The width the top bar needs (CSS px); the window fits it (D-034). */
+export const islandFit = (width: number) => call<null>("island_fit", { width });
 /** Sent by Rust when the island expanded or folded. */
 export function onIslandExpanded(handler: (expanded: boolean) => void): Promise<UnlistenFn> {
   return listen<boolean>("island-expanded", (event) => handler(event.payload));

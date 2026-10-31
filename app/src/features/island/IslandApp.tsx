@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu } from "@tauri-apps/api/menu";
 import {
   islandCapturing,
   islandExpand,
+  islandFit,
   islandOpenQuick,
   islandPushToTalk,
   islandSnooze,
@@ -65,6 +66,21 @@ export function IslandApp() {
   // Bumped when the panel folds, so the bar re-reads the pins changed in its Apps tab.
   const [pinsSeen, setPinsSeen] = useState(0);
   const [quickKey, setQuickKey] = useState<string | null>(null);
+  const barRef = useRef<HTMLElement>(null);
+
+  // The window is as wide as the bar needs (D-034): measured here, whenever what it holds changes
+  // (pinned apps arriving, the battery appearing), plus the flares that curve into the top edge.
+  useEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    const flares = 2 * 30 + 4;
+    const report = () =>
+      void islandFit(Math.ceil(bar.getBoundingClientRect().width) + flares).catch(() => {});
+    report();
+    const observer = new ResizeObserver(report);
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.add("island-window");
@@ -183,7 +199,7 @@ export function IslandApp() {
         if (expanded && e.target === e.currentTarget) void islandExpand(false);
       }}
     >
-      <header className="topbar-bar">
+      <header className="topbar-bar" ref={barRef}>
         <div className="topbar-left">
           <button
             className="topbar-seal"

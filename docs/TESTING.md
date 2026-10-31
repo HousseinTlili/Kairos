@@ -193,10 +193,17 @@ Spec: `docs/milestones/M14.md`; details: `docs/milestones/M14-acceptance.md`. A 
 - [ ] Settings ▸ Kairos ▸ Island: switching it off hides it at once.
 - [ ] Ctrl+Alt+L hides the island, again shows it (the switch in Settings follows). Ctrl+Alt+J, K, L sit side by side. A new key in "Hide and show" works at once; the quick box's or push-to-talk's key is refused.
 
+## D-035 — Kairos starts Hermes
+
+- [ ] Restart the PC (or `hermes gateway stop`), then open Kairos: "I am waking Hermes, Master." and, within about 10 s, the chat, with no console window.
+- [ ] Close Kairos: Hermes keeps answering (`curl http://127.0.0.1:8642/health`).
+- [ ] Settings ▸ Startup, switch "Start Hermes myself…" off: the next time, Kairos only shows the Start Hermes button.
+
 ## D-034 — The top bar
 
 - [ ] At sign-in: no console window and no "can't reach this page" box (the dev build's login entry was removed from the real registry on 2026-10-31).
-- [ ] Nothing maximized: the bar across the top, in the theme's colours; in Ember it glows red as in your picture.
+- [ ] The bar is only as wide as what it holds, centred; pin another app and it grows.
+- [ ] Nothing maximized: the bar at the top, in the theme's colours; in Ember it glows red as in your picture.
 - [ ] Maximize a window: the bar goes. Touch the top edge with the mouse: it slides down; it stays while the mouse is on it and goes half a second after.
 - [ ] The ask field opens the quick box under it; while Kairos works it shows what it's doing; an approval shows there and a click opens it.
 - [ ] A pinned app starts with one click; the bell opens Notifications; hold the wave button to speak; the seal or the clock opens the panel.

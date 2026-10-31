@@ -27,8 +27,8 @@ function describe(info: ConnectInfo): StatusView {
         tone: "bad",
         says: "Hermes does not answer, Master.",
         title: "Hermes isn't running",
-        body: `Nothing answered at ${info.base_url}. Start the Hermes gateway, then check again.`,
-        command: "hermes gateway restart",
+        body: `Nothing answered at ${info.base_url}. Kairos can start it for you, or start it yourself with:`,
+        command: "hermes gateway ensure",
       };
     case "key_rejected":
       return {
@@ -56,7 +56,8 @@ function describe(info: ConnectInfo): StatusView {
 }
 
 export function ConnectScreen() {
-  const { info, error, checking, check, reloadKey } = useConnection();
+  const { info, error, checking, starting, startError, check, reloadKey, startHermes } =
+    useConnection();
 
   useEffect(() => {
     void check();
@@ -97,8 +98,8 @@ export function ConnectScreen() {
   return (
     <section className="connect">
       <header className="connect-head">
-        <SealMark size={64} state={checking ? "working" : "idle"} />
-        <Illuminated text={view.says} />
+        <SealMark size={64} state={checking || starting ? "working" : "idle"} />
+        <Illuminated text={starting ? "I am waking Hermes, Master." : view.says} />
       </header>
       <div className={`status-card ${view.tone}`} role={view.tone === "bad" ? "alert" : "status"}>
         <h2>
@@ -135,8 +136,20 @@ export function ConnectScreen() {
         </dl>
       )}
 
+      {startError && (
+        <div className="status-card bad" role="alert">
+          <h2>Hermes didn't start</h2>
+          <p>{startError}</p>
+        </div>
+      )}
+
       <div className="actions">
-        <button onClick={() => void check()} disabled={checking}>
+        {info.status === "not_running" && (
+          <button className="primary" onClick={() => void startHermes()} disabled={starting}>
+            {starting ? "Starting Hermes…" : "Start Hermes"}
+          </button>
+        )}
+        <button onClick={() => void check()} disabled={checking || starting}>
           {checking ? "Checking…" : "Check again"}
         </button>
         {info.status === "key_rejected" && (

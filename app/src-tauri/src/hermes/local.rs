@@ -142,6 +142,72 @@ fn config_word(home: &Path, key: &str) -> Option<String> {
     parse_mode(&String::from_utf8_lossy(&output.stdout))
 }
 
+/// How long `hermes gateway ensure` may take: its own deadline, plus a margin for the CLI.
+const ENSURE_DEADLINE_S: u64 = 60;
+const ENSURE_TIMEOUT: Duration = Duration::from_secs(ENSURE_DEADLINE_S + 15);
+
+/// What `hermes gateway ensure` exit codes mean, in the Master's words (its `--help`, Hermes
+/// 0.22.5): 0 ready; 2 invalid invocation; 3 incompatible; 4 authorization/profile mismatch;
+/// 5 deadline; 6 draining/update-paused; 7 inaccessible/conflicting supervisor.
+pub fn ensure_outcome(code: Option<i32>) -> Result<(), String> {
+    Err(match code {
+        Some(0) => return Ok(()),
+        Some(3) => {
+            "this Hermes is incompatible with its own gateway files; run `hermes update`".into()
+        }
+        Some(4) => "Hermes's gateway belongs to another profile or account".into(),
+        Some(5) => "Hermes didn't get ready within a minute".into(),
+        Some(6) => "Hermes is updating or shutting down; try again in a moment".into(),
+        Some(7) => {
+            "another program is managing Hermes's gateway (a service or Hermes Desktop)".into()
+        }
+        Some(other) => format!("Hermes couldn't start its gateway (code {other})"),
+        None => "Hermes's start was stopped before it finished".into(),
+    })
+}
+
+/// Starts Hermes's gateway if it isn't running: `hermes gateway ensure`, Hermes's own way to bring
+/// up a local runtime without installing a service (D-035). The gateway it starts is detached and
+/// outlives Kairos (checked 2026-10-31). Nothing is read from its output: a gateway started from
+/// here could hold an output pipe open for its whole life. Blocking, up to a minute.
+pub fn ensure_gateway(home: &Path) -> Result<(), String> {
+    let mut command = Command::new(hermes_cli(home));
+    command
+        .args([
+            "gateway",
+            "ensure",
+            "--json",
+            "--timeout",
+            &ENSURE_DEADLINE_S.to_string(),
+        ])
+        .env("HERMES_HOME", home)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // CREATE_NO_WINDOW: no console window over the app, or over the desktop at login.
+        command.creation_flags(0x0800_0000);
+    }
+    let mut child = command
+        .spawn()
+        .map_err(|err| format!("couldn't run the Hermes command line: {err}"))?;
+    let started = Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => return ensure_outcome(status.code()),
+            Ok(None) if started.elapsed() < ENSURE_TIMEOUT => {
+                std::thread::sleep(Duration::from_millis(200))
+            }
+            _ => {
+                let _ = child.kill();
+                return ensure_outcome(None);
+            }
+        }
+    }
+}
+
 /// Whether Hermes's own login start is installed (`hermes gateway install`, M3 §8): its Scheduled
 /// Task, or the Startup-folder entry Hermes falls back to. `None` off Windows or when Task
 /// Scheduler can't be asked. Names as in Hermes's `gateway_windows.py` for the default profile.
@@ -205,6 +271,20 @@ fn parse_mode(stdout: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ensure_is_ready_only_on_zero_and_every_failure_says_why() {
+        assert_eq!(ensure_outcome(Some(0)), Ok(()));
+        for code in [Some(3), Some(4), Some(5), Some(6), Some(7), Some(1), None] {
+            let message = ensure_outcome(code).expect_err("not ready");
+            assert!(!message.is_empty());
+        }
+        assert!(
+            ensure_outcome(Some(5))
+                .unwrap_err()
+                .contains("within a minute")
+        );
+    }
 
     #[test]
     fn the_last_assignment_wins_and_quotes_and_export_are_stripped() {

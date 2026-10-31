@@ -360,11 +360,24 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
+## D-035 — Kairos starts Hermes's gateway when it isn't running — Accepted
+
+When Kairos finds nothing answering on Hermes's address, it runs `hermes gateway ensure` itself:
+Hermes's own command for bringing up a local runtime without installing a service, hidden (no
+console window), once each time Kairos starts, and again whenever the Master presses **Start
+Hermes**. The gateway it starts is detached and keeps running after Kairos closes (checked
+2026-10-31: still answering after the shell that started it was closed). Kairos reads only the
+command's exit code, never its output, so a gateway that inherits the output can't hold Kairos
+waiting. Settings ▸ Startup turns the automatic start off. This is not D-013's login start
+(`hermes gateway install`, a scheduled task), which Kairos still never installs by itself. Asked
+for by the product owner on 2026-10-31, when Hermes was found not running after a restart.
+
 ## D-034 — The island becomes a top bar that hides behind maximized windows — Accepted
 
 Replaces D-029's pill (the shape, and its rule that the window is never larger than what shows,
 which kept the cursor from being read). The island is now a bar across the top of the main screen,
-in the style of the product owner's picture of 2026-10-31: the seal and the pinned apps on the
+in the style of the product owner's picture of 2026-10-31, as wide as what it holds and centred
+(the page measures it and the window follows; it grows with more pinned apps, up to the screen): the seal and the pinned apps on the
 left, the ask field in the centre (it shows what Kairos is doing, and opens the quick box or the
 waiting approval), push-to-talk, notifications, Wi-Fi, sound, battery and the time on the right; its
 lower edge glows in the theme's accent. It **hides while any window on that screen is maximized**

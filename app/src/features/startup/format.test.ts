@@ -6,6 +6,7 @@ const state = (hermes: StartupState["hermes_at_login"]): StartupState => ({
   kairos_at_login: true,
   hermes_at_login: hermes,
   launched_at_login: false,
+  start_hermes: true,
   recent: [],
 });
 

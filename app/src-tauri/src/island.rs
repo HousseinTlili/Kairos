@@ -7,7 +7,7 @@
 //! capture is in front. Neither window ever takes the focus when it appears.
 
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::{Duration, Instant};
 
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Runtime, WebviewWindow};
@@ -26,8 +26,12 @@ pub const DEFAULT_HOTKEY: &str = "Ctrl+Alt+L";
 /// the bar for the glow under it.
 pub const BAR_H: f64 = 52.0;
 pub const BAR_WINDOW_H: f64 = 64.0;
-/// The bar opened into its panel (M15): the panel (600 wide, in CSS) hangs under the bar's centre.
+/// The bar opened into its panel (M15): the panel (600 wide, in CSS) hangs under the bar's centre,
+/// so the window is at least this wide while it is open.
 pub const EXPANDED_H: f64 = 380.0;
+const EXPANDED_MIN_W: f64 = 620.0;
+/// The bar's width before the page has measured it (logical px).
+const DEFAULT_BAR_W: u32 = 900;
 const EXPANDED_GAP: f64 = 6.0;
 pub const PANEL_W: f64 = 300.0;
 pub const PANEL_H: f64 = 560.0;
@@ -57,15 +61,25 @@ fn px(logical: f64, scale: f64) -> i32 {
     (logical * scale).round() as i32
 }
 
-/// The island window's place and size (physical): the full width of the top of the work area;
-/// opened, tall enough for the panel under the bar.
-pub fn island_rect(area: Area, expanded: bool) -> (i32, i32, u32, u32) {
-    let h = if expanded {
-        BAR_H + EXPANDED_GAP + EXPANDED_H
+/// The island window's place and size (physical): as wide as the bar needs (`bar_w`, logical px,
+/// measured by the page), centred at the top of the work area and never wider than it; opened,
+/// tall enough and wide enough for the panel under the bar.
+pub fn island_rect(area: Area, expanded: bool, bar_w: u32) -> (i32, i32, u32, u32) {
+    let (w, h) = if expanded {
+        (
+            f64::from(bar_w).max(EXPANDED_MIN_W),
+            BAR_H + EXPANDED_GAP + EXPANDED_H,
+        )
     } else {
-        BAR_WINDOW_H
+        (f64::from(bar_w), BAR_WINDOW_H)
     };
-    (area.x, area.y, area.w, px(h, area.scale) as u32)
+    let w = (px(w, area.scale).max(1) as u32).min(area.w);
+    (
+        area.x + (area.w - w) as i32 / 2,
+        area.y,
+        w,
+        px(h, area.scale) as u32,
+    )
 }
 
 /// The wake panel: against the right edge, centred vertically.
@@ -234,6 +248,8 @@ pub struct IslandState {
     /// The reveal's verdict: false while a maximized window covers the screen and the mouse isn't
     /// at the top.
     uncovered: AtomicBool,
+    /// What the bar needs, in logical px, as the page last measured it.
+    bar_w: AtomicU32,
 }
 
 impl Default for IslandState {
@@ -245,6 +261,7 @@ impl Default for IslandState {
             expanded: AtomicBool::new(false),
             autohide: AtomicBool::new(true),
             uncovered: AtomicBool::new(true),
+            bar_w: AtomicU32::new(DEFAULT_BAR_W),
         }
     }
 }
@@ -275,9 +292,9 @@ fn area_of<R: Runtime>(window: &WebviewWindow<R>) -> Option<Area> {
     })
 }
 
-fn place<R: Runtime>(window: &WebviewWindow<R>, expanded: bool) {
+fn place<R: Runtime>(window: &WebviewWindow<R>, expanded: bool, bar_w: u32) {
     if let Some(area) = area_of(window) {
-        let (x, y, w, h) = island_rect(area, expanded);
+        let (x, y, w, h) = island_rect(area, expanded, bar_w);
         let _ = window.set_size(PhysicalSize::new(w, h));
         let _ = window.set_position(PhysicalPosition::new(x, y));
     }
@@ -297,7 +314,11 @@ pub fn refresh<R: Runtime>(app: &AppHandle<R>, enabled: bool) {
         && state.uncovered.load(Ordering::SeqCst);
     if visible {
         // The size follows the state every time, so the window never stays larger than what shows.
-        place(&window, state.expanded.load(Ordering::SeqCst));
+        place(
+            &window,
+            state.expanded.load(Ordering::SeqCst),
+            state.bar_w.load(Ordering::SeqCst),
+        );
         if !window.is_visible().unwrap_or(false) {
             // Shown without focus: the bar must never take the keyboard from the Master's app.
             let _ = window.set_focusable(false);
@@ -351,9 +372,17 @@ pub fn watch<R: Runtime>(
                     covered =
                         state.autohide.load(Ordering::SeqCst) && desktop::maximized_on_primary();
                 }
+                // The whole top edge reveals the bar; staying needs the cursor on the bar itself.
                 let (at_edge, over_bar) = match (area, desktop::cursor()) {
                     (Some(a), Some((x, y))) if x >= a.x && x < a.x + a.w as i32 => {
-                        (y <= a.y + EDGE_PX, y < a.y + px(BAR_WINDOW_H, a.scale))
+                        let (bar_x, _, bar_w, _) =
+                            island_rect(a, false, state.bar_w.load(Ordering::SeqCst));
+                        (
+                            y <= a.y + EDGE_PX,
+                            y < a.y + px(BAR_WINDOW_H, a.scale)
+                                && x >= bar_x
+                                && x < bar_x + bar_w as i32,
+                        )
                     }
                     _ => (false, false),
                 };
@@ -413,6 +442,21 @@ pub fn open_quick<R: Runtime>(app: &AppHandle<R>) {
     crate::quick::show(app);
 }
 
+/// The page measured what the bar needs (logical px); the window follows, centred. Ignored while
+/// it hasn't changed, so a page that reports often costs nothing.
+pub fn fit<R: Runtime>(app: &AppHandle<R>, bar_w: u32) {
+    let state = app.state::<IslandState>();
+    let bar_w = bar_w.clamp(200, 4000);
+    if state.bar_w.swap(bar_w, Ordering::SeqCst) == bar_w {
+        return;
+    }
+    if let Some(window) = app.get_webview_window(ISLAND_WINDOW)
+        && window.is_visible().unwrap_or(false)
+    {
+        place(&window, state.expanded.load(Ordering::SeqCst), bar_w);
+    }
+}
+
 /// The bar opens its panel or folds back (M15). Opened, the window grows down to hold the panel
 /// and takes the focus (the Master clicked it), so a click elsewhere folds it back.
 pub fn set_expanded<R: Runtime>(app: &AppHandle<R>, expanded: bool) {
@@ -422,7 +466,11 @@ pub fn set_expanded<R: Runtime>(app: &AppHandle<R>, expanded: bool) {
     app.state::<IslandState>()
         .expanded
         .store(expanded, Ordering::SeqCst);
-    place(&window, expanded);
+    place(
+        &window,
+        expanded,
+        app.state::<IslandState>().bar_w.load(Ordering::SeqCst),
+    );
     let _ = window.set_focusable(expanded);
     if expanded {
         let _ = window.set_focus();
@@ -462,10 +510,17 @@ mod tests {
     };
 
     #[test]
-    fn the_bar_spans_the_top_of_the_screen() {
-        assert_eq!(island_rect(HD, false), (0, 0, 1920, 64));
-        // Opened, it grows down to hold the panel, still full width.
-        assert_eq!(island_rect(HD, true), (0, 0, 1920, 52 + 6 + 380));
+    fn the_bar_is_as_wide_as_it_needs_and_centred() {
+        assert_eq!(island_rect(HD, false, 900), ((1920 - 900) / 2, 0, 900, 64));
+        // More than the screen holds: the screen's width.
+        assert_eq!(island_rect(HD, false, 3000), (0, 0, 1920, 64));
+    }
+
+    #[test]
+    fn opened_it_is_tall_and_wide_enough_for_the_panel() {
+        assert_eq!(island_rect(HD, true, 900), (510, 0, 900, 52 + 6 + 380));
+        // A bar narrower than the panel widens for it.
+        assert_eq!(island_rect(HD, true, 400), ((1920 - 620) / 2, 0, 620, 438));
     }
 
     #[test]
@@ -476,7 +531,11 @@ mod tests {
             scale: 1.5,
             ..HD
         };
-        assert_eq!(island_rect(hidpi, false), (0, 0, 2880, 96));
+        // 900 logical px are 1350 physical at 150 %.
+        assert_eq!(
+            island_rect(hidpi, false, 900),
+            ((2880 - 1350) / 2, 0, 1350, 96)
+        );
     }
 
     #[test]
@@ -486,7 +545,7 @@ mod tests {
             y: 0,
             ..HD
         };
-        assert_eq!(island_rect(left, false).0, -1920);
+        assert_eq!(island_rect(left, false, 900).0, -1920 + 510);
         assert_eq!(panel_position(left), (-1920 + 1920 - 316, (1032 - 560) / 2));
     }
 

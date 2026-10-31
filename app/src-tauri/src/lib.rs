@@ -83,6 +83,9 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .manage(commands::AppState::default())
         .manage(island::IslandState::default())
+        // Before setup: the page reports its UTC offset as soon as it loads, which can be before
+        // setup gets this far (a panic seen 2026-10-31 on a fast restart of the dev app).
+        .manage(Arc::new(briefing::BriefingClock::default()))
         .manage(Arc::new(SystemMonitor::default()))
         .on_window_event(|window, event| {
             // Closing the window keeps Kairos in the tray; "Quit" in the tray menu ends it.
@@ -158,7 +161,6 @@ pub fn run() {
             };
             commands::set_last_seen(&app.state::<commands::AppState>(), now);
             commands::record_presence(&app.state::<commands::AppState>(), &startup);
-            app.manage(Arc::new(briefing::BriefingClock::default()));
             commands::on_presence(app.handle(), &startup);
             if let Some(happening) = presence_happening(&startup) {
                 automation_engine::on_happening(app.handle(), happening);
@@ -241,6 +243,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::connect,
             commands::reload_key,
+            commands::start_hermes,
+            commands::set_start_hermes,
             commands::create_run,
             commands::subscribe_run,
             commands::answer_approval,
@@ -320,6 +324,7 @@ pub fn run() {
             commands::hide_presence_panel,
             commands::show_main_window,
             commands::island_expand,
+            commands::island_fit,
             commands::set_island_hotkey,
             commands::appearance_state,
             commands::save_appearance,

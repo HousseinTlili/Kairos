@@ -2838,11 +2838,13 @@ html.panel-window body {
   --edge: color-mix(in srgb, var(--oxblood) 85%, transparent);
 }
 
+/* As wide as what it holds (D-034, 2026-10-31): the page measures it and the window fits it. */
 .topbar-bar {
   position: absolute;
   top: 0;
-  left: var(--flare);
-  right: var(--flare);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
   height: var(--bar-h);
   box-sizing: border-box;
   display: flex;
@@ -2901,7 +2903,7 @@ html.panel-window body {
 
 @keyframes topbar-in {
   from {
-    transform: translateY(-100%);
+    transform: translate(-50%, -100%);
   }
 }
 
@@ -2910,15 +2912,15 @@ html.panel-window body {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 0;
+  flex: none;
 }
 
 .topbar-left {
-  flex: 1;
+  /* Many pinned apps: the bar grows up to this, then the row scrolls. */
+  max-width: 420px;
 }
 
 .topbar-right {
-  flex: 1;
   justify-content: flex-end;
 }
 
@@ -2947,7 +2949,8 @@ html.panel-window body {
 /* The pinned apps as bare icons, as on a dock. */
 .topbar-apps {
   min-width: 0;
-  overflow: hidden;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .topbar-apps .open-apps {
@@ -2983,16 +2986,15 @@ html.panel-window body {
   cursor: pointer;
 }
 
-/* The ask field, at the true centre of the screen whatever the sides hold. */
+/* The ask field, between the two sides. */
 .topbar-ask {
-  position: absolute;
-  left: 50%;
-  top: 8px;
-  transform: translateX(-50%);
+  position: relative;
+  flex: none;
   display: flex;
   align-items: center;
   gap: 10px;
-  width: min(390px, 30vw);
+  /* A fixed width: the window follows the bar, so the bar can't size itself from the window. */
+  width: 340px;
   height: 36px;
   box-sizing: border-box;
   padding: 0 6px 0 14px;
@@ -3168,13 +3170,6 @@ html.panel-window body {
 .topbar-date {
   color: var(--muted);
   font-size: 0.6875rem;
-}
-
-@media (max-width: 1100px) {
-  .topbar-date,
-  .topbar-ask kbd {
-    display: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
