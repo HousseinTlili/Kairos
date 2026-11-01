@@ -193,6 +193,18 @@ Spec: `docs/milestones/M14.md`; details: `docs/milestones/M14-acceptance.md`. A 
 - [ ] Settings ▸ Kairos ▸ Island: switching it off hides it at once.
 - [ ] Ctrl+Alt+L hides the island, again shows it (the switch in Settings follows). Ctrl+Alt+J, K, L sit side by side. A new key in "Hide and show" works at once; the quick box's or push-to-talk's key is refused.
 
+## M19 — Skills (`m19/skills`)
+
+Spec: `docs/milestones/M19.md`; details: `docs/milestones/M19-acceptance.md`. About 10 minutes, and one
+question spends your model.
+
+- [ ] Settings ▸ Rules: "Add the new rules", Save: `no-forced-skills` and `skills-changes`.
+- [ ] Settings ▸ Kairos ▸ Skills ▸ Find new: search, open `reddit-reading`: no Install until Scan it has passed.
+- [ ] Install it; a new conversation uses it ("What's on r/LocalLLaMA?"); commands still follow your rules.
+- [ ] Turn it off: a new conversation doesn't use it. See what one that's already open does.
+- [ ] A skill the scan refuses: the reason in Kairos's words, no Install, no word of `--force`.
+- [ ] Remove it: asks first, then gone. Check for updates and Re-scan answer.
+
 ## M18 — Your own AI providers (`m18/providers`)
 
 Spec: `docs/milestones/M18.md`; details: `docs/milestones/M18-acceptance.md`. About 10 minutes, with a real key.
