@@ -2676,6 +2676,34 @@ pub async fn restart_hermes() -> Result<(), CommandError> {
     .await
 }
 
+// --- Computer use (M20, D-040) ------------------------------------------------------------------
+
+fn policy_text() -> Option<String> {
+    let path = crate::rules::default_path().ok()?;
+    std::fs::read_to_string(path).ok()
+}
+
+#[tauri::command]
+pub async fn computer_use_state() -> Result<crate::computer_use::ComputerUseState, CommandError> {
+    with_home(|home| crate::computer_use::state(home, policy_text().as_deref())).await
+}
+
+#[tauri::command]
+pub async fn computer_use_set(
+    on: bool,
+) -> Result<crate::computer_use::ComputerUseState, CommandError> {
+    with_home(move |home| {
+        let policy = policy_text();
+        if on {
+            crate::computer_use::turn_on(home, policy.as_deref())?;
+        } else {
+            crate::computer_use::turn_off(home)?;
+        }
+        crate::computer_use::state(home, policy.as_deref())
+    })
+    .await
+}
+
 // --- Skills (M19, D-039) ------------------------------------------------------------------------
 
 #[tauri::command]

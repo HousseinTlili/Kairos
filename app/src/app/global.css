@@ -5086,3 +5086,29 @@ button.net-row:hover:not(:disabled) {
 .skill-severity.medium {
   color: var(--warn);
 }
+
+/* Computer use (M20): the bar's Stop, the sidebar's waiting card, and what the switch means. */
+.bar-stop {
+  margin-left: 6px;
+  padding: 1px 10px;
+  border: 1px solid color-mix(in srgb, var(--bad) 60%, var(--border));
+  border-radius: 999px;
+  background: none;
+  color: var(--bad);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.bar-stop:hover {
+  background: color-mix(in srgb, var(--bad) 14%, transparent);
+}
+
+.computer-use-notes {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.computer-use-notes li + li {
+  margin-top: 8px;
+}

@@ -193,6 +193,20 @@ Spec: `docs/milestones/M14.md`; details: `docs/milestones/M14-acceptance.md`. A 
 - [ ] Settings ▸ Kairos ▸ Island: switching it off hides it at once.
 - [ ] Ctrl+Alt+L hides the island, again shows it (the switch in Settings follows). Ctrl+Alt+J, K, L sit side by side. A new key in "Hide and show" works at once; the quick box's or push-to-talk's key is refused.
 
+## M20 — Computer use (`m20/computer-use`)
+
+Spec: `docs/milestones/M20.md`; details: `docs/milestones/M20-acceptance.md`. About 15 minutes, and it spends your model.
+Restart Hermes first: the plugin changed. **Then** add the rules: a plugin older than these rules refuses every tool.
+
+- [ ] Settings ▸ Safety ▸ Computer use: off, and it says why it can't turn on until the rules are added.
+- [ ] Settings ▸ Rules: "Add the new rules", Save. The switch turns on.
+- [ ] In Character Map: "use it to select the letter A". A card to see it, then a card per click, in words.
+- [ ] Typing shows the exact text and offers only Once. "Always" is never there.
+- [ ] The top bar says "Working in Character Map" with Stop. Stop works, on a card and mid-way.
+- [ ] Ask it to use Firefox, Kairos, a terminal: refused, and the conversation says why.
+- [ ] On another settings page while a card waits: "Asks your leave" in the sidebar.
+- [ ] Add your own bank's app to `computer-use-off-limits`. Turn the switch off: the next request has no such tool.
+
 ## M19 — Skills (`m19/skills`)
 
 Spec: `docs/milestones/M19.md`; details: `docs/milestones/M19-acceptance.md`. About 10 minutes, and one

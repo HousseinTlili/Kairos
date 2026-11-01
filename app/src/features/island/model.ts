@@ -1,6 +1,7 @@
 // What the island shows (M14 §1): one state and one line of words, from what the main window and the
 // quick box each report. Pure, so the rules can be tested.
 
+import { desktopTarget } from "../chat/desktop";
 import type { Turn } from "../chat/turn";
 import { speechText } from "../voice/model";
 import type { VoicePhase } from "../voice/store";
@@ -23,6 +24,8 @@ export interface KairosState {
   doneAt: number | null;
   /** How long a line stays after `doneAt` (default DONE_MS). */
   holdMs?: number;
+  /** Kairos is working in another app (M20): what the bar's Stop stops. */
+  desktop?: { taskId: string; runId: string } | null;
 }
 
 /** How long "Done — …" stays on the pill after an answer. */
@@ -48,6 +51,7 @@ export function stateOf(
   now: number,
   doneAt: number | null,
 ): KairosState {
+  const target = desktopTarget(turn);
   const base = {
     source,
     sessionId,
@@ -55,12 +59,15 @@ export function stateOf(
     answer: turn?.text ? answerStart(turn.text) : null,
     approval: false,
     doneAt,
+    desktop:
+      target && turn?.taskId && turn.runId ? { taskId: turn.taskId, runId: turn.runId } : null,
   };
   if (turn?.status === "waiting_for_approval") {
     return { ...base, mood: "working", text: "Kairos asks your leave", approval: true };
   }
   if (voice.phase === "listening") return { ...base, mood: "listening", text: "Listening…" };
   if (voice.phase === "transcribing") return { ...base, mood: "working", text: "Understanding…" };
+  if (target) return { ...base, mood: "working", text: short(`Working in ${target}`, 34) };
   if (turn && RUNNING.includes(turn.status)) {
     return { ...base, mood: "working", text: short(turn.input, 34) };
   }

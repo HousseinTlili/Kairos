@@ -1,7 +1,7 @@
 // The Kairos rules as the Rules page edits them (M2 spec §5). Pure, so it can be tested; the
 // plugin's validator (through Rust) has the final word on what is valid.
 
-export const MATCH_KINDS = ["paths", "commands", "urls", "any_text"] as const;
+export const MATCH_KINDS = ["paths", "commands", "urls", "any_text", "actions", "targets"] as const;
 export type MatchKind = (typeof MATCH_KINDS)[number];
 export type RuleAction = "allow" | "deny" | "ask";
 
@@ -28,6 +28,8 @@ export const MATCH_LABEL: Record<MatchKind, string> = {
   commands: "Commands (regular expressions)",
   urls: "Web addresses (globs)",
   any_text: "Any text in the call (globs)",
+  actions: "Computer use actions",
+  targets: "Windows computer use would act on (globs)",
 };
 
 export const ACTION_LABEL: Record<RuleAction, string> = {
@@ -448,6 +450,135 @@ export const NEWER_STARTER_RULES: { after: string; rules: RuleDoc[] }[] = [
             "\\bhermes(\\.exe)?\\s+skills\\s+(install|uninstall|reset|tap|publish)\\b",
             "\\bhermes(\\.exe)?\\s+config\\s+(set|unset)\\s+skills\\.",
           ],
+        },
+        action: "ask",
+      },
+    ],
+  },
+  // M20: where computer_use may not go (D-040).
+  {
+    after: "skills-changes",
+    rules: [
+      {
+        id: "computer-use-off-limits",
+        description:
+          "Kairos may not work in this window: its own windows, terminals, system and security tools, password managers, browsers and banking go round your other rules (D-040).",
+        tools: ["computer_use"],
+        match: {
+          targets: [
+            "kairos.exe",
+            "kairos",
+            "hermes.exe",
+            "hermes desktop*",
+            "hermes desktop",
+            "claude.exe",
+            "claude",
+            "windowsterminal.exe",
+            "wt.exe",
+            "openconsole.exe",
+            "conhost.exe",
+            "cmd.exe",
+            "powershell.exe",
+            "powershell_ise.exe",
+            "pwsh.exe",
+            "bash.exe",
+            "wsl.exe",
+            "wslhost.exe",
+            "mintty.exe",
+            "code.exe",
+            "code - insiders.exe",
+            "cursor.exe",
+            "windsurf.exe",
+            "devenv.exe",
+            "explorer.exe",
+            "systemsettings.exe",
+            "regedit.exe",
+            "taskmgr.exe",
+            "mmc.exe",
+            "control.exe",
+            "msconfig.exe",
+            "gpedit.msc",
+            "consent.exe",
+            "secpol.msc",
+            "sechealthui.exe",
+            "securityhealthsystray.exe",
+            "windows security",
+            "1password.exe",
+            "bitwarden.exe",
+            "keepass.exe",
+            "keepassxc.exe",
+            "lastpass.exe",
+            "dashlane.exe",
+            "nordpass.exe",
+            "enpass.exe",
+            "proton pass.exe",
+            "protonpass.exe",
+            "roboform.exe",
+            "chrome.exe",
+            "msedge.exe",
+            "firefox.exe",
+            "opera.exe",
+            "brave.exe",
+            "vivaldi.exe",
+            "arc.exe",
+            "iexplore.exe",
+            "tor.exe",
+            "waterfox.exe",
+            "zen.exe",
+            "librewolf.exe",
+            "**bank**",
+            "**banque**",
+            "**paypal**",
+            "**revolut**",
+            "**wise.com**",
+            "**stripe**",
+            "**coinbase**",
+            "**binance**",
+          ],
+        },
+        action: "deny",
+      },
+      {
+        id: "computer-use-whole-screen",
+        description:
+          "The whole screen and the taskbar hold whatever else you have open. Kairos works in one named app.",
+        tools: ["computer_use"],
+        match: {
+          targets: ["screen", "desktop"],
+        },
+        action: "deny",
+      },
+      {
+        id: "computer-use-keys",
+        description:
+          "These keys open what the off-limits rule shuts: the Start menu, Run, Task Manager.",
+        tools: ["computer_use"],
+        match: {
+          actions: ["key"],
+          commands: [
+            "(^|\\+)\\s*(win|windows|super|meta|cmd|command)\\s*(\\+|$)",
+            "ctrl\\s*\\+\\s*shift\\s*\\+\\s*esc",
+            "ctrl\\s*\\+\\s*alt\\s*\\+\\s*del",
+          ],
+        },
+        action: "deny",
+      },
+      {
+        id: "computer-use-see",
+        description: "Seeing a window sends a picture of it to your AI provider.",
+        tools: ["computer_use"],
+        match: {
+          actions: ["capture"],
+        },
+        action: "ask",
+      },
+      {
+        id: "computer-use-list",
+        description:
+          "This sends the titles of your open windows, or your apps, to your AI provider.",
+        tools: ["computer_use"],
+        match: {
+          actions: ["list_apps", "list_windows"],
         },
         action: "ask",
       },

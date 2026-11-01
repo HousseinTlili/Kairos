@@ -13,9 +13,10 @@ from typing import Any, Callable
 
 KAIROS_SESSION = "kairos-"
 
-# The tools this plugin registers (pctools, notifications, screen).
+# The tools this plugin registers (pctools, notifications, screen), and Hermes's own desktop control,
+# which needs the Master at the cards just as much (M20, D-040).
 KAIROS_TOOLS = frozenset(
-    {"list_running_apps", "open_app", "close_app", "recent_notifications", "screen_capture"}
+    {"list_running_apps", "open_app", "close_app", "recent_notifications", "screen_capture", "computer_use"}
 )
 
 

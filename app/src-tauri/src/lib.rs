@@ -3,6 +3,7 @@ mod audit;
 mod automations;
 mod briefing;
 mod commands;
+mod computer_use;
 mod desk;
 mod net;
 // Public so the fixture tests in tests/ can drive it.
@@ -334,6 +335,8 @@ pub fn run() {
             commands::bar_set_volume,
             commands::bar_set_muted,
             commands::bar_open,
+            commands::computer_use_state,
+            commands::computer_use_set,
             commands::skills_installed,
             commands::skills_search,
             commands::skills_inspect,

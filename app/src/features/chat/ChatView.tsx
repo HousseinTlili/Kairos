@@ -12,6 +12,7 @@ import { useShell } from "../shell/store";
 import { BriefingCard } from "../briefing/BriefingCard";
 import { OfferCards } from "../automations/OfferCards";
 import { Illuminated } from "../shell/Illuminated";
+import { desktopCardWords, desktopPhrase } from "./desktop";
 import { ApprovalCard } from "./ApprovalCard";
 import { MarkdownView } from "./MarkdownView";
 import { useChat } from "./store";
@@ -106,8 +107,8 @@ export function TurnView({ turn }: { turn: Turn }) {
                 <li key={i} className={`tool-row ${toolLabel(turn, item)}`}>
                   <TerminalIcon />
                   <span className="tool-name">{item.tool}</span>
-                  <code className="tool-preview" title={item.preview}>
-                    {item.preview}
+                  <code className="tool-preview" title={desktopPhrase(item) || item.preview}>
+                    {desktopPhrase(item) || item.preview}
                   </code>
                   <span className="tool-state">{toolLabel(turn, item)}</span>
                   {decisionText(item) && (
@@ -120,6 +121,7 @@ export function TurnView({ turn }: { turn: Turn }) {
                 <li key={i}>
                   <ApprovalCard
                     row={item}
+                    desktop={desktopCardWords(turn, item)}
                     onAnswer={(choice) =>
                       turn.taskId && void answer(turn.taskId, item.promptId, choice)
                     }

@@ -456,6 +456,17 @@ export interface Catalog {
 
 export const modelCatalog = () => call<Catalog>("model_catalog");
 
+// --- Computer use (M20, D-040). Shape mirrors src-tauri/src/computer_use.rs. ----------------------
+
+export interface ComputerUseState {
+  on: boolean;
+  ready: boolean;
+  rules_ready: boolean;
+}
+
+export const computerUseState = () => call<ComputerUseState>("computer_use_state");
+export const computerUseSet = (on: boolean) => call<ComputerUseState>("computer_use_set", { on });
+
 // --- Skills (M19, D-039). Shapes mirror src-tauri/src/skills.rs. ---------------------------------
 
 export type SkillOrigin = "builtin" | "hub" | "yours";

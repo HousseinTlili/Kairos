@@ -18,7 +18,8 @@ export type SettingsTab =
   | "appearance"
   | "startup"
   | "automations"
-  | "skills";
+  | "skills"
+  | "computer-use";
 
 interface ShellState {
   view: View;

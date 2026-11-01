@@ -234,7 +234,8 @@ class OwnToolsTest(HooksTestBase):
             notifications.RECENT_NOTIFICATIONS["name"],
             screen.SCREEN_CAPTURE["name"],
         }
-        self.assertEqual(sessions.KAIROS_TOOLS, registered)
+        # Plus Hermes's own desktop control, which isn't the plugin's but needs the same scope (M20).
+        self.assertEqual(sessions.KAIROS_TOOLS, registered | {"computer_use"})
 
     def test_the_hints_about_them_are_only_given_in_kairos(self):
         from kairos.sessions import only_in_kairos

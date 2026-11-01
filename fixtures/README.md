@@ -18,6 +18,7 @@ via Nous Portal.
 | `run-kairos-rule-deny/` | M2 Step 8, approval mode `smart`: the Kairos `destructive-commands` rule asks before `rm -rf`, the answer is Deny. Note there is no `tool.started`: the Kairos check runs before Hermes announces the tool |
 | `run-kairos-rule-double-prompt/` | M2 Step 8, approval mode `manual`: the Kairos rule asks, then (after `tool.started`) Hermes's own recursive-delete check asks again |
 | `plugin-hooks/` | Recorded 2026-10-24 by a temporary probe plugin (M2 Step 1): what `pre_tool_call`, `post_tool_call`, the two approval hooks and the session hooks receive, for `read_file`, `terminal`, `search_files`, `web_extract` and a denied `rm -rf`. Each line holds key names, value types and samples cut to 160 characters, not full values |
+| `computer-use/` | M20 Step 2, in Character Map: `run-click-type.sse` (a capture, two clicks and typing, one card each), `run-stop-at-card.sse` (Stop on a waiting card), and from that session's messages `capture-ax.json` and `click-result.json` |
 
 ## `eventlog/`
 

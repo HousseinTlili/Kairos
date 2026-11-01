@@ -16,6 +16,7 @@ import { IslandSettings } from "../island/IslandSettings";
 import { AppearanceSettings } from "../appearance/AppearanceSettings";
 import { AutomationsSettings } from "../automations/AutomationsSettings";
 import { SkillsSettings } from "../skills/SkillsSettings";
+import { ComputerUseSettings } from "../computeruse/ComputerUseSettings";
 
 // Four groups instead of one row of tabs, which no longer fit the window (docs/design/BRAND.md).
 const GROUPS: { label: string; tabs: { id: SettingsTab; label: string }[] }[] = [
@@ -37,6 +38,7 @@ const GROUPS: { label: string; tabs: { id: SettingsTab; label: string }[] }[] = 
     label: "Safety",
     tabs: [
       { id: "rules", label: "Rules" },
+      { id: "computer-use", label: "Computer use" },
       { id: "connection", label: "Hermes connection" },
     ],
   },
@@ -96,6 +98,8 @@ export function Settings() {
           <NotificationSettings />
         ) : settingsTab === "briefing" ? (
           <BriefingSettings />
+        ) : settingsTab === "computer-use" ? (
+          <ComputerUseSettings />
         ) : settingsTab === "skills" ? (
           <SkillsSettings />
         ) : settingsTab === "providers" ? (

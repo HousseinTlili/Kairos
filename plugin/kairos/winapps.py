@@ -134,6 +134,11 @@ class Win32Layer:
         user32.EnumWindows(WNDENUMPROC(visit), 0)
         return found
 
+    def foreground(self) -> Window | None:
+        """The window the Master is in, if it's an app window."""
+        hwnd = int(user32.GetForegroundWindow() or 0)
+        return next((w for w in self.windows() if w.hwnd == hwnd), None)
+
     def post_close(self, hwnd: int) -> None:
         user32.PostMessageW(hwnd, WM_CLOSE, 0, 0)
 

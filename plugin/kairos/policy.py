@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Iterable, Mapping
 
 ACTIONS = ("allow", "deny", "ask")
-MATCH_KINDS = ("paths", "commands", "urls", "any_text")
+MATCH_KINDS = ("paths", "commands", "urls", "any_text", "actions", "targets")
 RULE_FIELDS = {"id", "description", "tools", "match", "action", "enabled"}
 TOP_FIELDS = {"version", "default", "rules"}
 RULE_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
@@ -30,7 +30,8 @@ PATH_KEYS = ("path", "file_path", "target_path", "source", "destination", "dest"
 # Tools whose text is a shell command or a script. `browser_exec` runs arbitrary Python on this
 # machine through the browser-use helper (Hermes's tools/browser_use_cli.py) and isn't covered by
 # Hermes's own command check, so it is read like a script (M2 Step 9).
-COMMAND_TOOLS = {"terminal": "command", "execute_code": "code", "browser_exec": "code"}
+# `computer_use` key combinations are read the same way, so a rule can name them (M20).
+COMMAND_TOOLS = {"terminal": "command", "execute_code": "code", "browser_exec": "code", "computer_use": "keys"}
 URL_KEYS = ("url", "urls")
 _URL = re.compile(r"https?://[^\s\"'<>]+", re.IGNORECASE)
 # Splits a command into candidate path tokens: whitespace, quotes, and shell separators.
@@ -173,8 +174,12 @@ class Rule:
     commands: tuple[re.Pattern[str], ...]
     urls: tuple[re.Pattern[str], ...]
     any_text: tuple[re.Pattern[str], ...]
+    actions: tuple[re.Pattern[str], ...] = ()
+    targets: tuple[re.Pattern[str], ...] = ()
 
-    def applies_to(self, tool: str, args: Mapping[str, object], env: Mapping[str, str]) -> bool:
+    def applies_to(
+        self, tool: str, args: Mapping[str, object], env: Mapping[str, str], targets: tuple[str, ...] = ()
+    ) -> bool:
         if not self.enabled or (self.tools is not None and tool not in self.tools):
             return False
         checks = (
@@ -182,6 +187,10 @@ class Rule:
             (self.commands, lambda: _command_text(tool, args), "search"),
             (self.urls, lambda: [u.lower() for u in _url_candidates(args)], "full"),
             (self.any_text, lambda: [normalise_path(t, env) for t in _any_text_candidates(args)], "full"),
+            # The `action` argument alone: in any_text, a click with app="capture" would pass for a capture.
+            (self.actions, lambda: [str(args.get("action") or "").strip().lower()], "full"),
+            # Windows the call acts on, worked out by desktop.py: never taken from the call's text.
+            (self.targets, lambda: list(targets), "full"),
         )
         for patterns, candidates, mode in checks:
             if not patterns:
@@ -201,10 +210,12 @@ class Policy:
     rules: tuple[Rule, ...]
     env: Mapping[str, str]
 
-    def evaluate(self, tool: str, args: Mapping[str, object] | None) -> Decision:
+    def evaluate(
+        self, tool: str, args: Mapping[str, object] | None, targets: tuple[str, ...] = ()
+    ) -> Decision:
         args = args if isinstance(args, Mapping) else {}
         for rule in self.rules:
-            if rule.applies_to(tool, args, self.env):
+            if rule.applies_to(tool, args, self.env, targets):
                 return Decision(rule.action, rule.id, rule.description)
         return INHERIT
 
@@ -257,7 +268,7 @@ def _parse_rule(raw: object, index: int, env: Mapping[str, str]) -> Rule:
                 compiled[kind] = tuple(re.compile(p, re.IGNORECASE) for p in patterns)
             except re.error as err:
                 raise PolicyError(f"{where}: invalid regex in match.commands: {err}") from None
-        elif kind == "urls":
+        elif kind in ("urls", "actions", "targets"):
             compiled[kind] = tuple(_glob_to_regex(p.lower()) for p in patterns)
         else:
             compiled[kind] = tuple(_glob_to_regex(normalise_path(p, env)) for p in patterns)
@@ -294,11 +305,13 @@ def load_policy(text: str, env: Mapping[str, str] | None = None) -> Policy:
     return Policy(rules=rules, env=env)
 
 
-def decide(policy: Policy | PolicyError, tool: str, args: Mapping[str, object] | None) -> Decision:
+def decide(
+    policy: Policy | PolicyError, tool: str, args: Mapping[str, object] | None, targets: tuple[str, ...] = ()
+) -> Decision:
     """The decision for one call. A broken policy blocks everything (spec §5, fail closed)."""
     if isinstance(policy, PolicyError):
         return Decision("invalid_rules", None, f"Kairos rules are invalid: {policy}")
-    return policy.evaluate(tool, args)
+    return policy.evaluate(tool, args, targets)
 
 
 class PolicyFile:

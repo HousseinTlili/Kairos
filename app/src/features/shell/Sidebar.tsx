@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { waitingApprovals } from "../chat/desktop";
 import { useChat } from "../chat/store";
 import { useConnection } from "../connection/store";
 import type { Conversation, OtherConversation } from "../../lib/tauri";
@@ -9,6 +10,7 @@ import { badgeText } from "../notifications/model";
 import { useNotifications } from "../notifications/store";
 import {
   BellIcon,
+  ShieldIcon,
   CalendarIcon,
   ChevronIcon,
   GaugeIcon,
@@ -171,6 +173,7 @@ export function Sidebar() {
     conversations.kairos.filter((c) => !isMemoryConversation(c.session_id)),
   );
   const badge = badgeText(useNotifications((s) => s.state?.unread ?? 0));
+  const waiting = waitingApprovals(turns);
   const reopenBriefing = useBriefing((s) => s.reopen);
 
   const presence = usePresence();
@@ -230,6 +233,16 @@ export function Sidebar() {
       >
         <GaugeIcon /> <span className="label">System</span>
       </button>
+
+      {/* On another page, nothing else says that Kairos is waiting for an answer (M20). */}
+      {waiting > 0 && view !== "chat" && (
+        <button className="nav-item" onClick={() => show("chat")} title="Kairos asks your leave">
+          <ShieldIcon /> <span className="label">Asks your leave</span>
+          <span className="nav-badge" aria-label={`${waiting} waiting`}>
+            {waiting}
+          </span>
+        </button>
+      )}
 
       <button
         className={`nav-item ${view === "notifications" ? "active" : ""}`}

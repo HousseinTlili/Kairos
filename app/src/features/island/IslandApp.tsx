@@ -20,6 +20,7 @@ import {
   openInMain,
   quickHotkey,
   showMainWindow,
+  stopRun,
   systemSnapshot,
   type BarState,
   type SystemSnapshot,
@@ -293,6 +294,15 @@ export function IslandApp() {
                 <SparkleIcon />
               </span>
               <span aria-live="polite">{text}</span>
+            </button>
+          )}
+          {shown?.desktop && (
+            <button
+              className="bar-stop"
+              onClick={() => void stopRun(shown.desktop!.taskId, shown.desktop!.runId)}
+              title="Stop what Kairos is doing in that app"
+            >
+              Stop
             </button>
           )}
         </div>

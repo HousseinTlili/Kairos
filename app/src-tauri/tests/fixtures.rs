@@ -176,7 +176,7 @@ fn every_recorded_stream_parses_without_errors_or_unknown_events() {
             checked += 1;
         }
     }
-    assert_eq!(checked, 6, "expected the six recorded runs");
+    assert_eq!(checked, 8, "expected the eight recorded runs");
 }
 
 #[test]

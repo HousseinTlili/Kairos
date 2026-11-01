@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 
 from .audit import AuditStore
+from .desktop import DesktopTracker
 from . import notifications, screen, style
 from .sessions import only_in_kairos
 from .hooks import KairosHooks
@@ -104,9 +105,23 @@ def register_screen(ctx, home: Path) -> None:
         log.exception("kairos: couldn't register screen_capture")
 
 
+def desktop_tracker() -> DesktopTracker | None:
+    """Where computer_use acts (M20). Without it, every such call is refused."""
+    if sys.platform != "win32":
+        return None
+    try:
+        from .winapps import Win32Layer
+
+        layer = Win32Layer()
+        return DesktopTracker(layer.windows, layer.foreground)
+    except Exception:  # noqa: BLE001
+        log.exception("kairos: couldn't set up the computer_use checks")
+        return None
+
+
 def register(ctx) -> KairosHooks:
     home = kairos_home()
-    hooks = KairosHooks(PolicyFile(home / "policy.json"), AuditStore(home / "audit.db"))
+    hooks = KairosHooks(PolicyFile(home / "policy.json"), AuditStore(home / "audit.db"), desktop_tracker())
     ctx.register_hook("pre_tool_call", hooks.pre_tool_call)
     ctx.register_hook("post_tool_call", hooks.post_tool_call)
     ctx.register_hook("post_approval_response", hooks.post_approval_response)

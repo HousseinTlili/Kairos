@@ -241,6 +241,8 @@ export const useChat = create<ChatState>((set, get) => {
       updateTask(task_id, (turn) => applyEvent(turn, envelope, approval_live === true));
       const name = envelope.event.event;
       if (name.startsWith("run.")) void get().refreshConversations();
+      // A desktop card's words are in the audit row, written before the card was (M20).
+      if (name === "approval.request") void get().refreshAudit();
       if (name === "tool.completed" || name === "approval.settled" || name.startsWith("run.")) {
         if (auditTimer) clearTimeout(auditTimer);
         auditTimer = setTimeout(() => void get().refreshAudit(), AUDIT_REFRESH_DELAY_MS);

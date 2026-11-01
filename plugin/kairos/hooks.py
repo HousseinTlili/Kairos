@@ -15,6 +15,7 @@ from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 from .audit import AuditStore
+from .desktop import DesktopTracker, Placed
 from .policy import Decision, PolicyFile, decide
 from .redact import redact, redact_text
 from .sessions import KAIROS_TOOLS, is_kairos
@@ -97,6 +98,8 @@ def call_summary(tool_name: str, args: Mapping[str, Any] | None) -> str:
     args = args if isinstance(args, Mapping) else {}
     if tool_name == "browser_exec" and isinstance(args.get("code"), str):
         return redact_text(args["code"])[:SCRIPT_MAX]
+    if tool_name == "computer_use":
+        return f"computer_use: {args.get('action') or ''}"
     for key in ("command", "code", "path", "file_path", "url"):
         value = args.get(key)
         if isinstance(value, str) and value:
@@ -116,8 +119,24 @@ def approval_rule_key(rule_id: str, tool_name: str, args: Mapping[str, Any] | No
     return f"kairos:{rule_id}:{digest}"
 
 
+def desktop_words(args: Mapping[str, Any] | None, placed: Placed | None) -> str:
+    """What a Kairos rule is asking about on the desktop, for the card's "It will …"."""
+    action = str((args or {}).get("action") or "").strip().lower()
+    if action == "capture" and placed is not None:
+        return f"see {placed.label}, and send the picture to your AI provider"
+    if action == "list_windows":
+        return "read the titles of all your open windows, and send them to your AI provider"
+    if action == "list_apps":
+        return "read the names of your apps, and send them to your AI provider"
+    return ""
+
+
 def hook_result(
-    decision: Decision, tool_name: str, args: Mapping[str, Any] | None, last_host: str | None = None
+    decision: Decision,
+    tool_name: str,
+    args: Mapping[str, Any] | None,
+    last_host: str | None = None,
+    placed: Placed | None = None,
 ) -> dict | None:
     """A Kairos decision as Hermes's pre_tool_call directive; None lets Hermes's own rules decide.
     A browser script's ask also says, on a "Will:" line, what it will do (turn.ts reads it)."""
@@ -138,10 +157,20 @@ def hook_result(
             words = describe_script(code, last_host)
             if words:
                 reason = f"{reason}\nWill: {words}"
+        rule_key = approval_rule_key(decision.rule_id or "unnamed", tool_name, args)
+        if tool_name == "computer_use":
+            words = desktop_words(args, placed)
+            if words:
+                # " — " separates the parts of the message (turn.ts reads it).
+                reason = f"{reason}\nWill: {words.replace(' — ', ' - ')}"
+            # A grant to see Notepad is for Notepad, whatever mode or element the next capture names.
+            rule_key = approval_rule_key(
+                decision.rule_id or "unnamed", tool_name, {"app": placed.key if placed else ""}
+            )
         return {
             "action": "approve",
             "message": f"Kairos rule '{decision.rule_id}': {reason} — {call_summary(tool_name, args)}",
-            "rule_key": approval_rule_key(decision.rule_id or "unnamed", tool_name, args),
+            "rule_key": rule_key,
         }
     return None  # allow, inherit
 
@@ -153,10 +182,24 @@ OWN_TOOLS = Decision(
 )
 
 
+NO_TARGET = Decision(
+    "deny",
+    "computer-use-no-target",
+    "Kairos can't tell which window this acts on, so it can't check it. The app may be closed, or on another "
+    "desktop. Otherwise, capture it by its process name first (app='notepad.exe').",
+)
+TYPED_SECRET = Decision(
+    "deny",
+    "computer-use-typed-secret",
+    "This text looks like a key or a token, and Kairos never types those into another app.",
+)
+
+
 class KairosHooks:
-    def __init__(self, policy_file: PolicyFile, audit: AuditStore):
+    def __init__(self, policy_file: PolicyFile, audit: AuditStore, desktop: DesktopTracker | None = None):
         self.policy_file = policy_file
         self.audit = audit
+        self.desktop = desktop
         # Where each conversation's browser was last sent (M12 Step 4), for the card's "on …".
         self.browser_hosts: OrderedDict[str, str] = OrderedDict()
 
@@ -171,6 +214,24 @@ class KairosHooks:
                 self.browser_hosts.popitem(last=False)
         return known
 
+    def _desktop_decision(
+        self, session: str, tool_call_id: str, args: Mapping[str, Any] | None
+    ) -> tuple[Decision, Placed | None]:
+        """Rules that refuse come first, then what can't be checked; what's left is the rule's, and
+        input with no rule falls through to Hermes's gate, which asks. Two asks would be two cards."""
+        if self.desktop is None:
+            return NO_TARGET, None
+        placed = self.desktop.before(session, tool_call_id, args)
+        decision = decide(self.policy_file.current(), "computer_use", args, placed.targets)
+        if decision.blocks:
+            return decision, placed
+        if not placed.known:
+            return NO_TARGET, placed
+        text = (args or {}).get("text") or (args or {}).get("value")
+        if isinstance(text, str) and redact_text(text) != text:
+            return TYPED_SECRET, placed
+        return decision, placed
+
     def pre_tool_call(
         self,
         tool_name: str = "",
@@ -180,10 +241,13 @@ class KairosHooks:
         tool_call_id: str = "",
         **_: Any,
     ) -> dict | None:
+        placed: Placed | None = None
         try:
             if tool_name in KAIROS_TOOLS and not is_kairos(session_id):
                 # Kairos's PC tools work only in Kairos's own conversations (sessions.py).
                 decision = OWN_TOOLS
+            elif tool_name == "computer_use":
+                decision, placed = self._desktop_decision(session_id or task_id, tool_call_id, args)
             else:
                 decision = decide(self.policy_file.current(), tool_name, args)
         except Exception as err:  # noqa: BLE001 — fail closed: a broken check never lets a call through
@@ -191,7 +255,7 @@ class KairosHooks:
             decision = Decision("invalid_rules", None, f"Kairos couldn't check its rules ({type(err).__name__}).")
         try:
             last_host = self._last_host(session_id or task_id, args) if tool_name == "browser_exec" else None
-            result = hook_result(decision, tool_name, args, last_host)
+            result = hook_result(decision, tool_name, args, last_host, placed)
         except Exception:  # noqa: BLE001
             log.exception("kairos: couldn't build the hook result for %s", tool_name)
             result = {"action": "block", "message": "Kairos couldn't check this action, so it was blocked."}
@@ -200,7 +264,12 @@ class KairosHooks:
             session_id=session_id or task_id or None,
             tool_call_id=tool_call_id or None,
             tool_name=tool_name,
-            args=args,
+            # The card reads these two from the audit row: the stream doesn't carry them (M20 Step 2).
+            args=(
+                {**(args or {}), "kairos_target": placed.label, "kairos_element": placed.element}
+                if placed is not None
+                else args
+            ),
             decision=decision,
         )
         return result
@@ -212,8 +281,16 @@ class KairosHooks:
         duration_ms: int | None = None,
         status: str | None = None,
         error_type: str | None = None,
+        tool_name: str = "",
+        session_id: str = "",
+        task_id: str = "",
         **_: Any,
     ) -> None:
+        if tool_name == "computer_use" and self.desktop is not None:
+            try:
+                self.desktop.after(tool_call_id, session_id or task_id, result)
+            except Exception:  # noqa: BLE001 — what's lost is a remembered target, and input then refuses
+                log.exception("kairos: couldn't read a computer_use result")
         self.audit.record_result(
             tool_call_id=tool_call_id or None,
             status=status,

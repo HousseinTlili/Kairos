@@ -1,0 +1,29 @@
+Built-in toolsets (api_server):
+  ✓ enabled  web  🔍 Web Search & Scraping
+  ✓ enabled  browser  🌐 Browser Automation
+  ✓ enabled  terminal  💻 Terminal & Processes
+  ✓ enabled  file  📁 File Operations
+  ✓ enabled  code_execution  ⚡ Code Execution
+  ✓ enabled  vision  👁️  Vision / Image Analysis
+  ✗ disabled  video  🎬 Video Analysis
+  ✓ enabled  image_gen  🎨 Image Generation
+  ✗ disabled  video_gen  🎬 Video Generation
+  ✗ disabled  x_search  🐦 X (Twitter) Search
+  ✗ disabled  tts  🔊 Text-to-Speech
+  ✗ disabled  stt  🎙️ Speech-to-Text
+  ✓ enabled  skills  📚 Skills
+  ✓ enabled  todo  📋 Task Planning
+  ✗ disabled  kanban  📌 Kanban
+  ✓ enabled  memory  💾 Memory
+  ✗ disabled  context_engine  🧩 Context Engine
+  ✓ enabled  session_search  🔎 Session Search
+  ✓ enabled  connections  🔌 Connections
+  ✗ disabled  clarify  ❓ Clarifying Questions
+  ✓ enabled  delegation  👥 Task Delegation
+  ✓ enabled  cronjob  ⏰ Cron Jobs
+  ✗ disabled  yuanbao  🤖 Yuanbao
+  ✗ disabled  computer_use  🖱️  Computer Use (macOS/Windows/Linux)
+
+Plugin toolsets (api_server):
+  ✗ disabled  a2a  🔌 A2A
+  ✓ enabled  kairos  🔌 Kairos

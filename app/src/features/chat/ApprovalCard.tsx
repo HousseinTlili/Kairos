@@ -1,5 +1,6 @@
 import type { ApprovalChoice } from "../../lib/tauri";
 import { ShieldIcon } from "../shell/icons";
+import { isDesktopApproval, offeredChoices } from "./desktop";
 import type { ApprovalRow } from "./turn";
 
 // Kairos asks its Master's leave (docs/design/BRAND.md, Words); the answer keeps the same verb.
@@ -20,12 +21,16 @@ const ANSWERED_LABEL: Record<ApprovalChoice, string> = {
 interface Props {
   row: ApprovalRow;
   onAnswer: (choice: ApprovalChoice) => void;
+  /** A desktop action in words, when the plugin could tell (M20): "Click Select in Notepad". */
+  desktop?: string;
 }
 
-export function ApprovalCard({ row, onAnswer }: Props) {
+export function ApprovalCard({ row, onAnswer, desktop }: Props) {
   const answerable = row.live && row.state === "waiting";
   // Offer Hermes's choices, in a fixed order, with Deny kept apart from the rest.
-  const allow = (["once", "session", "always"] as const).filter((c) => row.choices.includes(c));
+  const offered = offeredChoices(row);
+  const allow = (["once", "session", "always"] as const).filter((c) => offered.includes(c));
+  const onDesktop = isDesktopApproval(row);
 
   if (!answerable) {
     const answered = row.choice ? ANSWERED_LABEL[row.choice] : "Answered";
@@ -46,14 +51,20 @@ export function ApprovalCard({ row, onAnswer }: Props) {
       <div className="approval-head">
         <ShieldIcon />
         <h3 id={`approval-${row.promptId}`}>
-          {row.source === "kairos"
+          {row.source === "kairos" || onDesktop
             ? "Kairos asks your leave"
             : "Hermes asks your leave for this command"}
         </h3>
       </div>
       {row.will && <p className="approval-will">It will {row.will}.</p>}
+      {desktop && <p className="approval-will">{desktop}</p>}
       <p className="approval-why">
-        {row.source === "kairos" ? (
+        {onDesktop && row.source === "hermes" ? (
+          <>
+            The button&apos;s name comes from the app, and the window may have changed since Kairos
+            looked. Refuse if it looks wrong.
+          </>
+        ) : row.source === "kairos" ? (
           <>
             Rule <code>{row.rule ?? "unknown"}</code>: {row.description}
           </>
