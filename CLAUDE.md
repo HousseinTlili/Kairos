@@ -42,6 +42,7 @@ The decision is `automations::rules::decide` in the core; voice, island and Ask 
 Keys go into Hermes's `.env` under `# kairos:` markers (`providers.rs`); Kairos removes only its own lines.
 **M19** (skills, `m19/skills`): built, `docs/milestones/M19.md`; D-039 accepted (Kairos never sends `--force`; update is Remove then Install).
 The core is `skills.rs`, parsing `hermes skills` text against `fixtures/hermes-0.22.5/skills/`; `/v1/skills` answers 500.
+**M20** (computer use, `m20/computer-use`): spec only, `docs/milestones/M20.md`; D-040 Proposed. Its §7 questions come first.
 
 ## Roles
 

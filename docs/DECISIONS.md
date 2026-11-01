@@ -360,6 +360,20 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
+## D-040 — Kairos's computer use: off by default, some windows off limits, Hermes's gate asks — Proposed
+
+For M20 (`docs/milestones/M20.md`). Hermes's `computer_use` can be turned on for Kairos's own
+conversations from a switch, off by default. D-014's "stays off until there is a use case and a rule
+set" is met by this, not overturned. Clicking and typing go round every rule that reads a tool's
+arguments: unchecked, the model could click Allow on Kairos's own card or type into a terminal. So the
+plugin works out the target window and refuses Kairos itself, terminals, security tools, password
+managers, browsers and banking, and refuses input it can't place. Hermes's gate asks for every action,
+once, so there are no double cards; typing is never granted beyond once, and "always" is never offered.
+Seeing a window asks once per app per conversation, because the picture goes to the AI provider.
+Proposed 2026-11-01.
+
+---
+
 ## D-039 — Kairos manages skills through `hermes skills`, and never overrides the scan — Accepted
 
 For M19 (`docs/milestones/M19.md`). Kairos lists, finds, scans, installs and removes skills through
