@@ -360,6 +360,15 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
+## D-039 — Kairos manages skills through `hermes skills`, and never overrides the scan — Proposed
+
+For M19 (`docs/milestones/M19.md`). Kairos lists, finds, scans, installs and removes skills through
+Hermes's own commands, from the Master's clicks, showing a skill's text and scan verdict before
+installing it. It never sends `--force`, and avoids `hermes skills update`, which forces. A skill is
+instructions the model will follow, so a bad one is a prompt injection installed on purpose: the
+scan is one defence, reading it a second, and the Kairos rules behind every tool call the third.
+Proposed 2026-11-01.
+
 ## D-038 — Kairos adds AI providers through Hermes's own commands; keys live only in Hermes — Accepted
 
 For M18 (`docs/milestones/M18.md`). Settings ▸ Providers adds a known provider's API key

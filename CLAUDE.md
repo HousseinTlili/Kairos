@@ -40,6 +40,7 @@ Step 5 waits for the product owner's pattern images.
 The decision is `automations::rules::decide` in the core; voice, island and Ask run in the main window.
 **M18** (your own AI providers, `m18/providers`): built, `docs/milestones/M18.md`; D-038 accepted.
 Keys go into Hermes's `.env` under `# kairos:` markers (`providers.rs`); Kairos removes only its own lines.
+**M19** (skills, `m19/skills`): spec only, `docs/milestones/M19.md`; D-039 Proposed. Its §7 questions come first.
 
 ## Roles
 
