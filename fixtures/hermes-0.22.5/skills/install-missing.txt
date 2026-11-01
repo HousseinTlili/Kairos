@@ -1,0 +1,5 @@
+
+Fetching: nosuch/thing
+Error: Could not download 'nosuch/thing'.
+Check the name with hermes skills search thing and check your internet connection. If it keeps failing, run hermes doctor.
+

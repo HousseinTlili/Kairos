@@ -1,0 +1,58 @@
+                                   Installed Skills                                   
+┌───────────────────────────────┬──────────────────────┬─────────┬─────────┬─────────┐
+│ Name                          │ Category             │ Source  │ Trust   │ Status  │
+├───────────────────────────────┼──────────────────────┼─────────┼─────────┼─────────┤
+│ claude-code                   │ autonomous-ai-agents │ builtin │ builtin │ enabled │
+│ codex                         │ autonomous-ai-agents │ builtin │ builtin │ enabled │
+│ computer-use                  │ autonomous-ai-agents │ builtin │ builtin │ enabled │
+│ hermes-agent                  │ autonomous-ai-agents │ builtin │ builtin │ enabled │
+│ opencode                      │ autonomous-ai-agents │ builtin │ builtin │ enabled │
+│ architecture-diagram          │ creative             │ builtin │ builtin │ enabled │
+│ ascii-video                   │ creative             │ builtin │ builtin │ enabled │
+│ baoyu-infographic             │ creative             │ builtin │ builtin │ enabled │
+│ claude-design                 │ creative             │ builtin │ builtin │ enabled │
+│ design-md                     │ creative             │ builtin │ builtin │ enabled │
+│ humanizer                     │ creative             │ builtin │ builtin │ enabled │
+│ manim-video                   │ creative             │ builtin │ builtin │ enabled │
+│ p5js                          │ creative             │ builtin │ builtin │ enabled │
+│ popular-web-designs           │ creative             │ builtin │ builtin │ enabled │
+│ songwriting-and-ai-music      │ creative             │ builtin │ builtin │ enabled │
+│ email-inbox-triage            │ email                │ builtin │ builtin │ enabled │
+│ himalaya                      │ email                │ builtin │ builtin │ enabled │
+│ gif-search                    │ media                │ builtin │ builtin │ enabled │
+│ songsee                       │ media                │ builtin │ builtin │ enabled │
+│ youtube-content               │ media                │ builtin │ builtin │ enabled │
+│ obsidian                      │ note-taking          │ builtin │ builtin │ enabled │
+│ airtable                      │ productivity         │ builtin │ builtin │ enabled │
+│ box                           │ productivity         │ builtin │ builtin │ enabled │
+│ document-to-action-items      │ productivity         │ builtin │ builtin │ enabled │
+│ docx                          │ productivity         │ builtin │ builtin │ enabled │
+│ google-workspace              │ productivity         │ builtin │ builtin │ enabled │
+│ maps                          │ productivity         │ builtin │ builtin │ enabled │
+│ meeting-action-items          │ productivity         │ builtin │ builtin │ enabled │
+│ notion                        │ productivity         │ builtin │ builtin │ enabled │
+│ pdf                           │ productivity         │ builtin │ builtin │ enabled │
+│ powerpoint                    │ productivity         │ builtin │ builtin │ enabled │
+│ product-price-monitor         │ productivity         │ builtin │ builtin │ enabled │
+│ teams-meeting-pipeline        │ productivity         │ builtin │ builtin │ enabled │
+│ weekly-review-planning        │ productivity         │ builtin │ builtin │ enabled │
+│ xlsx                          │ productivity         │ builtin │ builtin │ enabled │
+│ arxiv                         │ research             │ builtin │ builtin │ enabled │
+│ competitor-news-monitor       │ research             │ builtin │ builtin │ enabled │
+│ grounded-citations            │ research             │ builtin │ builtin │ enabled │
+│ llm-wiki                      │ research             │ builtin │ builtin │ enabled │
+│ codebase-inspection           │ software-development │ builtin │ builtin │ enabled │
+│ dogfood                       │ software-development │ builtin │ builtin │ enabled │
+│ github                        │ software-development │ builtin │ builtin │ enabled │
+│ hermes-agent-skill-authoring  │ software-development │ builtin │ builtin │ enabled │
+│ inspecting-hermes-desktop-dom │ software-development │ builtin │ builtin │ enabled │
+│ node-inspect-debugger         │ software-development │ builtin │ builtin │ enabled │
+│ requesting-code-review        │ software-development │ builtin │ builtin │ enabled │
+│ simplify-code                 │ software-development │ builtin │ builtin │ enabled │
+│ spike                         │ software-development │ builtin │ builtin │ enabled │
+│ systematic-debugging          │ software-development │ builtin │ builtin │ enabled │
+│ test-driven-development       │ software-development │ builtin │ builtin │ enabled │
+│ blocked-page-recovery         │ web                  │ builtin │ builtin │ enabled │
+└───────────────────────────────┴──────────────────────┴─────────┴─────────┴─────────┘
+0 hub-installed, 51 builtin, 0 local — 51 enabled, 0 disabled
+

@@ -1,0 +1,9 @@
+
+Auditing 1 skill(s)...
+
+Scan: reddit-reading (official/social-media/reddit-reading/community)  Verdict: DANGEROUS
+  CRITICAL exfiltration   SKILL.md:39                    "two values in `~/.hermes/.env`:"
+  MEDIUM   exfiltration   scripts\reddit.py:91           "cid, secret = os.environ.get("REDDIT_CLIENT_ID"), os.environ"
+
+Decision: BLOCKED — Blocked (community source + dangerous verdict, 2 findings). --force does not override a dangerous verdict.
+

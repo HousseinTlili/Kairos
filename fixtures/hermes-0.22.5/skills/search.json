@@ -1,0 +1,30 @@
+[
+  {
+    "name": "reddit-reading",
+    "identifier": "official/social-media/reddit-reading",
+    "source": "official",
+    "trust_level": "builtin",
+    "description": "Read Reddit: subreddits, search, threads, users. No browser."
+  },
+  {
+    "name": "reddit",
+    "identifier": "skills-sh/resciencelab/opc-skills/reddit",
+    "source": "skills.sh",
+    "trust_level": "community",
+    "description": "Indexed by skills.sh from resciencelab/opc-skills"
+  },
+  {
+    "name": "Reddit",
+    "identifier": "reddit-communities",
+    "source": "clawhub",
+    "trust_level": "community",
+    "description": "Manage Reddit posts, comments, subreddits, users, moderation, and community workflows via the Reddit API. Use when users want to search subreddits, inspect posts, submit content, manage comments, or automate moderation actions."
+  },
+  {
+    "name": "Reddit",
+    "identifier": "oo-reddit",
+    "source": "clawhub",
+    "trust_level": "community",
+    "description": "Reddit (reddit.com). Use this skill for ANY Reddit request \u2014 reading, creating, updating, and deleting data. Whenever a task involves Reddit, use this skill instead of calling the API directly."
+  }
+]

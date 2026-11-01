@@ -1,0 +1,5 @@
+
+Fetching: official/social-media/reddit-reading
+Warning: 'reddit-reading' is already installed at social-media/reddit-reading
+Use --force to reinstall.
+

@@ -1,0 +1,2 @@
+Error: 'nosuchskill' is not a hub-installed skill (may be a builtin)
+

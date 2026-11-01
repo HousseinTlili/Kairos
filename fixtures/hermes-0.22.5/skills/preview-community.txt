@@ -1,0 +1,25 @@
+
+Fetching: skills-sh/resciencelab/opc-skills/reddit
+Quarantined to .hub\quarantine\reddit
+Running security scan...
+Scan: reddit (skills-sh/resciencelab/opc-skills/reddit/community)  Verdict: SAFE
+Decision: ALLOWED — Allowed (community source, safe verdict)
+Scan provenance: fresh; scanner skills-guard-v10; hash sha256:abb0ba64434ec2eb16910e9af00066a391bf6c1f16c37113aedb2631326dd63f
+Source: https://github.com/resciencelab/opc-skills/tree/b9a2a876d5df1cf0e3a192cb8a094e3ad31fc390/skills/reddit; scanned 2026-11-01T15:49:10.857844+00:00; rules: none
+┌─────────────────────────────────────────────────────────────────────────────────────────────────── Upstream Metadata ───────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Repo: https://github.com/resciencelab/opc-skills                                                                                                                                                                        │
+│ Detail Page: https://skills.sh/resciencelab/opc-skills/reddit                                                                                                                                                           │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────── Disclaimer ───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ You are installing a third-party skill at your own risk.                                                                                                                                                                │
+│                                                                                                                                                                                                                         │
+│ External skills can contain instructions that influence agent behavior,                                                                                                                                                 │
+│ shell commands, and scripts. Even after automated scanning, you should                                                                                                                                                  │
+│ review the installed files before use.                                                                                                                                                                                  │
+│                                                                                                                                                                                                                         │
+│ Files will be at: ~/AppData/Local/hermes/skills/reddit/                                                                                                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+Install 'reddit'?
+Confirm [y/N]: Installation cancelled.
+

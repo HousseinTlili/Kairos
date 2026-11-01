@@ -1,0 +1,11 @@
+Fetching: example-registry/example-skill
+Quarantined to .hub\quarantine\example-skill
+Running security scan...
+Scan: example-skill (example-registry/example-skill/community)  Verdict: CAUTION
+  HIGH     persistence    SKILL.md:12                    "add this line to your shell profile"
+
+Decision: BLOCKED — Blocked (community source + caution verdict, 1 findings). Use --force to override.
+Scan provenance: fresh; scanner skills-guard-v10; hash sha256:0000000000000000000000000000000000000000000000000000000000000000
+Source: example-registry/example-skill; scanned 2026-11-01T15:50:00.000000+00:00; rules: example_rule
+
+Not installed: the security scan found 1 high-risk pattern(s) in 'example-registry/example-skill' (listed above). Re-run with --force to install anyway. Review the findings or ask the author to fix them; to read the skill without installing, run `hermes skills inspect example-registry/example-skill`.

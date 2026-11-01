@@ -1,0 +1,14 @@
+
+Fetching: official/social-media/reddit-reading
+Quarantined to .hub\quarantine\reddit-reading
+Running security scan...
+Scan: reddit-reading (official/builtin)  Verdict: DANGEROUS
+  CRITICAL exfiltration   SKILL.md:39                    "two values in `~/.hermes/.env`:"
+  MEDIUM   exfiltration   scripts\reddit.py:91           "cid, secret = os.environ.get("REDDIT_CLIENT_ID"), os.environ"
+
+Decision: ALLOWED — Allowed (builtin source, dangerous verdict)
+Scan provenance: cached; scanner skills-guard-v10; hash sha256:b260d00fc0dc6524d5802faeb4271b6e1a81fe9904876966433aabbbd6ccab91
+Source: official/social-media/reddit-reading; scanned 2026-11-01T15:47:36.605096+00:00; rules: hermes_env_access, python_environ_get_secret
+Installed: social-media/reddit-reading
+Files: SKILL.md, scripts\reddit.py
+
