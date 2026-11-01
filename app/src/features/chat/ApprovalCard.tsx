@@ -61,8 +61,8 @@ export function ApprovalCard({ row, onAnswer, desktop }: Props) {
       <p className="approval-why">
         {onDesktop && row.source === "hermes" ? (
           <>
-            The button&apos;s name comes from the app, and the window may have changed since Kairos
-            looked. Refuse if it looks wrong.
+            Names come from the app, and the window may have changed since Kairos looked. Refuse if
+            this looks wrong.
           </>
         ) : row.source === "kairos" ? (
           <>
