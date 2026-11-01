@@ -29,7 +29,8 @@ checks, and the rules were added only for them: `config.yaml` and `policy.json` 
 ## Worth knowing
 
 - **The first probe sent your open windows' titles to the model.** `list_windows` returns every title, and the
-  spec had it free. That included one Opera tab's title, and it's in the conversation `m20-probe-1`. It now asks.
+  spec had it free. That included one Opera tab's title. It now asks. The conversation was deleted from Hermes; two rows of the
+  local audit log (`audit.db`) still hold it, as that log keeps what tools returned.
 - **The first switch off removes 236 lines of comments from `config.yaml`:** the commented-out "Gateway Platform
   Settings" block, which Hermes's writer ties to that list. No setting changes, and the same text stays in Hermes's
   `cli-config.yaml.example`. Hermes's own `hermes tools` does the same. A list of toolsets also stays in the file, so
@@ -37,7 +38,8 @@ checks, and the rules were added only for them: `config.yaml` and `policy.json` 
 - **The cost:** a five-step task took 130,000 to 200,000 input tokens on the default model, about 22,000 a step.
 - **It isn't airtight.** Off limits goes by process names and window titles, and the plugin sees the calls, not
   the driver. A dialog that opens after a click can differ from what it remembers. Every action still asks.
-- **Probe conversations remain in Hermes:** `m20-probe-1` to `-4`, `kairos-m20-live-a`, `-b`, `-d`, `m20-live-other`.
+- **Probe conversations:** all eight deleted from Hermes on 2026-11-01, at the product owner's word. Their rows
+  remain in the audit log, like any other tool call's.
 
 ## Product owner's checklist
 
