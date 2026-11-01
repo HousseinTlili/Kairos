@@ -356,15 +356,14 @@ fn parse_inspect(text: &str) -> Result<Inspected, String> {
     };
     let mut lines = preview.clone();
     let mut more_lines = 0;
-    if let Some(last) = lines.last() {
-        if let Some(count) = last
-            .strip_prefix("... (")
-            .and_then(|rest| rest.strip_suffix(" more lines)"))
-            .and_then(|n| n.parse().ok())
-        {
-            more_lines = count;
-            lines.pop();
-        }
+    if let Some(count) = lines
+        .last()
+        .and_then(|last| last.strip_prefix("... ("))
+        .and_then(|rest| rest.strip_suffix(" more lines)"))
+        .and_then(|n| n.parse().ok())
+    {
+        more_lines = count;
+        lines.pop();
     }
     while lines.last().is_some_and(|l| l.is_empty()) {
         lines.pop();

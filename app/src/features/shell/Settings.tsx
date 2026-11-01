@@ -15,6 +15,7 @@ import { useShell, type SettingsTab } from "./store";
 import { IslandSettings } from "../island/IslandSettings";
 import { AppearanceSettings } from "../appearance/AppearanceSettings";
 import { AutomationsSettings } from "../automations/AutomationsSettings";
+import { SkillsSettings } from "../skills/SkillsSettings";
 
 // Four groups instead of one row of tabs, which no longer fit the window (docs/design/BRAND.md).
 const GROUPS: { label: string; tabs: { id: SettingsTab; label: string }[] }[] = [
@@ -29,6 +30,7 @@ const GROUPS: { label: string; tabs: { id: SettingsTab; label: string }[] }[] = 
       { id: "island", label: "Island" },
       { id: "briefing", label: "Briefing" },
       { id: "automations", label: "Automations" },
+      { id: "skills", label: "Skills" },
     ],
   },
   {
@@ -94,6 +96,8 @@ export function Settings() {
           <NotificationSettings />
         ) : settingsTab === "briefing" ? (
           <BriefingSettings />
+        ) : settingsTab === "skills" ? (
+          <SkillsSettings />
         ) : settingsTab === "providers" ? (
           <ProvidersSettings />
         ) : settingsTab === "accounts" ? (

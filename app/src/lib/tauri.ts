@@ -456,6 +456,86 @@ export interface Catalog {
 
 export const modelCatalog = () => call<Catalog>("model_catalog");
 
+// --- Skills (M19, D-039). Shapes mirror src-tauri/src/skills.rs. ---------------------------------
+
+export type SkillOrigin = "builtin" | "hub" | "yours";
+export type SkillTrust = "official" | "trusted" | "community";
+export type SkillVerdict = "safe" | "caution" | "dangerous" | "unknown";
+
+export interface InstalledSkill {
+  name: string;
+  category: string;
+  origin: SkillOrigin;
+  enabled: boolean;
+  description: string;
+  own: boolean;
+}
+
+export interface FoundSkill {
+  name: string;
+  identifier: string;
+  source: string;
+  trust: SkillTrust;
+  description: string;
+}
+
+export interface InspectedSkill {
+  name: string;
+  description: string;
+  source: string;
+  trust: SkillTrust;
+  identifier: string;
+  text: string;
+  more_lines: number;
+}
+
+export interface SkillFinding {
+  severity: string;
+  category: string;
+  place: string;
+  text: string;
+}
+
+export interface ScanResult {
+  verdict: SkillVerdict;
+  findings: SkillFinding[];
+  passed: boolean;
+  already_installed: boolean;
+  origin: string;
+}
+
+export interface InstallOutcome {
+  installed: boolean;
+  verdict: SkillVerdict;
+  findings: SkillFinding[];
+}
+
+export interface SkillUpdate {
+  name: string;
+  status: string;
+}
+
+export interface AuditedSkill {
+  name: string;
+  verdict: SkillVerdict;
+  findings: SkillFinding[];
+}
+
+export const skillsInstalled = () => call<InstalledSkill[]>("skills_installed");
+export const skillsSearch = (query: string, source: string) =>
+  call<FoundSkill[]>("skills_search", { query, source });
+export const skillsInspect = (identifier: string) =>
+  call<InspectedSkill>("skills_inspect", { identifier });
+export const skillsScan = (identifier: string) => call<ScanResult>("skills_scan", { identifier });
+export const skillsInstall = (identifier: string) =>
+  call<InstallOutcome>("skills_install", { identifier });
+export const skillsRemove = (name: string) => call<void>("skills_remove", { name });
+export const skillsUpdate = (name: string) => call<InstallOutcome>("skills_update", { name });
+export const skillsCheck = () => call<SkillUpdate[]>("skills_check");
+export const skillsAudit = () => call<AuditedSkill[]>("skills_audit");
+export const skillsSetEnabled = (name: string, enabled: boolean) =>
+  call<void>("skills_set_enabled", { name, enabled });
+
 // --- Your own AI providers (M18, D-038). Shapes mirror src-tauri/src/providers.rs. --------------
 
 export interface KnownProvider {

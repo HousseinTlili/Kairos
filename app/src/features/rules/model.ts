@@ -422,6 +422,37 @@ export const NEWER_STARTER_RULES: { after: string; rules: RuleDoc[] }[] = [
       },
     ],
   },
+  // M19: the model's terminal could already run `hermes skills` (D-039).
+  {
+    after: "no-sandbox-changes",
+    rules: [
+      {
+        id: "no-forced-skills",
+        description: "Forcing a skill past Hermes's security scan is never allowed (D-039).",
+        tools: ["terminal", "execute_code", "browser_exec"],
+        match: {
+          commands: [
+            "\\bhermes(\\.exe)?\\s+skills\\s+[^;&|\\n]*--force\\b",
+            "\\bhermes(\\.exe)?\\s+skills\\s+update\\b",
+          ],
+        },
+        action: "deny",
+      },
+      {
+        id: "skills-changes",
+        description:
+          "A skill is instructions Kairos will follow: adding, removing or switching one is your call (D-039).",
+        tools: ["terminal", "execute_code", "browser_exec"],
+        match: {
+          commands: [
+            "\\bhermes(\\.exe)?\\s+skills\\s+(install|uninstall|reset|tap|publish)\\b",
+            "\\bhermes(\\.exe)?\\s+config\\s+(set|unset)\\s+skills\\.",
+          ],
+        },
+        action: "ask",
+      },
+    ],
+  },
 ];
 
 /** The newer starter rules this document doesn't have yet (matched by id). */

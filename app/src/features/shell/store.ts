@@ -17,7 +17,8 @@ export type SettingsTab =
   | "island"
   | "appearance"
   | "startup"
-  | "automations";
+  | "automations"
+  | "skills";
 
 interface ShellState {
   view: View;
