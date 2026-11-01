@@ -44,6 +44,7 @@ Keys go into Hermes's `.env` under `# kairos:` markers (`providers.rs`); Kairos 
 The core is `skills.rs`, parsing `hermes skills` text against `fixtures/hermes-0.22.5/skills/`; `/v1/skills` answers 500.
 **M20** (computer use, `m20/computer-use`): built, `docs/milestones/M20.md`; D-040 accepted (off by default; some windows off limits; Hermes's gate asks).
 `plugin/kairos/desktop.py` works out the target window. Replacing `platform_toolsets.api_server` costs `config.yaml` 236 lines of template comments, however it's done.
+**README:** at the product owner's request (2026-11-01) it lists M21 and M22's features (Ctrl+K, MCP manager, usage charts, clipboard shelf) ahead of their being built. They aren't built yet: go by the milestones, not the README.
 
 ## Roles
 

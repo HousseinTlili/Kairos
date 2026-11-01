@@ -7,15 +7,15 @@ Kairos is a personal AI assistant for Windows 11: a desktop app and a set of saf
 tools, skills and memory, and runs unmodified as its own process. Kairos adds its own interface, its own
 rules for what the agent may do, and a record of everything it did.
 
-> **Status: pre-release, in active development.** Everything under "What it does" is built and covered by
-> automated tests, but not all of it has been signed off on a real PC: see [docs/TESTING.md](docs/TESTING.md).
-> Windows only. Built against Hermes Agent 0.22.5.
+> **Status: pre-release, in active development.** Not all of it has been signed off on a real PC: see
+> [docs/TESTING.md](docs/TESTING.md). Windows only. Built against Hermes Agent 0.22.5.
 
 ## What it does
 
 **Talk to it**
 - Chat with streaming answers, tables, diagrams and images
 - A quick box over any app (Ctrl+Alt+K by default)
+- Ctrl+K: a command palette and search across conversations
 - Push-to-talk voice with local speech recognition (Whisper) and a local voice (Kokoro). Nothing listens
   unless you hold the key
 - A persona of its own, and memory you can see and undo
@@ -30,6 +30,7 @@ rules for what the agent may do, and a record of everything it did.
 - **Computer use:** working in an app in the background without taking your mouse or keyboard. Off by default
 - Your notifications in one place, including calls and texts through Phone Link
 - Automations on events, such as a program crashing or the charger being unplugged
+- A clipboard shelf: text, links, images and files at the edge of the screen
 - Themes and patterns
 
 **Reach further**
@@ -37,6 +38,8 @@ rules for what the agent may do, and a record of everything it did.
 - Google and GitHub accounts through their official sign-in, read-only by default
 - Any AI model: Hermes's providers, your own API keys, OpenAI-compatible endpoints, local Ollama and LM Studio
 - Skills from Hermes's registries: read one and see its security scan before you install it
+- An MCP server manager: add outside tools from Settings
+- Usage charts: tokens, cost and models over time
 
 ## How it stays safe
 
@@ -55,15 +58,6 @@ Kairos can act on your PC, so what it may do is decided outside the model:
 No safety layer is perfect: text on a page or in a window can carry instructions to the AI, so read the cards.
 What you ask, and what it sees, goes to the AI provider you choose, unless you use a local model. See
 [docs/SECURITY.md](docs/SECURITY.md).
-
-## Coming next
-
-Not built yet:
-
-- **Ctrl+K:** a command palette and search across conversations
-- **MCP server manager:** add outside tools from Settings
-- **Usage charts:** tokens, cost and models over time
-- **Clipboard shelf:** text, links, images and files at the edge of the screen
 
 ## Getting started
 
