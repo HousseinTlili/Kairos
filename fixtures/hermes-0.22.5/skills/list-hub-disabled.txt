@@ -1,0 +1,8 @@
+                         Installed Skills                         
+┌────────────────┬──────────────┬──────────┬──────────┬──────────┐
+│ Name           │ Category     │ Source   │ Trust    │ Status   │
+├────────────────┼──────────────┼──────────┼──────────┼──────────┤
+│ reddit-reading │ social-media │ official │ official │ disabled │
+└────────────────┴──────────────┴──────────┴──────────┴──────────┘
+1 hub-installed, 0 builtin, 0 local — 0 enabled, 1 disabled
+

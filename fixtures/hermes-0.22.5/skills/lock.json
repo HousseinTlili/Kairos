@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "installed": {
+    "reddit-reading": {
+      "source": "official",
+      "identifier": "official/social-media/reddit-reading",
+      "trust_level": "builtin",
+      "scan_verdict": "dangerous",
+      "content_hash": "sha256:b260d00fc0dc6524",
+      "install_path": "social-media/reddit-reading",
+      "files": [
+        "SKILL.md",
+        "scripts\\reddit.py"
+      ],
+      "metadata": {},
+      "scan_provenance": {
+        "bundle_hash": "sha256:b260d00fc0dc6524d5802faeb4271b6e1a81fe9904876966433aabbbd6ccab91",
+        "scanner_version": "skills-guard-v10",
+        "source": "official",
+        "source_url": "official/social-media/reddit-reading",
+        "verdict": "dangerous",
+        "trust_level": "builtin",
+        "findings": [
+          {
+            "pattern_id": "hermes_env_access",
+            "severity": "critical",
+            "category": "exfiltration",
+            "file": "SKILL.md",
+            "line": 39,
+            "match": "two values in `~/.hermes/.env`:",
+            "description": "directly references Hermes secrets file"
+          },
+          {
+            "pattern_id": "python_environ_get_secret",
+            "severity": "medium",
+            "category": "exfiltration",
+            "file": "scripts\\reddit.py",
+            "line": 91,
+            "match": "cid, secret = os.environ.get(\"REDDIT_CLIENT_ID\"), os.environ.get(\"REDDIT_CLIENT_SECRET\")",
+            "description": "reads secret via os.environ.get() (normal API-key access; informational)"
+          }
+        ],
+        "rules": [
+          "hermes_env_access",
+          "python_environ_get_secret"
+        ],
+        "scanned_at": "2026-11-01T15:47:36.605096+00:00",
+        "summary": "reddit-reading: dangerous — 2 finding(s) in exfiltration",
+        "fresh": false
+      },
+      "installed_at": "2026-11-01T15:55:01.276831+00:00",
+      "updated_at": "2026-11-01T15:55:01.276831+00:00"
+    }
+  }
+}

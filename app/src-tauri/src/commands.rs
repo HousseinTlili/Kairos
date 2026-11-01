@@ -2676,6 +2676,64 @@ pub async fn restart_hermes() -> Result<(), CommandError> {
     .await
 }
 
+// --- Skills (M19, D-039) ------------------------------------------------------------------------
+
+#[tauri::command]
+pub async fn skills_installed() -> Result<Vec<crate::skills::Installed>, CommandError> {
+    with_home(crate::skills::installed).await
+}
+
+#[tauri::command]
+pub async fn skills_search(
+    query: String,
+    source: String,
+) -> Result<Vec<crate::skills::Found>, CommandError> {
+    with_home(move |home| crate::skills::search(home, &query, &source)).await
+}
+
+#[tauri::command]
+pub async fn skills_inspect(identifier: String) -> Result<crate::skills::Inspected, CommandError> {
+    with_home(move |home| crate::skills::inspect(home, &identifier)).await
+}
+
+/// Fetches and scans, and installs nothing: Hermes asks for a confirmation no one can give.
+#[tauri::command]
+pub async fn skills_scan(identifier: String) -> Result<crate::skills::Scan, CommandError> {
+    with_home(move |home| crate::skills::scan(home, &identifier)).await
+}
+
+#[tauri::command]
+pub async fn skills_install(
+    identifier: String,
+) -> Result<crate::skills::InstallOutcome, CommandError> {
+    with_home(move |home| crate::skills::install(home, &identifier)).await
+}
+
+#[tauri::command]
+pub async fn skills_remove(name: String) -> Result<(), CommandError> {
+    with_home(move |home| crate::skills::remove(home, &name)).await
+}
+
+#[tauri::command]
+pub async fn skills_update(name: String) -> Result<crate::skills::InstallOutcome, CommandError> {
+    with_home(move |home| crate::skills::update(home, &name)).await
+}
+
+#[tauri::command]
+pub async fn skills_check() -> Result<Vec<crate::skills::Update>, CommandError> {
+    with_home(crate::skills::check).await
+}
+
+#[tauri::command]
+pub async fn skills_audit() -> Result<Vec<crate::skills::Audited>, CommandError> {
+    with_home(crate::skills::audit).await
+}
+
+#[tauri::command]
+pub async fn skills_set_enabled(name: String, enabled: bool) -> Result<(), CommandError> {
+    with_home(move |home| crate::skills::set_enabled(home, &name, enabled)).await
+}
+
 // --- The bar's own Wi-Fi and Bluetooth menus (D-037) -------------------------------------------
 
 /// `scan`: ask the adapter to look again first (the menu was just opened).

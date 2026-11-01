@@ -265,6 +265,14 @@ class StarterRulesTest(unittest.TestCase):
         # M5 skills: editing Kairos's own skills asks; reading them doesn't
         ("write_file", {"path": r"C:\Users\u\AppData\Local\hermes\skills\kairos\kairos-code-review\SKILL.md"}, "ask", "kairos-skills"),
         ("skill_manage", {"action": "patch", "name": "kairos-code-review"}, "ask", "kairos-skills"),
+        # M19: the model's terminal can't force a skill past the scan, and changing skills asks
+        ("terminal", {"command": "hermes skills install a/b --yes --force"}, "deny", "no-forced-skills"),
+        ("terminal", {"command": "hermes skills update"}, "deny", "no-forced-skills"),
+        ("terminal", {"command": "hermes skills install a/b --yes"}, "ask", "skills-changes"),
+        ("terminal", {"command": "hermes skills uninstall b --yes"}, "ask", "skills-changes"),
+        ("terminal", {"command": "hermes config set skills.disabled '[]'"}, "ask", "skills-changes"),
+        ("terminal", {"command": "hermes skills search reddit --json"}, "inherit", None),
+        ("terminal", {"command": "hermes skills list"}, "inherit", None),
         ("skill_manage", {"action": "create", "name": "my-new-skill"}, "inherit", None),
         ("read_file", {"path": r"C:\Users\u\AppData\Local\hermes\skills\kairos\kairos-code-review\SKILL.md"}, "inherit", None),
         # M3 opening apps: allowed, except installers and uninstallers

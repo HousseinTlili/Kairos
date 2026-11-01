@@ -146,10 +146,34 @@ fn config_word(home: &Path, key: &str) -> Option<String> {
 /// its output, or why it failed. Never given a secret: keys go into `.env` directly (D-038), so
 /// none is ever on a command line. Blocking, up to `CLI_TIMEOUT`.
 pub fn run_cli(home: &Path, args: &[&str]) -> Result<String, String> {
+    let (ok, text) = run_cli_output(home, args, CLI_TIMEOUT)?;
+    if ok {
+        Ok(text)
+    } else {
+        let said = text.lines().rfind(|l| !l.trim().is_empty());
+        Err(said
+            .unwrap_or("Hermes refused the change")
+            .trim()
+            .to_string())
+    }
+}
+
+/// A Hermes command's exit status and its output, stdout then stderr, plain and wide enough that
+/// tables aren't cut (M19): no colour, UTF-8, and a width no line reaches. Blocking, up to `limit`.
+/// The output is read while the command runs: one longer than the pipe's buffer would otherwise
+/// wait for ever.
+pub fn run_cli_output(
+    home: &Path,
+    args: &[&str],
+    limit: Duration,
+) -> Result<(bool, String), String> {
     let mut command = Command::new(hermes_cli(home));
     command
         .args(args)
         .env("HERMES_HOME", home)
+        .env("NO_COLOR", "1")
+        .env("COLUMNS", "320")
+        .env("PYTHONIOENCODING", "utf-8")
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
@@ -161,34 +185,34 @@ pub fn run_cli(home: &Path, args: &[&str]) -> Result<String, String> {
     let mut child = command
         .spawn()
         .map_err(|err| format!("couldn't run the Hermes command line: {err}"))?;
+    let stdout = drain(child.stdout.take());
+    let stderr = drain(child.stderr.take());
     let started = Instant::now();
-    loop {
+    let status = loop {
         match child.try_wait() {
-            Ok(Some(_)) => break,
-            Ok(None) if started.elapsed() < CLI_TIMEOUT => {
-                std::thread::sleep(Duration::from_millis(50))
-            }
+            Ok(Some(status)) => break status,
+            Ok(None) if started.elapsed() < limit => std::thread::sleep(Duration::from_millis(50)),
             _ => {
                 let _ = child.kill();
+                let _ = child.wait();
                 return Err("Hermes's command line didn't answer in time".into());
             }
         }
-    }
-    let output = child.wait_with_output().map_err(|err| err.to_string())?;
-    let text = String::from_utf8_lossy(&output.stdout).into_owned();
-    if output.status.success() {
-        Ok(text)
-    } else {
-        let err = String::from_utf8_lossy(&output.stderr);
-        let said = err
-            .lines()
-            .chain(text.lines())
-            .rfind(|l| !l.trim().is_empty());
-        Err(said
-            .unwrap_or("Hermes refused the change")
-            .trim()
-            .to_string())
-    }
+    };
+    let mut text = stdout.join().unwrap_or_default();
+    text.push_str(&stderr.join().unwrap_or_default());
+    Ok((status.success(), text))
+}
+
+/// Reads a pipe to its end on its own thread.
+fn drain<R: std::io::Read + Send + 'static>(pipe: Option<R>) -> std::thread::JoinHandle<String> {
+    std::thread::spawn(move || {
+        let mut bytes = Vec::new();
+        if let Some(mut pipe) = pipe {
+            let _ = std::io::Read::read_to_end(&mut pipe, &mut bytes);
+        }
+        String::from_utf8_lossy(&bytes).into_owned()
+    })
 }
 
 /// How long `hermes gateway ensure` may take: its own deadline, plus a margin for the CLI.

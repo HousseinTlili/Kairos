@@ -19,6 +19,7 @@ mod presence;
 mod providers;
 mod quick;
 mod rules;
+mod skills;
 mod store;
 mod system;
 mod titlebar;
@@ -333,6 +334,16 @@ pub fn run() {
             commands::bar_set_volume,
             commands::bar_set_muted,
             commands::bar_open,
+            commands::skills_installed,
+            commands::skills_search,
+            commands::skills_inspect,
+            commands::skills_scan,
+            commands::skills_install,
+            commands::skills_remove,
+            commands::skills_update,
+            commands::skills_check,
+            commands::skills_audit,
+            commands::skills_set_enabled,
             commands::providers_state,
             commands::add_provider_key,
             commands::add_provider_endpoint,
