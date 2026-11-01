@@ -1,0 +1,23 @@
+: open
+
+id: 0
+data: {"event": "tool.started", "run_id": "run_6ce81d50d4b14cb5912c2d990fc45f71", "timestamp": 1793552107.2398772, "tool": "tool_search", "preview": "Searching tools \u00b7 computer_use", "tool_call_id": "call_f6a33b44186040dd87927a43", "seq": 0}
+
+id: 1
+data: {"event": "tool.completed", "run_id": "run_6ce81d50d4b14cb5912c2d990fc45f71", "timestamp": 1793552114.8480272, "tool": "tool_search", "duration": 0, "error": false, "tool_call_id": "call_f6a33b44186040dd87927a43", "preview": "", "seq": 1}
+
+id: 2
+data: {"event": "tool.started", "run_id": "run_6ce81d50d4b14cb5912c2d990fc45f71", "timestamp": 1793552116.9801042, "tool": "tool_describe", "preview": "Reading tool details \u00b7 1 tool", "tool_call_id": "call_50151f8f05e74c9f91aae711", "seq": 2}
+
+id: 3
+data: {"event": "tool.completed", "run_id": "run_6ce81d50d4b14cb5912c2d990fc45f71", "timestamp": 1793552116.9941275, "tool": "tool_describe", "duration": 0, "error": false, "tool_call_id": "call_50151f8f05e74c9f91aae711", "preview": "", "seq": 3}
+
+id: 4
+data: {"event": "approval.request", "run_id": "run_6ce81d50d4b14cb5912c2d990fc45f71", "timestamp": 1793552122.4430425, "kind": "approval", "prompt_id": "b68a0b768b07428485a8dc50d0493c6f", "execution_generation": 1, "command": "<browser_exec> (plugin approval rule)", "description": "Kairos rule 'browser-code-system-access': Browser automation code that reaches beyond the browser (files, programs, the system or its own network requests) needs your OK. \u2014 \n# Check cua-driver availability and how to invoke it\nimport os, sys\nprint(\"cwd:\", os.getcwd())\nprint(\"files in cwd:\", os.listdir(\".\"))\nfor f in os.listdir(\".\"):\n    if \"agent\" in f.lower() or \"cua\" in f.lower() or \"hermes\" in f.lower():\n        print(\"  candidate:\", f)\n", "choices": ["once", "deny", "session", "always"], "seq": 4}
+
+id: 5
+data: {"event": "approval.settled", "run_id": "run_6ce81d50d4b14cb5912c2d990fc45f71", "timestamp": 1793552123.5561552, "prompt_id": "b68a0b768b07428485a8dc50d0493c6f", "execution_generation": 1, "seq": 5}
+
+id: 6
+data: {"event": "run.cancelled", "run_id": "run_6ce81d50d4b14cb5912c2d990fc45f71", "timestamp": 1793552123.5783398, "completed": false, "partial": false, "interrupted": true, "turn_exit_reason": "interrupted_by_user", "seq": 6}
+
