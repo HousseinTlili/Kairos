@@ -1,0 +1,61 @@
+
+Fetching: skills-sh/mukul975/anthropic-cybersecurity-skills/analyzing-persistence-mechanisms-in-linux
+Quarantined to .hub\quarantine\analyzing-persistence-mechanisms-in-linux
+Running security scan...
+Scan: analyzing-persistence-mechanisms-in-linux (skills-sh/mukul975/anthropic-cybersecurity-skills/analyzing-persistence-mechanisms-in-linux/community)  Verdict: DANGEROUS
+  CRITICAL persistence    SKILL.md:3                     "description: Scan Linux systems for persistence mechanisms i"
+  CRITICAL persistence    SKILL.md:40                    "Adversaries establish persistence on Linux systems through c"
+  CRITICAL persistence    SKILL.md:63                    "5. **Check SSH Authorized Keys** — Audit all authorized_keys"
+  CRITICAL persistence    references\api-reference.md:74 "# Monitor authorized_keys"
+  CRITICAL persistence    references\api-reference.md:75 "-w /root/.ssh/authorized_keys -p wa -k ssh_key_modification"
+  CRITICAL persistence    references\api-reference.md:85 "# Find all authorized_keys files"
+  CRITICAL persistence    references\api-reference.md:86 "find / -name authorized_keys -type f 2>/dev/null"
+  CRITICAL persistence    references\api-reference.md:89 "grep 'command=' /home/*/.ssh/authorized_keys /root/.ssh/auth"
+  CRITICAL persistence    references\api-reference.md:100 "| Account Manipulation: SSH Keys | T1098.004 | authorized_ke"
+  CRITICAL persistence    scripts\agent.py:188           "def scan_ssh_authorized_keys():"
+  CRITICAL persistence    scripts\agent.py:192           "auth_keys = os.path.join(home_dir, ".ssh", "authorized_keys""
+  CRITICAL persistence    scripts\agent.py:248           "ssh_keys = scan_ssh_authorized_keys() if "ssh" in scans else"
+  CRITICAL traversal      scripts\agent.py:46            "["bash", "-c", "for u in $(cut -d: -f1 /etc/passwd); do cron"
+  HIGH     exfiltration   references\api-reference.md:47 "env | grep LD_PRELOAD"
+  MEDIUM   persistence    SKILL.md:3                     "description: Scan Linux systems for persistence mechanisms i"
+  MEDIUM   persistence    SKILL.md:8                     "- crontab"
+  MEDIUM   persistence    SKILL.md:40                    "Adversaries establish persistence on Linux systems through c"
+  MEDIUM   persistence    SKILL.md:59                    "1. **Scan Crontab Entries** — Enumerate all user crontabs, /"
+  MEDIUM   persistence    SKILL.md:3                     "description: Scan Linux systems for persistence mechanisms i"
+  MEDIUM   persistence    SKILL.md:40                    "Adversaries establish persistence on Linux systems through c"
+  MEDIUM   persistence    SKILL.md:62                    "4. **Inspect Shell Profiles** — Scan .bashrc, .bash_profile,"
+  MEDIUM   persistence    SKILL.md:3                     "description: Scan Linux systems for persistence mechanisms i"
+  MEDIUM   persistence    SKILL.md:40                    "Adversaries establish persistence on Linux systems through c"
+  MEDIUM   persistence    SKILL.md:62                    "4. **Inspect Shell Profiles** — Scan .bashrc, .bash_profile,"
+  MEDIUM   privilege_escalation SKILL.md:52                    "- Root or sudo access on target Linux system (or forensic im"
+  MEDIUM   persistence    references\api-reference.md:3  "## Crontab Inspection Commands"
+  MEDIUM   persistence    references\api-reference.md:6  "# List current user crontab"
+  MEDIUM   persistence    references\api-reference.md:7  "crontab -l"
+  MEDIUM   persistence    references\api-reference.md:9  "# List crontab for a specific user (requires root)"
+  MEDIUM   persistence    references\api-reference.md:10 "crontab -l -u username"
+  MEDIUM   persistence    references\api-reference.md:14 "cat /etc/crontab"
+  MEDIUM   persistence    references\api-reference.md:59 "# Monitor crontab modifications"
+  MEDIUM   persistence    references\api-reference.md:60 "-w /etc/crontab -p wa -k cron_modification"
+  MEDIUM   persistence    references\api-reference.md:96 "| Scheduled Task/Job: Cron | T1053.003 | Crontab entries |"
+  MEDIUM   persistence    references\api-reference.md:99 "| Event Triggered Execution: Unix Shell | T1546.004 | .bashr"
+  MEDIUM   persistence    references\api-reference.md:99 "| Event Triggered Execution: Unix Shell | T1546.004 | .bashr"
+  MEDIUM   persistence    references\api-reference.md:33 "find /etc/systemd/system/ -name '*.service' -exec sh -c \"
+  MEDIUM   persistence    references\api-reference.md:37 "find /home -path '*/.config/systemd/user/*.service' 2>/dev/n"
+  MEDIUM   persistence    scripts\agent.py:14            ""/etc/crontab", "/etc/cron.d/", "/etc/cron.daily/", "/etc/cr"
+  MEDIUM   persistence    scripts\agent.py:30            "r"(socat|openssl)\s+.*exec", r"crontab\s+-r","
+  MEDIUM   persistence    scripts\agent.py:46            "["bash", "-c", "for u in $(cut -d: -f1 /etc/passwd); do cron"
+  MEDIUM   persistence    scripts\agent.py:24            "SHELL_PROFILES = [".bashrc", ".bash_profile", ".profile", "."
+  MEDIUM   persistence    scripts\agent.py:24            "SHELL_PROFILES = [".bashrc", ".bash_profile", ".profile", "."
+  MEDIUM   execution      scripts\agent.py:45            "user_crontabs = subprocess.run("
+  MEDIUM   execution      scripts\agent.py:115           "dpkg_check = subprocess.run("
+  MEDIUM   execution      scripts\agent.py:146           "env_check = subprocess.run(["env"], capture_output=True, tex"
+  MEDIUM   execution      scripts\agent.py:179           "dpkg = subprocess.run(["dpkg", "-S", filepath], capture_outp"
+  MEDIUM   traversal      scripts\agent.py:110           "if any(s in ex for s in ["/tmp/", "/dev/shm/", "curl", "wget"
+
+Decision: BLOCKED — Blocked (community source + dangerous verdict, 48 findings). --force does not override a dangerous verdict.
+Scan provenance: fresh; scanner skills-guard-v10; hash sha256:26a440f92144ddc287186740cbf663c723b65ab29f3bc0f4e1b34b1fe0491cf8
+Source: https://github.com/mukul975/anthropic-cybersecurity-skills/tree/54a798831d2266a3ca61ce68a7acb80b81160d57/skills/analyzing-persistence-mechanisms-in-linux; scanned 2026-11-01T16:34:56.456579+00:00; rules: dev_shm, dump_all_env, persistence_cron, python_subprocess, shell_rc_mod, ssh_backdoor, sudo_usage, 
+system_passwd_access, systemd_service
+
+Not installed: the security scan found 48 high-risk pattern(s) in 'skills-sh/mukul975/anthropic-cybersecurity-skills/analyzing-persistence-mechanisms-in-linux' (listed above). Hermes never installs unverified skills with high-risk findings, even with --force. Review the findings or ask the author to fix them; to read 
+the skill without installing, run `hermes skills inspect skills-sh/mukul975/anthropic-cybersecurity-skills/analyzing-persistence-mechanisms-in-linux`.

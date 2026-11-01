@@ -4,6 +4,10 @@ Recorded with `NO_COLOR=1`, `COLUMNS=220`, `PYTHONIOENCODING=utf-8` and stdin cl
 public: `official/social-media/reddit-reading`, shipped with Hermes, and one community skill,
 `skills-sh/resciencelab/opc-skills/reddit`, scanned but never installed or run.
 
-`preview-blocked.from-source.txt` is **not a recording**. No skill probed so far was refused, so it
-is written from `format_scan_report` and `_install_blocked` in Hermes's source. Replace it with a
-real one when a blocked skill is seen (M19 Step 5).
+`preview-blocked.txt` is a real refusal, recorded the same day:
+`skills-sh/mukul975/anthropic-cybersecurity-skills/analyzing-persistence-mechanisms-in-linux`, Dangerous
+with 48 findings on a community source; quarantined, refused and removed, never installed or run.
+
+`preview-blocked.from-source.txt` is **not a recording**. It stands for the case not seen yet, a
+Caution verdict refused on a community source, and is written from `format_scan_report` and
+`_install_blocked` in Hermes's source.

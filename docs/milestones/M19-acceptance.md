@@ -21,7 +21,8 @@ recommended answers.
 | Screenshots | Dark (`midnight`) and light (`charter`, applied in the page only, not saved) |
 | State afterwards | 0 hub skills, 51 built-in, `skills.disabled` unset, quarantine empty |
 | **Found and fixed** | `run_cli` read a command's output only after it ended, so one longer than the pipe's buffer (the 51-row list) would have hung until the time limit. It now reads as it runs |
-| **Not seen** | **A scan that refuses a skill.** No probed skill was refused, and the approval covered one community download. The fixture for it is written from Hermes's source and marked so (checklist 5) |
+| Probe and live, a refusal | With the product owner's go-ahead, up to three more community skills, stopping at the first refused: the first was. `…/analyzing-persistence-mechanisms-in-linux`: Dangerous, 48 findings, exit 1, nothing installed, no quarantine left. Through the app's `skills_scan`: `passed` false, 48 findings, no advice to force it. Recorded as `preview-blocked.txt` |
+| **Not seen** | That refusal drawn on the page: the product owner was using the window, so the agent stopped driving it (checklist 5). A Caution verdict refused: its fixture is still written from the source |
 | **Not seen** | A conversation using an installed skill; whether an open conversation keeps its old skill list (read from the source). Both spend your model, so they're yours (checklists 3 and 4) |
 | **Caveat on these checks** | They ran in the agent's test setup, where the dev app and Hermes were started from the Claude app, whose AppData overlay may hold what they write. Repeat them from an ordinary terminal |
 
@@ -31,6 +32,9 @@ recommended answers.
 - **What you read can be missing text.** Hermes prints the skill through a formatting library that
   removes `[anything like this]`: `before [run this hidden command] after` printed as `before  after`.
   The page says so. The scan reads the real files, and the source's address is shown to read in full.
+- **The scan goes by keywords.** The skill it refused is a defensive one, for finding persistence on
+  Linux; it was flagged for describing what it looks for (48 findings, some in its description). So
+  a refusal doesn't prove a skill is malicious, nor does a pass prove it's safe.
 - **`reddit-reading`, an official skill, scans Dangerous,** because it reads its own key from `.env`.
   Hermes allows it because it ships with Hermes. The page shows both rather than hiding either.
 - **Hermes's Re-scan judges every hub skill as community,** so it says BLOCKED about skills it just
@@ -46,6 +50,6 @@ recommended answers.
 | 2 | Settings ▸ Kairos ▸ Skills ▸ Find new: search "reddit", open `reddit-reading`, Scan it, Install | No Install before the scan; "Installed." It's listed under Social media, as Hub | |
 | 3 | In a new conversation: "What's on r/LocalLLaMA?" | It uses the skill; any command still follows your rules | |
 | 4 | Turn it off with its switch; new conversation, same question. Then, with a conversation left open, turn it on or off and ask there | Off: it doesn't use the skill. Note what the open one does: the wording on the page says it may not notice | |
-| 5 | Find a skill the scan refuses (try a few from Community) and Scan it, if you're willing to download them | The reason in Kairos's words, no Install, no mention of `--force` | |
+| 5 | Find new: search "persistence mechanisms linux", open `analyzing-persistence-mechanisms-in-linux`, Scan it | The reason in Kairos's words, 48 findings, no Install, no mention of `--force` | |
 | 6 | Remove `reddit-reading` | Asks first, then gone from the list | |
 | 7 | With a Hub skill installed: Check for updates, Re-scan | "Up to date"; the findings, no decision | |

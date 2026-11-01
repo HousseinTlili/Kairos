@@ -202,7 +202,7 @@ question spends your model.
 - [ ] Settings ▸ Kairos ▸ Skills ▸ Find new: search, open `reddit-reading`: no Install until Scan it has passed.
 - [ ] Install it; a new conversation uses it ("What's on r/LocalLLaMA?"); commands still follow your rules.
 - [ ] Turn it off: a new conversation doesn't use it. See what one that's already open does.
-- [ ] A skill the scan refuses: the reason in Kairos's words, no Install, no word of `--force`.
+- [ ] A skill the scan refuses (search "persistence mechanisms linux"): the reason in Kairos's words, no Install, no word of `--force`.
 - [ ] Remove it: asks first, then gone. Check for updates and Re-scan answer.
 
 ## M18 — Your own AI providers (`m18/providers`)

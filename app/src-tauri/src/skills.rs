@@ -906,6 +906,27 @@ mod tests {
     }
 
     #[test]
+    fn a_skill_the_scan_refused_on_the_pc_gives_no_way_to_install() {
+        let scan = parse_scan(&fixture("preview-blocked.txt")).expect("a report");
+        assert!(!scan.passed);
+        assert!(!scan.already_installed);
+        assert_eq!(scan.verdict, Verdict::Dangerous);
+        assert_eq!(scan.findings.len(), 48);
+        assert_eq!(scan.findings[0].place, "SKILL.md:3");
+        assert!(scan.origin.starts_with("https://github.com/mukul975/"));
+        let shown = serde_json::to_string(&scan).expect("json");
+        assert!(!shown.contains("--force"), "{shown}");
+    }
+
+    #[test]
+    fn a_refused_skill_reads_as_not_installed_if_hermes_refuses_at_install() {
+        let outcome = parse_install(&fixture("preview-blocked.txt")).expect("a report");
+        assert!(!outcome.installed);
+        assert_eq!(outcome.verdict, Verdict::Dangerous);
+    }
+
+    /// The caution case hasn't been seen on the PC: this fixture is written from Hermes's source.
+    #[test]
     fn a_blocked_scan_gives_no_way_to_install() {
         let scan = parse_scan(&fixture("preview-blocked.from-source.txt")).expect("a report");
         assert!(!scan.passed);
