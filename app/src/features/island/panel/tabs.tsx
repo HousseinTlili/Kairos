@@ -472,14 +472,18 @@ export function WallpaperBackdrop() {
 
 // --- Apps -----------------------------------------------------------------------------------------
 
-/** Home's dock: the pinned apps as icons, one click to start each. */
-export function PinnedStrip({ onEmpty }: { onEmpty: ReactNode }) {
+/**
+ * The pinned apps as icons, one click to start each. A new `refresh` reads them again, keeping the
+ * icons on screen meanwhile: on the top bar an empty row for a moment narrowed the bar, and the
+ * whole bar jumped sideways and back (the flicker seen 2026-11-01).
+ */
+export function PinnedStrip({ onEmpty, refresh }: { onEmpty: ReactNode; refresh?: number }) {
   const [pins, setPins] = useState<Pin[] | null>(null);
   useEffect(() => {
     void callModule<Pin[]>("pinned", "list")
       .then(setPins)
       .catch(() => setPins([]));
-  }, []);
+  }, [refresh]);
   if (!pins) return null;
   if (pins.length === 0) return <>{onEmpty}</>;
   return (

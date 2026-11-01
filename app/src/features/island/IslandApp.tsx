@@ -274,7 +274,7 @@ export function IslandApp() {
             onSwitched={(desktops) => setBar((b) => (b ? { ...b, desktops } : b))}
           />
           <div className="topbar-apps">
-            <PinnedStrip key={pinsSeen} onEmpty={null} />
+            <PinnedStrip refresh={pinsSeen} onEmpty={null} />
           </div>
         </div>
 

@@ -8,6 +8,8 @@
 //! it. Neither window ever takes the focus when it appears.
 
 use std::sync::Mutex;
+#[cfg(windows)]
+use std::sync::atomic::AtomicIsize;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::{Duration, Instant};
 
@@ -190,7 +192,9 @@ mod desktop {
         MONITOR_DEFAULTTONEAREST, MONITOR_DEFAULTTOPRIMARY, MonitorFromPoint, MonitorFromWindow,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
-        EnumWindows, GetCursorPos, IsIconic, IsWindowVisible, IsZoomed,
+        EnumWindows, GetCursorPos, GetForegroundWindow, IsIconic, IsWindowVisible, IsZoomed,
+        SW_HIDE, SW_SHOWNOACTIVATE, SWP_NOACTIVATE, SWP_NOZORDER, SetForegroundWindow,
+        SetWindowPos, ShowWindow,
     };
     use windows::core::BOOL;
 
@@ -247,6 +251,49 @@ mod desktop {
         unsafe { GetCursorPos(&mut point) }.ok()?;
         Some((point.x, point.y))
     }
+
+    /// Moves and sizes a window in one step, without touching its order or focus.
+    pub fn move_window(hwnd: *mut core::ffi::c_void, x: i32, y: i32, w: u32, h: u32) -> bool {
+        // SAFETY: a handle Tauri gave for a live window; SetWindowPos checks it anyway.
+        unsafe {
+            SetWindowPos(
+                HWND(hwnd),
+                None,
+                x,
+                y,
+                w as i32,
+                h as i32,
+                SWP_NOZORDER | SWP_NOACTIVATE,
+            )
+        }
+        .is_ok()
+    }
+
+    /// Shows a window without giving it the keyboard: Tauri's `show` activates it.
+    pub fn show_quietly(hwnd: *mut core::ffi::c_void) {
+        // SAFETY: as above; the result only says whether it was visible before.
+        let _ = unsafe { ShowWindow(HWND(hwnd), SW_SHOWNOACTIVATE) };
+    }
+
+    /// Hides a window shown by `show_quietly`. Tauri's `hide` won't do: it believes the window is
+    /// already hidden, because it wasn't the one to show it, and does nothing (seen 2026-11-01:
+    /// an invisible window left over the top of the screen, taking clicks).
+    pub fn hide_quietly(hwnd: *mut core::ffi::c_void) {
+        // SAFETY: as above.
+        let _ = unsafe { ShowWindow(HWND(hwnd), SW_HIDE) };
+    }
+
+    /// The window that has the keyboard, as a number to keep.
+    pub fn foreground() -> isize {
+        // SAFETY: takes nothing, returns a handle.
+        unsafe { GetForegroundWindow() }.0 as isize
+    }
+
+    /// Gives the keyboard back to a window kept with `foreground`.
+    pub fn give_back(window: isize) {
+        // SAFETY: Windows checks the handle; a window closed since is simply refused.
+        let _ = unsafe { SetForegroundWindow(HWND(window as *mut core::ffi::c_void)) };
+    }
 }
 
 #[cfg(not(windows))]
@@ -274,6 +321,9 @@ pub struct IslandState {
     bar_w: AtomicU32,
     /// The bar is sliding back up; its window hides when that ends, unless it is wanted again.
     leaving: AtomicBool,
+    /// The window that had the keyboard before the bar opened a menu or its panel.
+    #[cfg(windows)]
+    keyboard_was: AtomicIsize,
 }
 
 impl Default for IslandState {
@@ -287,6 +337,8 @@ impl Default for IslandState {
             uncovered: AtomicBool::new(true),
             bar_w: AtomicU32::new(DEFAULT_BAR_W),
             leaving: AtomicBool::new(false),
+            #[cfg(windows)]
+            keyboard_was: AtomicIsize::new(0),
         }
     }
 }
@@ -320,9 +372,35 @@ fn area_of<R: Runtime>(window: &WebviewWindow<R>) -> Option<Area> {
 fn place<R: Runtime>(window: &WebviewWindow<R>, expanded: bool, bar_w: u32) {
     if let Some(area) = area_of(window) {
         let (x, y, w, h) = island_rect(area, expanded, bar_w);
+        // One step: sized first and moved after, a change of width showed the centred bar jumping
+        // sideways and back.
+        #[cfg(windows)]
+        if let Ok(hwnd) = window.hwnd()
+            && desktop::move_window(hwnd.0, x, y, w, h)
+        {
+            return;
+        }
         let _ = window.set_size(PhysicalSize::new(w, h));
         let _ = window.set_position(PhysicalPosition::new(x, y));
     }
+}
+
+fn show_bar<R: Runtime>(window: &WebviewWindow<R>) {
+    #[cfg(windows)]
+    if let Ok(hwnd) = window.hwnd() {
+        desktop::show_quietly(hwnd.0);
+        return;
+    }
+    let _ = window.show();
+}
+
+fn hide_bar<R: Runtime>(window: &WebviewWindow<R>) {
+    #[cfg(windows)]
+    if let Ok(hwnd) = window.hwnd() {
+        desktop::hide_quietly(hwnd.0);
+    }
+    // Also through Tauri, which keeps its own idea of whether the window shows.
+    let _ = window.hide();
 }
 
 /// Shows or hides the bar from everything that decides it: the setting, the hour off, a
@@ -347,7 +425,7 @@ pub fn refresh<R: Runtime>(app: &AppHandle<R>, enabled: bool) {
         if !window.is_visible().unwrap_or(false) {
             // Shown without focus: the bar must never take the keyboard from the Master's app.
             let _ = window.set_focusable(false);
-            let _ = window.show();
+            show_bar(&window);
             let _ = app.emit_to(ISLAND_WINDOW, "island-shown", ());
         } else if state.leaving.swap(false, Ordering::SeqCst) {
             // Wanted again while sliding up: it slides back down.
@@ -367,7 +445,7 @@ pub fn refresh<R: Runtime>(app: &AppHandle<R>, enabled: bool) {
                     .swap(false, Ordering::SeqCst)
                     && let Some(window) = app.get_webview_window(ISLAND_WINDOW)
                 {
-                    let _ = window.hide();
+                    hide_bar(&window);
                 }
             });
     }
@@ -541,8 +619,31 @@ pub fn set_expanded<R: Runtime>(app: &AppHandle<R>, expanded: bool) {
         app.state::<IslandState>().bar_w.load(Ordering::SeqCst),
     );
     let _ = window.set_focusable(expanded);
+    #[cfg(windows)]
+    let state = app.state::<IslandState>();
     if expanded {
+        // Opened, it needs the keyboard (a search, a password); it gives it back when it folds.
+        #[cfg(windows)]
+        state
+            .keyboard_was
+            .store(desktop::foreground(), Ordering::SeqCst);
+        // Tauri doesn't know the bar is showing (`show_bar` goes round it), and focuses only a
+        // window it believes is visible.
+        let _ = window.show();
         let _ = window.set_focus();
+    } else {
+        // Folded by a click on itself or Esc, it still has the keyboard: back to the Master's app.
+        // After a click on another window, that window has it already and is left alone.
+        #[cfg(windows)]
+        {
+            let before = state.keyboard_was.swap(0, Ordering::SeqCst);
+            if before != 0
+                && let Ok(own) = window.hwnd()
+                && desktop::foreground() == own.0 as isize
+            {
+                desktop::give_back(before);
+            }
+        }
     }
     let _ = app.emit_to(ISLAND_WINDOW, "island-expanded", expanded);
 }

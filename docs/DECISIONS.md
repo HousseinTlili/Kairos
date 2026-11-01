@@ -432,6 +432,10 @@ after (a switch in Settings ▸ Island turns the hiding off). For that the core 
 100 ms and lists the windows (`IsZoomed`, skipping cloaked ones) every 300 ms, which costs next to
 nothing; full-screen apps and screen captures still hide it as before. The seal or the clock opens
 the M15 panel under the bar. Asked for by the product owner on 2026-10-31.
+Corrected 2026-11-01 after the bar flickered on click: its window now moves and resizes in one step
+(`SetWindowPos`), and appears without taking the keyboard (`SW_SHOWNOACTIVATE`), going round Tauri,
+which then has to be told when the window hides and when a menu opens (`show_bar`, `hide_bar`,
+`set_expanded`). A menu takes the keyboard while it is open and gives it back when it closes.
 
 ## D-033 — Automations are Kairos's own: events from the PC, decided in the core, AI requests under the usual rules — Accepted
 

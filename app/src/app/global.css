@@ -3285,9 +3285,12 @@ html.panel-window body {
   height: 17px;
 }
 
+/* A fixed width: 9 % becoming 10 % must not change the bar's width, which would re-fit its window. */
 .bar-figure {
+  min-width: 4ch;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .bar-battery {

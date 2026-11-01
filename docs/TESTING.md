@@ -218,6 +218,7 @@ Spec: `docs/milestones/M18.md`; details: `docs/milestones/M18-acceptance.md`. Ab
 
 - [ ] At sign-in: no console window and no "can't reach this page" box (the dev build's login entry was removed from the real registry on 2026-10-31).
 - [ ] The bar is only as wide as what it holds, centred; pin another app and it grows.
+- [ ] Clicking it is steady: opening and closing a menu, or going from one menu to another, doesn't make the bar jump or flash. While you type in an app, the bar sliding in doesn't take your keyboard; closing a menu gives the keyboard back to that app.
 - [ ] Nothing maximized: the bar at the top, in the theme's colours; in Ember it glows red as in your picture.
 - [ ] Maximize a window: the bar slides up into the top of the screen. Touch the top edge at its **left** with the mouse: it slides down (the rest of the edge does nothing); it stays while the mouse is in the top strip or on it, and slides back up half a second after.
 - [ ] Like Omarchy's bar (D-036): the desktop numbers follow Win+Ctrl+arrows and a click switches desktop; the clock opens a calendar; sound: click for the slider and mute, wheel for ±5 %, right-click mutes; Wi-Fi opens Windows's network list, Bluetooth its settings; CPU opens Kairos's System page; battery shows its details and opens power mode or battery saver.
