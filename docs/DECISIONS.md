@@ -360,7 +360,7 @@ runs in Browser Use mode (one `browser_exec` tool running Python, kept by the pr
 every script that clicks, types, submits or reads cookies asks, a vault fill asks, and card numbers
 and passwords are never typed (built 2026-10-27). Proposed 2026-10-27; the product owner decides.
 
-## D-040 — Kairos's computer use: off by default, some windows off limits, Hermes's gate asks — Proposed
+## D-040 — Kairos's computer use: off by default, some windows off limits, Hermes's gate asks — Accepted
 
 For M20 (`docs/milestones/M20.md`). Hermes's `computer_use` can be turned on for Kairos's own
 conversations from a switch, off by default. D-014's "stays off until there is a use case and a rule
@@ -370,7 +370,8 @@ plugin works out the target window and refuses Kairos itself, terminals, securit
 managers, browsers and banking, and refuses input it can't place. Hermes's gate asks for every action,
 once, so there are no double cards; typing is never granted beyond once, and "always" is never offered.
 Seeing a window asks once per app per conversation, because the picture goes to the AI provider.
-Proposed 2026-11-01.
+Accepted by the product owner on 2026-11-01 with the recommended answers (M20 §7): the switch and the
+probe allowed; the Hermes command line loses `computer_use`; browsers off limits; §4's list to start.
 
 ---
 
