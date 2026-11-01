@@ -1,10 +1,10 @@
 //! The switch for Hermes's `computer_use` on the API Kairos uses (M20, D-040): off by default, turned
 //! on and off by the Master's click.
 //!
-//! Both `hermes tools enable` and `hermes config unset` strip comments from `config.yaml` (seen
-//! 2026-11-01: 236 lines of them), so this only uses `hermes config set platform_toolsets.api_server`.
-//! The cost: after the first use, an explicit list of toolsets stays in the file, turned on or off. It
-//! won't turn on without the rules that keep it out of Kairos's own windows, terminals and the rest.
+//! `hermes config set platform_toolsets.api_server` with the list, with or without the tool. Replacing
+//! that list costs `config.yaml` the 236 lines of template comments Hermes's writer ties to it (seen
+//! 2026-11-01), as `hermes tools` does too; no setting changes. It won't turn on without the rules that
+//! keep it out of Kairos's own windows, terminals and the rest.
 //! The pure parts are tested against fixtures.
 
 use std::path::Path;

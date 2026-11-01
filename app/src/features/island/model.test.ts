@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { AuditEvent } from "../../lib/tauri";
 import { newTurn, type Turn } from "../chat/turn";
 import {
   DONE_MS,
@@ -16,6 +17,41 @@ const quiet = { phase: "idle" as const, speaking: false };
 function turn(status: Turn["status"], text = ""): Turn {
   return { ...newTurn("Open Notepad and write a shopping list for the weekend"), status, text };
 }
+
+describe("working in another app (M20)", () => {
+  const working = (status: Turn["status"]): Turn => ({
+    ...newTurn("use it"),
+    status,
+    taskId: "t",
+    runId: "r",
+    items: [
+      {
+        kind: "tool",
+        toolCallId: "c",
+        tool: "computer_use",
+        preview: "",
+        state: "running",
+        audit: {
+          args_redacted: JSON.stringify({ action: "capture", kairos_target: "Character Map" }),
+        } as AuditEvent,
+      },
+    ],
+  });
+  const quiet = { phase: "idle", speaking: false } as const;
+
+  it("names the app, and gives the bar what Stop needs", () => {
+    const state = stateOf("main", working("running"), quiet, "kairos-1", 0, null);
+    expect(state.text).toBe("Working in Character Map");
+    expect(state.desktop).toEqual({ taskId: "t", runId: "r" });
+  });
+
+  it("keeps Stop while a card waits, and drops it when the request ends", () => {
+    const waiting = stateOf("main", working("waiting_for_approval"), quiet, "kairos-1", 0, null);
+    expect(waiting.approval).toBe(true);
+    expect(waiting.desktop).toEqual({ taskId: "t", runId: "r" });
+    expect(stateOf("main", working("completed"), quiet, "kairos-1", 0, null).desktop).toBeNull();
+  });
+});
 
 describe("what the island says", () => {
   it("is at your service when nothing happens", () => {

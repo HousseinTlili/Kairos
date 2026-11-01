@@ -43,7 +43,7 @@ Keys go into Hermes's `.env` under `# kairos:` markers (`providers.rs`); Kairos 
 **M19** (skills, `m19/skills`): built, `docs/milestones/M19.md`; D-039 accepted (Kairos never sends `--force`; update is Remove then Install).
 The core is `skills.rs`, parsing `hermes skills` text against `fixtures/hermes-0.22.5/skills/`; `/v1/skills` answers 500.
 **M20** (computer use, `m20/computer-use`): built, `docs/milestones/M20.md`; D-040 accepted (off by default; some windows off limits; Hermes's gate asks).
-`plugin/kairos/desktop.py` works out the target window; `hermes tools enable` and `config unset` strip `config.yaml`'s comments, so use `config set`.
+`plugin/kairos/desktop.py` works out the target window. Replacing `platform_toolsets.api_server` costs `config.yaml` 236 lines of template comments, however it's done.
 
 ## Roles
 
